@@ -3,104 +3,264 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SCVSAT - Receituário A</title>
+<title>SCVSAT — Receituário A</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+/* ── Reset & Tokens ───────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--amber:#d97706;--slate:#1e293b;--border:#e2e8f0;--bg:#f8fafc}
-body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:var(--bg);color:#0f172a;height:100vh;overflow:hidden}
-input,select,textarea{width:100%;border:1px solid var(--border);border-radius:7px;padding:7px 11px;font-size:13px;color:#0f172a;background:#fff;outline:none;font-family:inherit}
-input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 2px #fef3c7}
-select{-webkit-appearance:none;padding-right:26px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
-textarea{resize:vertical;min-height:65px}
-#app{display:flex;height:100vh;overflow:hidden}
-#sidebar{width:210px;background:var(--slate);display:flex;flex-direction:column;flex-shrink:0}
-#logo-box{padding:14px 12px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:9px}
-.logo-ico{width:32px;height:32px;background:var(--amber);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff;flex-shrink:0}
-.logo-txt{color:#fff;font-weight:700;font-size:12px;line-height:1.3}
-.logo-sub{color:#94a3b8;font-size:10px;margin-top:1px}
-#nav{flex:1;overflow-y:auto;padding:5px 0}
-.nb{display:block;width:100%;padding:9px 13px;background:transparent;color:#94a3b8;border:none;cursor:pointer;text-align:left;font-size:13px;font-family:inherit;transition:all .12s}
-.nb:hover{color:#fff;background:rgba(255,255,255,.07)}
-.nb.active{background:var(--amber);color:#fff;font-weight:700}
-#sidebar-foot{padding:9px 12px;border-top:1px solid rgba(255,255,255,.07);font-size:10px;color:rgba(148,163,184,.5)}
-#main{flex:1;overflow-y:auto;padding:20px;background:var(--bg)}
-#content{max-width:1080px;margin:0 auto}
-.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
-.pt{font-size:20px;font-weight:700}
-.ps{color:#64748b;margin-top:2px;font-size:13px}
-.bp{background:var(--amber);color:#fff;border:none;border-radius:7px;padding:8px 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
-.bp:hover{background:#b45309}
-.bp:disabled{background:#94a3b8;cursor:not-allowed}
-.bg_{background:#fff;color:#475569;border:1px solid var(--border);border-radius:7px;padding:8px 15px;font-size:13px;cursor:pointer;font-family:inherit}
-.bg_:hover{background:#f8fafc}
-.bsm{border:none;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
-.card{background:#fff;border-radius:11px;border:1px solid var(--border);overflow:hidden;margin-bottom:14px}
+:root{
+  --amber:#c96a00;--amber-lt:#f59e0b;--amber-bg:#fff7ed;
+  --slate:#0f172a;--slate2:#1e293b;--slate3:#334155;
+  --border:#e2e8f0;--bg:#f1f5f9;--surface:#ffffff;
+  --text:#0f172a;--muted:#64748b;--muted2:#94a3b8;
+  --green:#059669;--green-bg:#ecfdf5;
+  --red:#dc2626;--red-bg:#fef2f2;
+  --blue:#2563eb;--blue-bg:#eff6ff;
+  --radius:10px;--radius-sm:7px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.15);
+  --sidebar-w:220px;
+  --font:'DM Sans',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+}
+body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(--text);line-height:1.5}
+button{font-family:var(--font);cursor:pointer}
+input,select,textarea{font-family:var(--font);width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;color:var(--text);background:var(--surface);outline:none;transition:border .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(201,106,0,.12)}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+textarea{resize:vertical;min-height:70px}
+a{color:var(--amber);text-decoration:none}
+
+/* ── Login ─────────────────────────────────────────────────── */
+#tela-login{display:none;position:fixed;inset:0;z-index:2000;background:var(--slate);align-items:center;justify-content:center;padding:20px}
+#tela-login.show{display:flex}
+.login-card{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:400px;padding:36px;box-shadow:var(--shadow-lg)}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.login-ico{width:40px;height:40px;background:var(--amber);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff;flex-shrink:0}
+.login-title{font-size:16px;font-weight:700;color:var(--slate)}
+.login-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.login-field{margin-bottom:16px}
+.login-field label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.login-btn{width:100%;background:var(--amber);color:#fff;border:none;border-radius:var(--radius-sm);padding:11px;font-size:14px;font-weight:600;margin-top:8px;transition:background .15s}
+.login-btn:hover{background:#b45309}
+.login-btn:disabled{background:var(--muted2);cursor:not-allowed}
+.login-erro{color:var(--red);font-size:12px;margin-top:8px;min-height:18px;font-weight:500}
+.login-footer{text-align:center;font-size:11px;color:var(--muted2);margin-top:20px}
+
+/* ── App Shell ──────────────────────────────────────────────── */
+#app{display:none;height:100dvh;overflow:hidden}
+#app.show{display:flex}
+
+/* ── Sidebar ────────────────────────────────────────────────── */
+#sidebar{width:var(--sidebar-w);background:var(--slate);display:flex;flex-direction:column;flex-shrink:0;transition:transform .25s;z-index:200}
+#sidebar-header{padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.s-ico{width:34px;height:34px;background:var(--amber);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;flex-shrink:0}
+.s-brand{color:#fff;font-weight:700;font-size:12px;line-height:1.3}
+.s-sub{color:var(--muted2);font-size:10px;margin-top:1px}
+#nav{flex:1;overflow-y:auto;padding:8px 0}
+.nb{display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;color:var(--muted2);border:none;text-align:left;font-size:13px;font-weight:500;transition:all .12s;border-radius:0}
+.nb:hover{color:#fff;background:rgba(255,255,255,.06)}
+.nb.active{background:rgba(201,106,0,.18);color:var(--amber-lt);font-weight:600}
+.nb .ni{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.nav-section{padding:16px 14px 4px;font-size:9px;font-weight:700;color:rgba(148,163,184,.35);text-transform:uppercase;letter-spacing:.1em}
+#sidebar-footer{padding:12px 14px;border-top:1px solid rgba(255,255,255,.07)}
+.sf-user{font-size:12px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sf-papel{font-size:10px;color:var(--muted2);margin-top:1px;margin-bottom:8px}
+.sf-papel span{background:rgba(201,106,0,.2);color:var(--amber-lt);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.logout-btn{background:rgba(220,38,38,.1);color:#f87171;border:1px solid rgba(220,38,38,.2);border-radius:var(--radius-sm);padding:6px 10px;font-size:11px;font-weight:600;width:100%;transition:all .15s}
+.logout-btn:hover{background:rgba(220,38,38,.2)}
+
+/* ── Mobile Overlay & Hamburger ─────────────────────────────── */
+#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:190}
+#hamburger{display:none;position:fixed;top:12px;left:12px;z-index:300;background:var(--slate);border:none;border-radius:8px;width:38px;height:38px;align-items:center;justify-content:center;flex-direction:column;gap:4px;box-shadow:var(--shadow-md)}
+#hamburger span{display:block;width:18px;height:2px;background:#fff;border-radius:2px;transition:all .25s}
+
+/* ── Main Content ────────────────────────────────────────────── */
+#main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;flex-shrink:0;position:sticky;top:0;z-index:100}
+#topbar-title{font-size:15px;font-weight:700;color:var(--text);flex:1;padding-left:0}
+#page-body{padding:20px;flex:1}
+#content{max-width:1100px;margin:0 auto}
+
+/* ── Page Header ─────────────────────────────────────────────── */
+.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.ph-left .pt{font-size:20px;font-weight:700;color:var(--text)}
+.ph-left .ps{color:var(--muted);margin-top:2px;font-size:13px}
+.ph-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:var(--radius-sm);padding:8px 14px;font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--amber);color:#fff}.btn-primary:hover{background:#b45309}
+.btn-secondary{background:var(--surface);color:var(--slate3);border:1.5px solid var(--border)}.btn-secondary:hover{background:var(--bg)}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:6px;border:none;font-weight:600}
+.btn-edit{background:#dbeafe;color:#1e40af}.btn-edit:hover{background:#bfdbfe}
+.btn-danger{background:#fee2e2;color:#991b1b}.btn-danger:hover{background:#fecaca}
+.btn-success{background:#d1fae5;color:#065f46}.btn-success:hover{background:#a7f3d0}
+.btn-warn{background:#fef3c7;color:#92400e}.btn-warn:hover{background:#fde68a}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Stats Grid ──────────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border-radius:var(--radius);border:1.5px solid var(--border);padding:16px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-green::before{background:var(--green)}
+.stat-amber::before{background:var(--amber-lt)}
+.stat-blue::before{background:var(--blue)}
+.stat-slate::before{background:var(--slate3)}
+.stat-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px}
+.stat-val{font-size:30px;font-weight:700;line-height:1}
+.stat-green .stat-val{color:var(--green)}
+.stat-amber .stat-val{color:#92400e}
+.stat-blue  .stat-val{color:var(--blue)}
+.stat-slate .stat-val{color:var(--slate3)}
+
+/* ── Cards & Tables ──────────────────────────────────────────── */
+.card{background:var(--surface);border-radius:var(--radius);border:1.5px solid var(--border);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow)}
+.card-header{padding:12px 16px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface)}
+.card-header-title{font-size:13px;font-weight:700;color:var(--text)}
 table{width:100%;border-collapse:collapse}
-th{padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;background:#f8fafc;border-bottom:1px solid var(--border)}
-td{padding:9px 12px;font-size:13px;color:#475569;border-bottom:1px solid #f8fafc;vertical-align:middle}
-td.bold{font-weight:700;color:#0f172a}
-td.mono{font-family:monospace;font-weight:700;color:#92400e;font-size:12px}
-.badge{border-radius:5px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-block}
-.bg-green{background:#d1fae5;color:#065f46}
-.bg-amber{background:#fef3c7;color:#92400e}
-.bg-red{background:#fee2e2;color:#991b1b}
-.bg-gray{background:#f1f5f9;color:#475569}
-.bg-blue{background:#dbeafe;color:#1e40af}
-.search-wrap{position:relative;margin-bottom:11px;max-width:380px}
-.search-wrap input{padding-right:30px}
-.search-x{position:absolute;right:9px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;padding:0;line-height:1;display:none}
+th{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#f8fafc;border-bottom:1.5px solid var(--border);white-space:nowrap}
+td{padding:11px 14px;font-size:13px;color:var(--muted);border-bottom:1px solid #f8fafc;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+td.bold{font-weight:600;color:var(--text)}
+td.mono{font-family:var(--mono);font-weight:500;color:#92400e;font-size:12px}
+
+/* ── Mobile Table Cards ──────────────────────────────────────── */
+.m-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;box-shadow:var(--shadow)}
+.m-card-title{font-weight:600;color:var(--text);font-size:14px;margin-bottom:4px}
+.m-card-sub{font-size:12px;color:var(--muted);margin-bottom:10px}
+.m-card-footer{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.m-card-proto{font-family:var(--mono);font-size:12px;font-weight:500;color:#92400e;background:#fff7ed;border:1px solid #fcd34d;border-radius:5px;padding:2px 8px}
+
+/* ── Badge ───────────────────────────────────────────────────── */
+.badge{border-radius:5px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap}
+.b-green{background:var(--green-bg);color:var(--green)}
+.b-amber{background:#fef3c7;color:#92400e}
+.b-red{background:var(--red-bg);color:var(--red)}
+.b-gray{background:#f1f5f9;color:var(--muted)}
+.b-blue{background:var(--blue-bg);color:var(--blue)}
+
+/* ── Search & Filter ─────────────────────────────────────────── */
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.search-wrap{position:relative;flex:1;min-width:180px;max-width:340px}
+.search-wrap input{padding-right:32px}
+.search-x{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted2);font-size:17px;padding:0;line-height:1;display:none}
 .search-x.show{display:block}
-.filter-wrap{display:flex;gap:6px;margin-bottom:11px;flex-wrap:wrap}
-.fb{background:#fff;color:#475569;border:1px solid var(--border);border-radius:7px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit}
-.fb.active{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700}
-.unit-card{background:#fff;border-radius:11px;border:1px solid var(--border);padding:13px 15px;display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-.stat{border-radius:11px;padding:13px 15px}
-.stat-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.stat-val{font-size:32px;font-weight:800;margin-top:5px}
-#overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(15,23,42,.55);align-items:center;justify-content:center;padding:16px}
+.filter-btn{background:var(--surface);color:var(--muted);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:12px;font-weight:500;transition:all .12s}
+.filter-btn.active{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700}
+
+/* ── Unit Cards ──────────────────────────────────────────────── */
+.unit-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;box-shadow:var(--shadow)}
+.unit-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+
+/* ── Modal ───────────────────────────────────────────────────── */
+#overlay{display:none;position:fixed;inset:0;z-index:400;background:rgba(15,23,42,.6);align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(2px)}
 #overlay.open{display:flex}
-#modal{background:#fff;border-radius:13px;width:100%;max-width:640px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
-#modal.wide{max-width:740px}
-.mh{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
-.mh span{font-weight:700;font-size:14px}
-.mc{background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1}
-.mb{overflow-y:auto;flex:1;padding:18px}
-.mf{display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid var(--border);flex-shrink:0}
-.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:640px;max-height:92dvh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
+#modal.wide{max-width:720px}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1.5px solid var(--border);flex-shrink:0}
+.modal-head-title{font-weight:700;font-size:14px}
+.modal-close{background:none;border:none;font-size:20px;color:var(--muted2);line-height:1;padding:2px;border-radius:5px}
+.modal-close:hover{background:var(--bg);color:var(--text)}
+.modal-body{overflow-y:auto;flex:1;padding:18px}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1.5px solid var(--border);flex-shrink:0}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{display:flex;flex-direction:column;gap:4px}
 .field.s2{grid-column:span 2}
 .field.s1{grid-column:span 1}
-.field label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
-.req{color:#ef4444}
-.err{color:#ef4444;font-size:11px;margin-top:2px}
-.chklist{border:1px solid var(--border);border-radius:7px;padding:9px;max-height:130px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:3px 8px}
-.chkitem{display:flex;align-items:center;gap:5px;font-size:12px;color:#334155;cursor:pointer;padding:2px 0}
-.chkitem input{width:auto}
-.info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:9px 12px;font-size:12px;color:#1e40af;margin-top:10px}
-.warn-box{background:#fffbeb;border:1px solid #fcd34d;border-radius:7px;padding:9px 12px;font-size:12px;color:#92400e;margin-top:6px}
+.field label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.req{color:var(--red)}
+.err{color:var(--red);font-size:11px;margin-top:2px;font-weight:500}
+.section-divider{grid-column:span 2;border-top:1px solid var(--border);padding-top:10px;margin-top:4px}
+.section-divider-label{font-size:11px;color:var(--muted2);font-weight:500}
+.chklist{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px;max-height:130px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;background:#fafafa}
+.chkitem{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--slate3);cursor:pointer;padding:2px 0}
+.chkitem input[type=checkbox]{width:auto;accent-color:var(--amber)}
+.info-box{background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:#1e40af;margin-top:8px}
+.warn-box{background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:#92400e;margin-top:6px}
 .bloco-sel{display:flex;flex-direction:column;gap:6px;margin-top:8px}
-.bloco-item{display:flex;align-items:center;gap:10px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px}
-.bloco-pags{color:#64748b;min-width:120px}
-#loading{display:none;position:fixed;inset:0;z-index:500;background:rgba(248,250,252,.92);align-items:center;justify-content:center;flex-direction:column;gap:12px}
-#loading.show{display:flex}
-.spinner{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:7px;height:14px;margin:6px 0}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-#termo-overlay{display:none;position:fixed;inset:0;z-index:150;background:rgba(15,23,42,.6);align-items:center;justify-content:center;padding:16px}
+.bloco-item{display:flex;align-items:center;gap:10px;background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px}
+.bloco-pags{color:var(--muted);min-width:110px;font-size:11px}
+
+/* ── Termo ───────────────────────────────────────────────────── */
+#termo-overlay{display:none;position:fixed;inset:0;z-index:450;background:rgba(15,23,42,.65);align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(2px)}
 #termo-overlay.open{display:flex}
-#termo-box{background:#fff;border-radius:13px;width:100%;max-width:760px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
-#termo-body{overflow-y:auto;flex:1;padding:18px}
-.termo-doc{border:2px solid #1e293b;padding:28px 32px;font-family:Georgia,serif;font-size:12.5px;line-height:1.65;color:#0f172a}
-#toast{position:fixed;bottom:20px;right:20px;z-index:600;background:#1e293b;color:#fff;padding:10px 18px;border-radius:9px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none}
+#termo-box{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:780px;max-height:94dvh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
+#termo-body{overflow-y:auto;flex:1}
+.termo-doc{border:2px solid var(--slate);padding:28px 32px;font-family:Georgia,serif;font-size:12.5px;line-height:1.65;color:var(--text)}
+
+/* ── Toast ───────────────────────────────────────────────────── */
+#toast{position:fixed;bottom:20px;right:20px;z-index:999;background:var(--slate);color:#fff;padding:10px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;max-width:320px;box-shadow:var(--shadow-lg)}
 #toast.show{opacity:1}
 #toast.ok{background:#065f46}
 #toast.erro{background:#991b1b}
+
+/* ── Loading ─────────────────────────────────────────────────── */
+#loading{display:none;position:fixed;inset:0;z-index:600;background:rgba(248,250,252,.92);align-items:center;justify-content:center;flex-direction:column;gap:12px;backdrop-filter:blur(1px)}
+#loading.show{display:flex}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:var(--radius-sm);height:14px;margin:6px 0}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── Empty State ─────────────────────────────────────────────── */
+.empty{text-align:center;padding:36px 20px;color:var(--muted2)}
+.empty-icon{font-size:32px;margin-bottom:8px}
+.empty-text{font-size:13px;font-weight:500}
+
+/* ── Logs ────────────────────────────────────────────────────── */
+.log-row{display:flex;gap:12px;padding:10px 16px;border-bottom:1px solid #f8fafc;align-items:flex-start}
+.log-row:last-child{border-bottom:none}
+.log-time{font-size:11px;color:var(--muted2);white-space:nowrap;min-width:115px;padding-top:1px;font-family:var(--mono)}
+.log-tag{flex-shrink:0}
+.log-text{font-size:12px;color:var(--muted)}
+.log-entity{font-weight:600;color:var(--text)}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media(max-width:768px){
+  :root{--sidebar-w:260px}
+  #hamburger{display:flex}
+  #sidebar{position:fixed;top:0;bottom:0;left:0;transform:translateX(-100%)}
+  #sidebar.open{transform:translateX(0)}
+  #sidebar-overlay.show{display:block}
+  #app.show{flex-direction:column}
+  #main{width:100%}
+  #topbar{padding-left:58px}
+  #page-body{padding:14px}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .stat-val{font-size:24px}
+  /* Hide desktop tables, show mobile cards */
+  .desktop-table{display:none}
+  .mobile-cards{display:block}
+  .ph{flex-direction:column;align-items:stretch}
+  .ph-actions{justify-content:flex-start}
+  .form-grid{grid-template-columns:1fr}
+  .field.s2,.field.s1{grid-column:span 1}
+  .section-divider{grid-column:span 1}
+  .chklist{grid-template-columns:1fr}
+  #modal{max-width:100%;max-height:100dvh;border-radius:var(--radius-lg) var(--radius-lg) 0 0;position:fixed;bottom:0;left:0;right:0}
+  #overlay{align-items:flex-end;padding:0}
+  .termo-doc{padding:16px}
+  #termo-box{max-height:100dvh;border-radius:var(--radius-lg) var(--radius-lg) 0 0;position:fixed;bottom:0;left:0;right:0}
+  #termo-overlay{align-items:flex-end;padding:0}
+  .unit-card{flex-direction:column;align-items:flex-start}
+  .unit-actions{width:100%;justify-content:flex-start}
+  .toolbar{flex-wrap:wrap}
+  .search-wrap{max-width:100%;width:100%}
+}
+@media(min-width:769px){
+  .desktop-table{display:block}
+  .mobile-cards{display:none}
+}
+
+/* ── Print ───────────────────────────────────────────────────── */
 @media print{
-  #app,#loading,#overlay,#toast{display:none!important}
+  #app,#loading,#overlay,#toast,#tela-login,#hamburger{display:none!important}
   #termo-overlay{display:block!important;position:static;background:none;padding:0}
-  #termo-box{max-height:none;border-radius:0}
+  #termo-box{max-height:none;border-radius:0;box-shadow:none}
   .no-print{display:none!important}
   .termo-doc{border:2px solid #000}
 }
@@ -108,970 +268,862 @@ td.mono{font-family:monospace;font-weight:700;color:#92400e;font-size:12px}
 </head>
 <body>
 
+<!-- ══════════════ LOADING ══════════════ -->
 <div id="loading">
   <div class="spinner"></div>
-  <div id="loading-msg" style="font-size:13px;color:#64748b;font-weight:500">Conectando ao Supabase...</div>
+  <div id="loading-msg" style="font-size:13px;color:var(--muted);font-weight:500">Carregando...</div>
 </div>
 
-<div id="app">
-  <aside id="sidebar">
-    <div id="logo-box">
-      <div class="logo-ico">R</div>
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="tela-login">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-ico">R</div>
       <div>
-        <div class="logo-txt">SCVSAT</div>
-        <div class="logo-sub">12a Regional - Umuarama-PR</div>
+        <div class="login-title">SCVSAT</div>
+        <div class="login-sub">12ª Regional de Saúde — Umuarama-PR</div>
+      </div>
+    </div>
+    <div class="login-field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')tentarLogin()">
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter')tentarLogin()">
+    </div>
+    <div id="login-erro" class="login-erro"></div>
+    <button class="login-btn" id="login-btn" onclick="tentarLogin()">Entrar</button>
+    <div class="login-footer">Receituário A · Sistema Interno Restrito</div>
+  </div>
+</div>
+
+<!-- ══════════════ HAMBURGER ══════════════ -->
+<button id="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ══════════════ APP ══════════════ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <div class="s-ico">R</div>
+      <div>
+        <div class="s-brand">SCVSAT</div>
+        <div class="s-sub">12ª Regional · Umuarama</div>
       </div>
     </div>
     <nav id="nav"></nav>
-    <div id="sidebar-foot">
-      Receituário A . v2.0<br>
-      <button onclick="recarregarDados()" style="background:none;border:none;color:rgba(148,163,184,.6);font-size:10px;cursor:pointer;padding:0;margin-top:3px;font-family:inherit">&lt;&lt; Recarregar dados</button>
+    <div id="sidebar-footer">
+      <div class="sf-user" id="sf-nome">—</div>
+      <div class="sf-papel"><span id="sf-papel">—</span></div>
+      <button class="logout-btn" onclick="fazerLogout()">↩ Sair do sistema</button>
     </div>
   </aside>
+
+  <!-- MAIN -->
   <main id="main">
-    <div id="content">
-      <div style="padding:40px;text-align:center;color:#94a3b8">
-        <div class="spinner" style="margin:0 auto 12px"></div>
-        Carregando sistema...
+    <div id="topbar">
+      <div id="topbar-title">Dashboard</div>
+      <button class="btn btn-secondary" onclick="recarregarDados()" style="font-size:12px;padding:6px 11px">↺ Atualizar</button>
+    </div>
+    <div id="page-body">
+      <div id="content">
+        <div style="padding:40px;text-align:center;color:var(--muted2)">
+          <div class="spinner" style="margin:0 auto 12px"></div>
+          Carregando sistema...
+        </div>
       </div>
     </div>
   </main>
 </div>
 
+<!-- ══════════════ MODAL ══════════════ -->
 <div id="overlay" onclick="if(event.target===this)fecharModal()">
   <div id="modal">
-    <div class="mh"><span id="modal-titulo"></span><button class="mc" onclick="fecharModal()">×</button></div>
-    <div class="mb" id="modal-corpo"></div>
-    <div class="mf" id="modal-rodape"></div>
+    <div class="modal-head">
+      <span class="modal-head-title" id="modal-titulo"></span>
+      <button class="modal-close" onclick="fecharModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-corpo"></div>
+    <div class="modal-foot" id="modal-rodape"></div>
   </div>
 </div>
 
+<!-- ══════════════ TERMO ══════════════ -->
 <div id="termo-overlay" onclick="if(event.target===this)fecharTermo()">
   <div id="termo-box">
-    <div class="mh no-print"><span>Termo de Recebimento</span><button class="mc" onclick="fecharTermo()">×</button></div>
+    <div class="modal-head no-print">
+      <span class="modal-head-title">Termo de Recebimento</span>
+      <button class="modal-close" onclick="fecharTermo()">×</button>
+    </div>
     <div id="termo-body"></div>
   </div>
 </div>
 
+<!-- ══════════════ TOAST ══════════════ -->
 <div id="toast"></div>
 
-<!-- Supabase JS SDK -->
+<!-- ══════════════ SUPABASE ══════════════ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-// =====================================================
-// ⚙️ CONFIGURAÇÃO — preencha com os dados do seu projeto
-// Painel Supabase → Project Settings → API
-// =====================================================
+// ╔══════════════════════════════════════════╗
+// ║  ⚙️  CONFIGURAÇÃO — preencha seus dados  ║
+// ║  Supabase → Project Settings → API       ║
+// ╚══════════════════════════════════════════╝
 const SUPABASE_URL      = 'https://xxvwvvjckjpeiocceeae.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_D71tqfg_UcaSY_DQf6pyog_l_XG2tvo';
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// =====================================================
+// ═══════════════════════════════════════════
 // ESTADO GLOBAL
-// =====================================================
+// ═══════════════════════════════════════════
 const APP = {
-  view: 'dashboard',
-  medicos: [], requisitantes: [], unidades: [],
-  blocos: [], entregas: [], logs: [],
-  estados: [], municipios: [], config: {},
-  blocoFiltro: 'Todos',
-  carregado: false
+  view:'dashboard', medicos:[], requisitantes:[], unidades:[],
+  blocos:[], entregas:[], logs:[], estados:[], municipios:[],
+  config:{}, blocoFiltro:'Todos', carregado:false
 };
+let USUARIO = null; // { email, nome, papel }
 
 const ESPS = ['Acupuntura','Alergia e imunologia','Anestesiologia','Angiologia','Cardiologia',
-  'Cirurgia cardiovascular','Cirurgia da mão','Cirurgia de cabeça e pescoço','Cirurgia do aparelho digestivo',
-  'Cirurgia geral','Cirurgia oncológica','Cirurgia pediátrica','Cirurgia plástica','Cirurgia torácica',
-  'Cirurgia vascular','Clínica médica','Coloproctologia','Dermatologia','Endocrinologia e metabologia',
-  'Endoscopia','Gastroenterologia','Genética médica','Geriatria','Ginecologia e obstetrícia',
-  'Hematologia e hemoterapia','Homeopatia','Infectologia','Mastologia','Medicina de emergência',
-  'Medicina de família e comunidade','Medicina do trabalho','Medicina do tráfego','Medicina esportiva',
-  'Medicina física e reabilitação','Medicina intensiva','Medicina legal e perícia médica',
-  'Medicina nuclear','Medicina preventiva e social','Nefrologia','Neurocirurgia','Neurologia',
-  'Nutrologia','Oftalmologia','Oncologia clínica','Ortopedia e traumatologia','Otorrinolaringologia',
-  'Patologia','Patologia clínica/medicina laboratorial','Pediatria','Pneumologia','Psiquiatria',
-  'Radiologia e diagnóstico por imagem','Radioterapia','Reumatologia','Urologia','Outra'];
+  'Cirurgia cardiovascular','Cirurgia da mão','Cirurgia de cabeça e pescoço',
+  'Cirurgia do aparelho digestivo','Cirurgia geral','Cirurgia oncológica','Cirurgia pediátrica',
+  'Cirurgia plástica','Cirurgia torácica','Cirurgia vascular','Clínica médica','Coloproctologia',
+  'Dermatologia','Endocrinologia e metabologia','Endoscopia','Gastroenterologia','Genética médica',
+  'Geriatria','Ginecologia e obstetrícia','Hematologia e hemoterapia','Homeopatia','Infectologia',
+  'Mastologia','Medicina de emergência','Medicina de família e comunidade','Medicina do trabalho',
+  'Medicina esportiva','Medicina física e reabilitação','Medicina intensiva','Nefrologia',
+  'Neurocirurgia','Neurologia','Nutrologia','Oftalmologia','Oncologia clínica',
+  'Ortopedia e traumatologia','Otorrinolaringologia','Patologia','Patologia clínica','Pediatria',
+  'Pneumologia','Psiquiatria','Radiologia e diagnóstico por imagem','Radioterapia','Reumatologia',
+  'Urologia','Outra'];
 
-const NAV = [
-  {id:'dashboard',     label:'Dashboard'},
-  {id:'medicos',       label:'Médicos'},
-  {id:'requisitantes', label:'Requisitantes'},
-  {id:'unidades',      label:'Unidades de Saúde'},
-  {id:'blocos',        label:'Estoque de Blocos'},
-  {id:'entregas',      label:'Entregas'},
-  {id:'auditoria',     label:'Auditoria / Logs'},
+const NAV_ITEMS = [
+  {id:'dashboard',     label:'Dashboard',          icon:'◈'},
+  {id:'medicos',       label:'Médicos',             icon:'⚕'},
+  {id:'requisitantes', label:'Requisitantes',       icon:'👤'},
+  {id:'unidades',      label:'Unidades de Saúde',   icon:'🏥'},
+  {id:'blocos',        label:'Estoque de Blocos',   icon:'📋'},
+  {id:'entregas',      label:'Entregas',             icon:'📦'},
+  {id:'auditoria',     label:'Auditoria / Logs',    icon:'🔍'},
 ];
 
-// =====================================================
-// TRANSFORMADORES: Supabase (lowercase) → APP (UPPERCASE)
-// =====================================================
-function toMedico(m) {
-  const esps = (m.medico_especialidades||[]).map(e=>e.especialidade);
-  const unis = (m.medico_unidades||[]).map(e=>e.unidade_id);
-  return {
-    ID:m.id, SEXO:m.sexo, NOME:m.nome, CRM:m.crm, UF_CRM:m.uf_crm,
-    CPF:m.cpf, RG:m.rg, EMAIL:m.email, TELEFONE:m.telefone,
-    CEP:m.cep, LOGRADOURO:m.logradouro, NUMERO:m.numero,
-    COMPLEMENTO:m.complemento, BAIRRO:m.bairro, MUNICIPIO:m.municipio,
-    UF:m.uf, STATUS:m.status, CRIADO_EM:m.criado_em,
-    ESPECIALIDADES: esps.join(';'),
-    UNIDADES: unis.join(';')
-  };
-}
-function toRequisitante(r) {
-  const meds = (r.requisitante_medicos||[]).map(e=>e.medico_id);
-  return {
-    ID:r.id, NOME:r.nome, CPF:r.cpf, RG:r.rg, EMAIL:r.email,
-    TELEFONE:r.telefone, CEP:r.cep, LOGRADOURO:r.logradouro,
-    NUMERO:r.numero, COMPLEMENTO:r.complemento, BAIRRO:r.bairro,
-    MUNICIPIO:r.municipio, UF:r.uf, STATUS:r.status, CRIADO_EM:r.criado_em,
-    MEDICOS_AUTORIZADOS: meds.join(';')
-  };
-}
-function toUnidade(u) {
-  return {
-    ID:u.id, NOME:u.nome, CNES:u.cnes, CEP:u.cep, LOGRADOURO:u.logradouro,
-    NUMERO:u.numero, COMPLEMENTO:u.complemento, BAIRRO:u.bairro,
-    MUNICIPIO:u.municipio, UF:u.uf, TELEFONE:u.telefone, STATUS:u.status
-  };
-}
-function toBloco(b) {
-  return {
-    ID:b.id, NUMERO:b.numero, PAGINA_INICIAL:b.pagina_inicial,
-    PAGINA_FINAL:b.pagina_final, STATUS:b.status,
-    ID_ENTREGA:b.entrega_id||'', CRIADO_EM:b.criado_em
-  };
-}
-function toEntrega(e) {
-  const ids = (e.entrega_blocos||[]).map(eb=>eb.bloco_id);
-  return {
-    ID:e.id, PROTOCOLO:e.protocolo, DATA_HORA:e.data_hora,
-    ID_MEDICO:e.medico_id, ID_REQUISITANTE:e.requisitante_id||'',
-    ID_UNIDADE:e.unidade_id, EMISSOR:e.emissor, OBSERVACOES:e.observacoes,
-    QUANTIDADE_BLOCOS:e.quantidade_blocos,
-    IDS_BLOCOS: ids.join(';')
-  };
-}
-function toLog(l) {
-  return {
-    ID:l.id, DATA_HORA:l.data_hora, USUARIO:l.usuario,
-    ACAO:l.acao, ENTIDADE:l.entidade, DETALHE:l.detalhe
-  };
-}
-function toEstado(e) { return {SIGLA:e.sigla, NOME:e.nome}; }
-function toMunicipio(m) { return {ID:m.id, NOME:m.nome, UF:m.uf, COD_IBGE:m.cod_ibge}; }
+// ═══════════════════════════════════════════
+// TRANSFORMADORES Supabase → APP
+// ═══════════════════════════════════════════
+const toMedico = m => ({
+  ID:m.id, SEXO:m.sexo, NOME:m.nome, CRM:m.crm, UF_CRM:m.uf_crm,
+  CPF:m.cpf, RG:m.rg, EMAIL:m.email, TELEFONE:m.telefone,
+  CEP:m.cep, LOGRADOURO:m.logradouro, NUMERO:m.numero,
+  COMPLEMENTO:m.complemento, BAIRRO:m.bairro, MUNICIPIO:m.municipio,
+  UF:m.uf, STATUS:m.status, CRIADO_EM:m.criado_em,
+  ESPECIALIDADES:(m.medico_especialidades||[]).map(e=>e.especialidade).join(';'),
+  UNIDADES:(m.medico_unidades||[]).map(e=>e.unidade_id).join(';')
+});
+const toRequisitante = r => ({
+  ID:r.id, NOME:r.nome, CPF:r.cpf, RG:r.rg, EMAIL:r.email,
+  TELEFONE:r.telefone, CEP:r.cep, LOGRADOURO:r.logradouro,
+  NUMERO:r.numero, COMPLEMENTO:r.complemento, BAIRRO:r.bairro,
+  MUNICIPIO:r.municipio, UF:r.uf, STATUS:r.status, CRIADO_EM:r.criado_em,
+  MEDICOS_AUTORIZADOS:(r.requisitante_medicos||[]).map(e=>e.medico_id).join(';')
+});
+const toUnidade = u => ({
+  ID:u.id, NOME:u.nome, CNES:u.cnes, CEP:u.cep, LOGRADOURO:u.logradouro,
+  NUMERO:u.numero, COMPLEMENTO:u.complemento, BAIRRO:u.bairro,
+  MUNICIPIO:u.municipio, UF:u.uf, TELEFONE:u.telefone, STATUS:u.status
+});
+const toBloco = b => ({
+  ID:b.id, NUMERO:b.numero, PAGINA_INICIAL:b.pagina_inicial,
+  PAGINA_FINAL:b.pagina_final, STATUS:b.status, ID_ENTREGA:b.entrega_id||''
+});
+const toEntrega = e => ({
+  ID:e.id, PROTOCOLO:e.protocolo, DATA_HORA:e.data_hora,
+  ID_MEDICO:e.medico_id, ID_REQUISITANTE:e.requisitante_id||'',
+  ID_UNIDADE:e.unidade_id, EMISSOR:e.emissor, OBSERVACOES:e.observacoes,
+  QUANTIDADE_BLOCOS:e.quantidade_blocos,
+  IDS_BLOCOS:(e.entrega_blocos||[]).map(eb=>eb.bloco_id).join(';')
+});
+const toLog = l => ({
+  ID:l.id, DATA_HORA:l.data_hora, USUARIO:l.usuario,
+  ACAO:l.acao, ENTIDADE:l.entidade, DETALHE:l.detalhe
+});
 
-// =====================================================
-// GERAÇÃO DE ID E PROTOCOLO
-// =====================================================
-function gerarId(prefixo) {
-  return prefixo + '-' + Date.now() + '-' + Math.floor(Math.random()*1000);
-}
+// ═══════════════════════════════════════════
+// UTILITÁRIOS
+// ═══════════════════════════════════════════
+const pad    = n => String(n).padStart(4,'0');
+const esc    = s => String(s||'').replace(/&/g,'&amp;').replace(/'/g,"&#39;").replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const trat   = m => (String(m.SEXO||'').toLowerCase()==='feminino') ? 'Dra.' : 'Dr.';
+const nomeMed= m => trat(m)+' '+(m.NOME||'');
+const fmtDt  = dt => {
+  if (!dt) return '-';
+  try {
+    const d = new Date(dt);
+    return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'})+' '+
+           d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'});
+  } catch(e){ return String(dt); }
+};
+const badge = (s,cls) => {
+  const m={Ativo:'b-green',Disponivel:'b-green',Inativo:'b-red',Extraviado:'b-red',
+           Cancelado:'b-gray',Entregue:'b-amber',Suspenso:'b-red'};
+  return `<span class="badge ${cls||m[s]||'b-gray'}">${s||'-'}</span>`;
+};
+const podeEscrever = () => USUARIO?.papel==='Administrador'||USUARIO?.papel==='Operador';
+const isAdmin      = () => USUARIO?.papel==='Administrador';
+
+function gerarId(p){ return p+'-'+Date.now()+'-'+Math.floor(Math.random()*9999); }
 
 async function gerarProtocolo() {
-  const hoje = new Date().toLocaleDateString('sv-SE', {timeZone:'America/Sao_Paulo'}); // YYYY-MM-DD
-  const { count } = await sb.from('entregas')
-    .select('*', {count:'exact', head:true})
-    .like('protocolo', hoje + '%');
-  const seq = String((count||0) + 1).padStart(4,'0');
-  return hoje + '-' + seq;
+  const hoje = new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
+  const {count} = await sb.from('entregas').select('*',{count:'exact',head:true}).like('protocolo',hoje+'%');
+  return hoje+'-'+String((count||0)+1).padStart(4,'0');
 }
 
-// =====================================================
-// LOG DE AUDITORIA
-// =====================================================
-async function registrarLog(usuario, acao, entidade, detalhe) {
-  await sb.from('logs').insert({ usuario: usuario||'Sistema', acao, entidade, detalhe });
+async function registrarLog(usuario,acao,entidade,detalhe) {
+  await sb.from('logs').insert({usuario:usuario||'Sistema',acao,entidade,detalhe});
 }
 
-// =====================================================
-// CAMADA DE DADOS — funções que substituem o GAS
-// =====================================================
+// ═══════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════
+function toast(msg,tipo){ const t=document.getElementById('toast'); t.textContent=msg; t.className='show '+(tipo||''); setTimeout(()=>{t.className=''},3500); }
+function mostrarLoading(s,msg){ const el=document.getElementById('loading'); el.classList.toggle('show',!!s); if(msg) document.getElementById('loading-msg').textContent=msg; }
+function fecharModal(){ document.getElementById('overlay').classList.remove('open'); }
+function fecharTermo(){ document.getElementById('termo-overlay').classList.remove('open'); }
+function abrirModal(titulo,corpo,rodape,larga){
+  document.getElementById('modal-titulo').textContent=titulo;
+  document.getElementById('modal-corpo').innerHTML=corpo;
+  document.getElementById('modal-rodape').innerHTML=rodape;
+  document.getElementById('modal').className=larga?'wide':'';
+  document.getElementById('overlay').classList.add('open');
+}
+function skeleton(){
+  return `<div style="padding:20px"><div class="skeleton" style="width:40%;height:22px;margin-bottom:14px"></div>${[1,2,3].map(()=>`<div class="skeleton" style="height:40px;margin-bottom:8px"></div>`).join('')}</div>`;
+}
+function erroView(msg){
+  return `<div style="padding:20px;background:#fee2e2;border-radius:var(--radius);color:#991b1b;font-size:13px">
+    <strong>Erro:</strong> ${msg||'Tente novamente.'}
+    <br><button onclick="carregarView(APP.view)" class="btn btn-primary" style="margin-top:10px;font-size:12px">Tentar novamente</button>
+  </div>`;
+}
+function initBusca(id,fn){
+  const inp=document.getElementById(id); if(!inp||inp._ok) return; inp._ok=true;
+  const x=inp.closest('.search-wrap')?.querySelector('.search-x'); let t;
+  inp.addEventListener('input',()=>{ clearTimeout(t); x?.classList.toggle('show',!!inp.value); t=setTimeout(()=>fn(inp.value),260); });
+  if(x) x.addEventListener('click',()=>{ inp.value=''; x.classList.remove('show'); fn(''); inp.focus(); });
+}
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('show'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('show'); }
 
-async function carregarDadosIniciais() {
+// ═══════════════════════════════════════════
+// AUTENTICAÇÃO
+// ═══════════════════════════════════════════
+async function iniciarSessao(){
+  const {data:{session}} = await sb.auth.getSession();
+  if (!session){ mostrarLogin(); return; }
+  await carregarUsuario(session.user.email);
+}
+
+async function carregarUsuario(email){
+  const {data} = await sb.from('usuarios').select('nome,tipo_acesso').eq('email',email).eq('status','Ativo').single();
+  if (!data){ await sb.auth.signOut(); mostrarLogin('Usuário não cadastrado ou inativo.'); return; }
+  USUARIO = {email, nome:data.nome, papel:data.tipo_acesso};
+  document.getElementById('sf-nome').textContent = data.nome;
+  document.getElementById('sf-papel').textContent = data.tipo_acesso;
+  document.getElementById('tela-login').classList.remove('show');
+  document.getElementById('app').classList.add('show');
+  buildNav();
+  mostrarLoading(true,'Carregando dados...');
+  try {
+    const dados = await carregarDadosIniciais();
+    Object.assign(APP,dados); APP.carregado=true; mostrarLoading(false); carregarView('dashboard');
+  } catch(e){ mostrarLoading(false); document.getElementById('content').innerHTML=erroView(e.message); }
+}
+
+async function tentarLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const senha  = document.getElementById('login-senha').value;
+  const btn    = document.getElementById('login-btn');
+  document.getElementById('login-erro').textContent='';
+  if (!email||!senha){ document.getElementById('login-erro').textContent='Preencha e-mail e senha.'; return; }
+  btn.disabled=true; btn.textContent='Entrando...';
+  const {error} = await sb.auth.signInWithPassword({email,password:senha});
+  btn.disabled=false; btn.textContent='Entrar';
+  if (error){ document.getElementById('login-erro').textContent='E-mail ou senha incorretos.'; return; }
+  const {data:{session}} = await sb.auth.getSession();
+  await carregarUsuario(session.user.email);
+}
+
+async function fazerLogout(){
+  await sb.auth.signOut(); USUARIO=null;
+  document.getElementById('app').classList.remove('show');
+  mostrarLogin();
+}
+
+function mostrarLogin(erro){
+  document.getElementById('tela-login').classList.add('show');
+  document.getElementById('login-email').value='';
+  document.getElementById('login-senha').value='';
+  document.getElementById('login-erro').textContent=erro||'';
+}
+
+// ═══════════════════════════════════════════
+// NAVEGAÇÃO
+// ═══════════════════════════════════════════
+function buildNav(){
+  document.getElementById('nav').innerHTML = NAV_ITEMS.map(p=>
+    `<button class="nb${p.id===APP.view?' active':''}" onclick="go('${p.id}')">
+      <span class="ni">${p.icon}</span>${p.label}
+    </button>`
+  ).join('');
+}
+function go(v){ APP.view=v; buildNav(); document.getElementById('topbar-title').textContent=NAV_ITEMS.find(n=>n.id===v)?.label||''; closeSidebar(); carregarView(v); }
+
+async function carregarView(v){
+  const c=document.getElementById('content');
+  if (v==='auditoria'){ c.innerHTML=renderAuditoria(); return; }
+  if (v==='unidades') { c.innerHTML=renderUnidades();  return; }
+  c.innerHTML=skeleton();
+  try {
+    if (v==='dashboard'){
+      const d=await carregarDadosIniciais(); Object.assign(APP,d); c.innerHTML=renderDashboard();
+    } else if (v==='medicos'){
+      APP.medicos=await dbMedicos(); c.innerHTML=renderMedicos('');
+      initBusca('q-med',q=>{c.innerHTML=renderMedicos(q);initBusca('q-med',q2=>{c.innerHTML=renderMedicos(q2);});});
+    } else if (v==='requisitantes'){
+      APP.requisitantes=await dbRequisitantes(); c.innerHTML=renderRequisitantes('');
+      initBusca('q-req',q=>{c.innerHTML=renderRequisitantes(q);initBusca('q-req',q2=>{c.innerHTML=renderRequisitantes(q2);});});
+    } else if (v==='blocos'){
+      APP.blocos=await dbBlocos(); c.innerHTML=renderBlocos();
+    } else if (v==='entregas'){
+      const d=await dbEntregasCompleto(); Object.assign(APP,d); c.innerHTML=renderEntregas('');
+      initBusca('q-ent',q=>{c.innerHTML=renderEntregas(q);initBusca('q-ent',q2=>{c.innerHTML=renderEntregas(q2);});});
+    }
+  } catch(e){ c.innerHTML=erroView(e.message); }
+}
+
+async function recarregarDados(){ await carregarView(APP.view); toast('Dados atualizados!','ok'); }
+
+// ═══════════════════════════════════════════
+// CAMADA DE DADOS
+// ═══════════════════════════════════════════
+async function carregarDadosIniciais(){
   const [
-    {data:estados}, {data:municipios}, {data:config},
-    {data:medicos}, {data:requisitantes}, {data:unidades},
-    {data:blocos}, {data:entregas}, {data:logs}
+    {data:estados},{data:municipios},{data:config},
+    {data:medicos},{data:requisitantes},{data:unidades},
+    {data:blocos},{data:entregas},{data:logs}
   ] = await Promise.all([
     sb.from('estados').select('*').order('nome'),
     sb.from('municipios').select('*').order('nome'),
     sb.from('config').select('*'),
-    sb.from('medicos').select('*, medico_especialidades(especialidade), medico_unidades(unidade_id)').order('nome'),
-    sb.from('requisitantes').select('*, requisitante_medicos(medico_id)').order('nome'),
+    sb.from('medicos').select('*,medico_especialidades(especialidade),medico_unidades(unidade_id)').order('nome'),
+    sb.from('requisitantes').select('*,requisitante_medicos(medico_id)').order('nome'),
     sb.from('unidades_saude').select('*').order('nome'),
     sb.from('blocos').select('*').order('numero'),
-    sb.from('entregas').select('*, entrega_blocos(bloco_id)').order('data_hora', {ascending:false}),
-    sb.from('logs').select('*').order('data_hora', {ascending:false}).limit(200)
+    sb.from('entregas').select('*,entrega_blocos(bloco_id)').order('data_hora',{ascending:false}),
+    sb.from('logs').select('*').order('data_hora',{ascending:false}).limit(200)
   ]);
-
-  const cfgObj = {};
-  (config||[]).forEach(c => { cfgObj[c.parametro] = c.valor; });
-
+  const cfg={}; (config||[]).forEach(c=>{cfg[c.parametro]=c.valor;});
   return {
-    estados:       (estados||[]).map(toEstado),
-    municipios:    (municipios||[]).map(toMunicipio),
-    config:        cfgObj,
-    medicos:       (medicos||[]).map(toMedico),
-    requisitantes: (requisitantes||[]).map(toRequisitante),
-    unidades:      (unidades||[]).map(toUnidade),
-    blocos:        (blocos||[]).map(toBloco),
-    entregas:      (entregas||[]).map(toEntrega),
-    logs:          (logs||[]).map(toLog)
+    estados:(estados||[]).map(e=>({SIGLA:e.sigla,NOME:e.nome})),
+    municipios:(municipios||[]).map(m=>({ID:m.id,NOME:m.nome,UF:m.uf})),
+    config:cfg, medicos:(medicos||[]).map(toMedico),
+    requisitantes:(requisitantes||[]).map(toRequisitante),
+    unidades:(unidades||[]).map(toUnidade),
+    blocos:(blocos||[]).map(toBloco),
+    entregas:(entregas||[]).map(toEntrega),
+    logs:(logs||[]).map(toLog)
   };
 }
-
-async function dbCarregarMedicos() {
-  const {data} = await sb.from('medicos')
-    .select('*, medico_especialidades(especialidade), medico_unidades(unidade_id)')
-    .order('nome');
-  return (data||[]).map(toMedico);
-}
-
-async function dbCarregarRequisitantes() {
-  const {data} = await sb.from('requisitantes')
-    .select('*, requisitante_medicos(medico_id)')
-    .order('nome');
-  return (data||[]).map(toRequisitante);
-}
-
-async function dbCarregarBlocos() {
-  const {data} = await sb.from('blocos').select('*').order('numero');
-  return (data||[]).map(toBloco);
-}
-
-async function dbCarregarEntregas() {
-  const [
-    {data:entregas}, {data:medicos}, {data:blocos},
-    {data:unidades}, {data:requisitantes}, {data:logs}
-  ] = await Promise.all([
-    sb.from('entregas').select('*, entrega_blocos(bloco_id)').order('data_hora', {ascending:false}),
-    sb.from('medicos').select('*, medico_especialidades(especialidade), medico_unidades(unidade_id)').order('nome'),
+async function dbMedicos(){ const {data}=await sb.from('medicos').select('*,medico_especialidades(especialidade),medico_unidades(unidade_id)').order('nome'); return (data||[]).map(toMedico); }
+async function dbRequisitantes(){ const {data}=await sb.from('requisitantes').select('*,requisitante_medicos(medico_id)').order('nome'); return (data||[]).map(toRequisitante); }
+async function dbBlocos(){ const {data}=await sb.from('blocos').select('*').order('numero'); return (data||[]).map(toBloco); }
+async function dbEntregasCompleto(){
+  const [a,b,c,d,e,f]=await Promise.all([
+    sb.from('entregas').select('*,entrega_blocos(bloco_id)').order('data_hora',{ascending:false}),
+    sb.from('medicos').select('*,medico_especialidades(especialidade),medico_unidades(unidade_id)').order('nome'),
     sb.from('blocos').select('*').order('numero'),
     sb.from('unidades_saude').select('*').order('nome'),
-    sb.from('requisitantes').select('*, requisitante_medicos(medico_id)').order('nome'),
-    sb.from('logs').select('*').order('data_hora', {ascending:false}).limit(200)
+    sb.from('requisitantes').select('*,requisitante_medicos(medico_id)').order('nome'),
+    sb.from('logs').select('*').order('data_hora',{ascending:false}).limit(200)
   ]);
-  return {
-    entregas:      (entregas||[]).map(toEntrega),
-    medicos:       (medicos||[]).map(toMedico),
-    blocos:        (blocos||[]).map(toBloco),
-    unidades:      (unidades||[]).map(toUnidade),
-    requisitantes: (requisitantes||[]).map(toRequisitante),
-    logs:          (logs||[]).map(toLog)
-  };
+  return { entregas:(a.data||[]).map(toEntrega), medicos:(b.data||[]).map(toMedico),
+           blocos:(c.data||[]).map(toBloco), unidades:(d.data||[]).map(toUnidade),
+           requisitantes:(e.data||[]).map(toRequisitante), logs:(f.data||[]).map(toLog) };
 }
 
-async function dbSalvarMedico(d) {
-  const medId = d.id || gerarId('MED');
-  const payload = {
-    id: medId, sexo:d.sexo||'Masculino', nome:d.nome||'',
-    crm:d.crm||'', uf_crm:d.uf_crm||'PR', cpf:d.cpf||'',
-    rg:d.rg||'', email:d.email||'', telefone:d.telefone||'',
-    cep:d.cep||'', logradouro:d.logradouro||'', numero:d.numero||'',
-    complemento:d.complemento||'', bairro:d.bairro||'',
-    municipio:d.municipio||'', uf:d.uf||'PR', status:d.status||'Ativo'
-  };
-
-  const {error} = await sb.from('medicos').upsert(payload, {onConflict:'id'});
-  if (error) return {ok:false, msg:error.message};
-
-  // Especialidades
-  await sb.from('medico_especialidades').delete().eq('medico_id', medId);
-  const esps = Array.isArray(d.especialidades) ? d.especialidades : [];
-  if (esps.length > 0) {
-    await sb.from('medico_especialidades').insert(esps.map(e=>({medico_id:medId, especialidade:e})));
-  }
-
-  // Unidades
-  await sb.from('medico_unidades').delete().eq('medico_id', medId);
-  const unis = Array.isArray(d.unidades) ? d.unidades : [];
-  if (unis.length > 0) {
-    await sb.from('medico_unidades').insert(unis.map(u=>({medico_id:medId, unidade_id:u})));
-  }
-
-  await registrarLog('Sistema', d.id ? 'EDICAO' : 'CADASTRO', 'Médico ' + medId, d.nome);
-  return {ok:true, dados: await dbCarregarMedicos()};
-}
-
-async function dbAlterarStatusMedico(id, status) {
-  const {error} = await sb.from('medicos').update({status}).eq('id', id);
-  if (error) return {ok:false, msg:error.message};
-  await registrarLog('Sistema', 'STATUS', 'Médico ' + id, 'Status → ' + status);
-  return {ok:true, dados: await dbCarregarMedicos()};
-}
-
-async function dbSalvarRequisitante(d) {
-  const reqId = d.id || gerarId('REQ');
-  const payload = {
-    id:reqId, nome:d.nome||'', cpf:d.cpf||'', rg:d.rg||'',
-    email:d.email||'', telefone:d.telefone||'', cep:d.cep||'',
-    logradouro:d.logradouro||'', numero:d.numero||'',
-    complemento:d.complemento||'', bairro:d.bairro||'',
-    municipio:d.municipio||'', uf:d.uf||'PR', status:d.status||'Ativo'
-  };
-
-  const {error} = await sb.from('requisitantes').upsert(payload, {onConflict:'id'});
-  if (error) return {ok:false, msg:error.message};
-
-  await sb.from('requisitante_medicos').delete().eq('requisitante_id', reqId);
-  const meds = Array.isArray(d.medicos_autorizados) ? d.medicos_autorizados : [];
-  if (meds.length > 0) {
-    await sb.from('requisitante_medicos').insert(meds.map(m=>({requisitante_id:reqId, medico_id:m})));
-  }
-
-  await registrarLog('Sistema', d.id ? 'EDICAO' : 'CADASTRO', 'Requisitante ' + reqId, d.nome);
-  return {ok:true, dados: await dbCarregarRequisitantes()};
-}
-
-async function dbAlterarStatusRequisitante(id, status) {
-  const {error} = await sb.from('requisitantes').update({status}).eq('id', id);
-  if (error) return {ok:false, msg:error.message};
-  await registrarLog('Sistema', 'STATUS', 'Requisitante ' + id, 'Status → ' + status);
-  return {ok:true, dados: await dbCarregarRequisitantes()};
-}
-
-async function dbSalvarUnidade(d) {
-  const uniId = d.id || gerarId('UNI');
-  const payload = {
-    id:uniId, nome:d.nome||'', cnes:d.cnes||'', cep:d.cep||'',
-    logradouro:d.logradouro||'', numero:d.numero||'',
-    complemento:d.complemento||'', bairro:d.bairro||'',
-    municipio:d.municipio||'', uf:d.uf||'PR',
-    telefone:d.telefone||'', status:d.status||'Ativo'
-  };
-
-  const {error} = await sb.from('unidades_saude').upsert(payload, {onConflict:'id'});
-  if (error) return {ok:false, msg:error.message};
-  await registrarLog('Sistema', d.id ? 'EDICAO' : 'CADASTRO', 'Unidade ' + uniId, d.nome);
-  const {data} = await sb.from('unidades_saude').select('*').order('nome');
-  return {ok:true, dados:(data||[]).map(toUnidade)};
-}
-
-async function dbAlterarStatusUnidade(id, status) {
-  const {error} = await sb.from('unidades_saude').update({status}).eq('id', id);
-  if (error) return {ok:false, msg:error.message};
-  await registrarLog('Sistema', 'STATUS', 'Unidade ' + id, 'Status → ' + status);
-  const {data} = await sb.from('unidades_saude').select('*').order('nome');
-  return {ok:true, dados:(data||[]).map(toUnidade)};
-}
-
-async function dbAdicionarBlocos(quantidade) {
-  const {data:existing} = await sb.from('blocos')
-    .select('numero, pagina_final')
-    .order('numero', {ascending:false})
-    .limit(1);
-
-  let ultNumero = 0, ultPagina = 0;
-  if (existing && existing.length > 0) {
-    ultNumero = parseInt(existing[0].numero) || 0;
-    ultPagina = parseInt(existing[0].pagina_final) || 0;
-  }
-
-  const base = Date.now(); // captura uma vez fora do loop
-  const rows = [];
-  for (let i = 0; i < quantidade; i++) {
-    const num = ultNumero + i + 1;
-    const ini = ultPagina + (i * 20) + 1;
-    const fim = ini + 19;
-    rows.push({
-      id: `BLO-${base}-${i}`,   // base fixa + índice = sempre único
-      numero: String(num).padStart(4,'0'),
-      pagina_inicial: ini,
-      pagina_final: fim,
-      status: 'Disponivel'
-    });
-  }
-
-  const {error} = await sb.from('blocos').insert(rows);
-  if (error) return {ok:false, msg:error.message};
-
-  await registrarLog('Sistema', 'ENTRADA', 'Estoque',
-    quantidade + ' bloco(s) adicionado(s) - Blocos ' +
-    String(ultNumero+1).padStart(4,'0') + ' a ' +
-    String(ultNumero+quantidade).padStart(4,'0'));
-
-  return {ok:true, dados: await dbCarregarBlocos()};
-}
-
-async function dbRegistrarEntrega(d) {
-  // Validação: médico ativo
-  const medico = APP.medicos.find(m => m.ID === d.idMedico);
-  if (!medico) return {ok:false, msg:'Médico não encontrado.'};
-  if (medico.STATUS !== 'Ativo') return {ok:false, msg:'Médico inativo — entrega não permitida.'};
-
-  // Validação: requisitante autorizado
-  if (d.idRequisitante) {
-    const req = APP.requisitantes.find(r => r.ID === d.idRequisitante);
-    if (!req) return {ok:false, msg:'Requisitante não encontrado.'};
-    const autorizados = String(req.MEDICOS_AUTORIZADOS||'').split(';').map(x=>x.trim());
-    if (!autorizados.includes(String(d.idMedico))) {
-      return {ok:false, msg:'Requisitante não autorizado para este médico.'};
-    }
-  }
-
-  // Validação: blocos disponíveis
-  const idsBlocos = Array.isArray(d.idsBlocos) ? d.idsBlocos : [d.idsBlocos];
-  for (const idB of idsBlocos) {
-    const bloco = APP.blocos.find(b => b.ID === idB);
-    if (!bloco) return {ok:false, msg:'Bloco ' + idB + ' não encontrado.'};
-    if (bloco.STATUS !== 'Disponivel') {
-      return {ok:false, msg:'Bloco ' + bloco.NUMERO + ' não está disponível. Status: ' + bloco.STATUS};
-    }
-  }
-
-  const protocolo = await gerarProtocolo();
-  const entregaId = gerarId('ENT');
-
-  // Inserir entrega
-  const {error:errEnt} = await sb.from('entregas').insert({
-    id: entregaId, protocolo, medico_id: d.idMedico,
-    requisitante_id: d.idRequisitante || null,
-    unidade_id: d.idUnidade,
-    emissor: d.emissor || 'Sistema',
-    observacoes: d.observacoes || '',
-    quantidade_blocos: idsBlocos.length
-  });
-  if (errEnt) return {ok:false, msg:errEnt.message};
-
-  // Vincular blocos (trigger no DB marca como Entregue automaticamente)
-  const {error:errBlocos} = await sb.from('entrega_blocos').insert(
-    idsBlocos.map(bid => ({entrega_id: entregaId, bloco_id: bid}))
-  );
-  if (errBlocos) return {ok:false, msg:errBlocos.message};
-
-  const trat = (String(medico.SEXO||'').toLowerCase()==='feminino') ? 'Dra.' : 'Dr.';
-  const blocoNums = idsBlocos.map(id=>{const b=APP.blocos.find(x=>x.ID===id);return b?'#'+b.NUMERO:'';}).filter(Boolean).join(', ');
-  await registrarLog(d.emissor||'Sistema', 'ENTREGA', 'Entrega ' + protocolo,
-    idsBlocos.length + ' bloco(s) [' + blocoNums + '] entregue(s) a ' + trat + ' ' + medico.NOME);
-
-  // Recarregar dados atualizados
-  const dados = await dbCarregarEntregas();
-  return {ok:true, protocolo, entregaId, dados};
-}
-
-async function dbGetDadosTermo(entregaId) {
-  const {data:ents} = await sb.from('entregas')
-    .select('*, entrega_blocos(bloco_id)')
-    .eq('id', entregaId)
-    .single();
-  if (!ents) return {ok:false, msg:'Entrega não encontrada.'};
-
-  const idsBlocos = (ents.entrega_blocos||[]).map(e=>e.bloco_id);
-
-  const [{data:med}, {data:uni}, {data:blocos}] = await Promise.all([
-    sb.from('medicos').select('*').eq('id', ents.medico_id).single(),
-    sb.from('unidades_saude').select('*').eq('id', ents.unidade_id).single(),
-    sb.from('blocos').select('*').in('id', idsBlocos)
-  ]);
-
-  let requisitante = null;
-  if (ents.requisitante_id) {
-    const {data:req} = await sb.from('requisitantes').select('*').eq('id', ents.requisitante_id).single();
-    requisitante = req;
-  }
-
-  const cfg = APP.config;
-  const sexo = med ? (med.sexo||'Masculino') : 'Masculino';
-  const trat = sexo.toLowerCase()==='feminino' ? 'Dra.' : 'Dr.';
-
-  return {
-    ok: true,
-    entrega: {
-      id: ents.id, protocolo: ents.protocolo,
-      dataHora: ents.data_hora, emissor: ents.emissor||'',
-      observacoes: ents.observacoes||'',
-      quantidade: ents.quantidade_blocos || idsBlocos.length
-    },
-    medico: med ? {
-      tratamento: trat, nome: med.nome,
-      nomeCompleto: trat + ' ' + med.nome,
-      crm: med.crm, uf_crm: med.uf_crm, cpf: med.cpf
-    } : null,
-    requisitante: requisitante ? {
-      nome: requisitante.nome, cpf: requisitante.cpf, rg: requisitante.rg||''
-    } : null,
-    unidade: uni ? {
-      nome: uni.nome, municipio: uni.municipio||'',
-      uf: uni.uf||'', cnes: uni.cnes||'', telefone: uni.telefone||''
-    } : null,
-    blocos: (blocos||[]).map(b=>({
-      numero: b.numero, paginaInicial: b.pagina_inicial, paginaFinal: b.pagina_final
-    })),
-    config: cfg
-  };
-}
-
-// Busca CEP direto no ViaCEP (sem precisar do GAS)
-async function buscarCEP(cepId, campos) {
-  const cepEl = document.getElementById(cepId);
-  if (!cepEl) return;
-  const cep = cepEl.value.replace(/[^0-9]/g,'');
-  if (cep.length !== 8) return;
+async function buscarCEP(cepId,campos){
+  const el=document.getElementById(cepId); if(!el) return;
+  const cep=el.value.replace(/\D/g,''); if(cep.length!==8) return;
   try {
-    const resp = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
-    const d = await resp.json();
-    if (d.erro) return;
-    const set = (id, val) => { const el=document.getElementById(id); if(el&&val) el.value=val; };
-    set(campos.logradouro, d.logradouro);
-    set(campos.bairro,     d.bairro);
-    set(campos.municipio,  d.localidade);
-    set(campos.uf,         d.uf);
+    const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
+    const d=await r.json(); if(d.erro) return;
+    const s=(id,v)=>{const e=document.getElementById(id);if(e&&v)e.value=v;};
+    s(campos.logradouro,d.logradouro); s(campos.bairro,d.bairro);
+    s(campos.municipio,d.localidade); s(campos.uf,d.uf);
   } catch(e){}
 }
 
-// =====================================================
-// UTILITÁRIOS DE INTERFACE
-// =====================================================
-const pad   = n => String(n).padStart(4,'0');
-const fmtDt = dt => {
-  if (!dt) return '-';
-  try {
-    const d = new Date(dt);
-    return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}) + ' ' +
-           d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'});
-  } catch(e){ return String(dt); }
-};
-const badge = s => {
-  const m={Ativo:'green',Disponivel:'green',Inativo:'red',Extraviado:'red',Cancelado:'gray',Entregue:'amber'};
-  return `<span class="badge bg-${m[s]||'gray'}">${s||'-'}</span>`;
-};
-const tratamento = m => (String(m.SEXO||m.sexo||'').toLowerCase()==='feminino') ? 'Dra.' : 'Dr.';
-const nomeMed    = m => tratamento(m) + ' ' + (m.NOME||m.nome||'');
-const esc        = s => String(s||'').replace(/'/g,"&#39;").replace(/"/g,"&quot;");
-
-function toast(msg, tipo) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'show ' + (tipo||'');
-  setTimeout(() => { t.className = ''; }, 3500);
+// ── Salvar Médico ──────────────────────────
+async function dbSalvarMedico(d){
+  const mid=d.id||gerarId('MED');
+  const {error}=await sb.from('medicos').upsert({
+    id:mid,sexo:d.sexo||'Masculino',nome:d.nome||'',crm:d.crm||'',uf_crm:d.uf_crm||'PR',
+    cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',telefone:d.telefone||'',
+    cep:d.cep||'',logradouro:d.logradouro||'',numero:d.numero||'',
+    complemento:d.complemento||'',bairro:d.bairro||'',municipio:d.municipio||'',
+    uf:d.uf||'PR',status:d.status||'Ativo'
+  },{onConflict:'id'});
+  if(error) return {ok:false,msg:error.message};
+  await sb.from('medico_especialidades').delete().eq('medico_id',mid);
+  if(d.especialidades?.length) await sb.from('medico_especialidades').insert(d.especialidades.map(e=>({medico_id:mid,especialidade:e})));
+  await sb.from('medico_unidades').delete().eq('medico_id',mid);
+  if(d.unidades?.length) await sb.from('medico_unidades').insert(d.unidades.map(u=>({medico_id:mid,unidade_id:u})));
+  await registrarLog(USUARIO?.nome||'Sistema',d.id?'EDICAO':'CADASTRO','Médico '+mid,d.nome);
+  return {ok:true,dados:await dbMedicos()};
+}
+async function dbStatusMedico(id,status){
+  const {error}=await sb.from('medicos').update({status}).eq('id',id);
+  if(error) return {ok:false,msg:error.message};
+  await registrarLog(USUARIO?.nome||'Sistema','STATUS','Médico '+id,'→ '+status);
+  return {ok:true,dados:await dbMedicos()};
 }
 
-function mostrarLoading(s, msg) {
-  const el = document.getElementById('loading');
-  el.classList.toggle('show', !!s);
-  if (msg) document.getElementById('loading-msg').textContent = msg;
+// ── Salvar Requisitante ────────────────────
+async function dbSalvarRequisitante(d){
+  const rid=d.id||gerarId('REQ');
+  const {error}=await sb.from('requisitantes').upsert({
+    id:rid,nome:d.nome||'',cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',
+    telefone:d.telefone||'',cep:d.cep||'',logradouro:d.logradouro||'',
+    numero:d.numero||'',complemento:d.complemento||'',bairro:d.bairro||'',
+    municipio:d.municipio||'',uf:d.uf||'PR',status:d.status||'Ativo'
+  },{onConflict:'id'});
+  if(error) return {ok:false,msg:error.message};
+  await sb.from('requisitante_medicos').delete().eq('requisitante_id',rid);
+  if(d.medicos_autorizados?.length) await sb.from('requisitante_medicos').insert(d.medicos_autorizados.map(m=>({requisitante_id:rid,medico_id:m})));
+  await registrarLog(USUARIO?.nome||'Sistema',d.id?'EDICAO':'CADASTRO','Requisitante '+rid,d.nome);
+  return {ok:true,dados:await dbRequisitantes()};
+}
+async function dbStatusRequisitante(id,status){
+  const {error}=await sb.from('requisitantes').update({status}).eq('id',id);
+  if(error) return {ok:false,msg:error.message};
+  await registrarLog(USUARIO?.nome||'Sistema','STATUS','Requisitante '+id,'→ '+status);
+  return {ok:true,dados:await dbRequisitantes()};
 }
 
-function skeleton() {
-  return `<div style="padding:20px">
-    <div class="skeleton" style="width:40%;height:22px;margin-bottom:14px"></div>
-    <div class="skeleton" style="width:100%;height:44px;margin-bottom:6px"></div>
-    <div class="skeleton" style="width:100%;height:44px;margin-bottom:6px"></div>
-    <div class="skeleton" style="width:80%;height:44px"></div>
-  </div>`;
+// ── Salvar Unidade ─────────────────────────
+async function dbSalvarUnidade(d){
+  const uid=d.id||gerarId('UNI');
+  const {error}=await sb.from('unidades_saude').upsert({
+    id:uid,nome:d.nome||'',cnes:d.cnes||'',cep:d.cep||'',logradouro:d.logradouro||'',
+    numero:d.numero||'',complemento:d.complemento||'',bairro:d.bairro||'',
+    municipio:d.municipio||'',uf:d.uf||'PR',telefone:d.telefone||'',status:d.status||'Ativo'
+  },{onConflict:'id'});
+  if(error) return {ok:false,msg:error.message};
+  await registrarLog(USUARIO?.nome||'Sistema',d.id?'EDICAO':'CADASTRO','Unidade '+uid,d.nome);
+  const {data}=await sb.from('unidades_saude').select('*').order('nome');
+  return {ok:true,dados:(data||[]).map(toUnidade)};
+}
+async function dbStatusUnidade(id,status){
+  const {error}=await sb.from('unidades_saude').update({status}).eq('id',id);
+  if(error) return {ok:false,msg:error.message};
+  await registrarLog(USUARIO?.nome||'Sistema','STATUS','Unidade '+id,'→ '+status);
+  const {data}=await sb.from('unidades_saude').select('*').order('nome');
+  return {ok:true,dados:(data||[]).map(toUnidade)};
 }
 
-function fecharModal() { document.getElementById('overlay').classList.remove('open'); }
-function fecharTermo() { document.getElementById('termo-overlay').classList.remove('open'); }
-function abrirModal(titulo, corpo, rodape, larga) {
-  document.getElementById('modal-titulo').textContent = titulo;
-  document.getElementById('modal-corpo').innerHTML = corpo;
-  document.getElementById('modal-rodape').innerHTML = rodape;
-  document.getElementById('modal').className = larga ? 'wide' : '';
-  document.getElementById('overlay').classList.add('open');
+// ── Blocos ─────────────────────────────────
+async function dbAdicionarBlocos(quantidade){
+  const {data:ex}=await sb.from('blocos').select('numero,pagina_final').order('numero',{ascending:false}).limit(1);
+  let ultN=0,ultP=0;
+  if(ex?.length){ ultN=parseInt(ex[0].numero)||0; ultP=parseInt(ex[0].pagina_final)||0; }
+  const base=Date.now();
+  const rows=Array.from({length:quantidade},(_,i)=>({
+    id:`BLO-${base}-${i}`,
+    numero:String(ultN+i+1).padStart(4,'0'),
+    pagina_inicial:ultP+(i*20)+1,
+    pagina_final:ultP+(i*20)+20,
+    status:'Disponivel'
+  }));
+  const {error}=await sb.from('blocos').insert(rows);
+  if(error) return {ok:false,msg:error.message};
+  await registrarLog(USUARIO?.nome||'Sistema','ENTRADA','Estoque',
+    `${quantidade} bloco(s) — Blocos ${String(ultN+1).padStart(4,'0')} a ${String(ultN+quantidade).padStart(4,'0')}`);
+  return {ok:true,dados:await dbBlocos()};
 }
 
-function initBusca(inputId, onSearch) {
-  const inp = document.getElementById(inputId);
-  if (!inp || inp._buscaIniciada) return;
-  inp._buscaIniciada = true;
-  const xBtn = inp.closest('.search-wrap') ? inp.closest('.search-wrap').querySelector('.search-x') : null;
-  let timer;
-  inp.addEventListener('input', () => {
-    clearTimeout(timer);
-    if (xBtn) xBtn.classList.toggle('show', !!inp.value);
-    timer = setTimeout(() => onSearch(inp.value), 280);
-  });
-  if (xBtn) xBtn.addEventListener('click', () => {
-    inp.value = ''; xBtn.classList.remove('show'); onSearch(''); inp.focus();
-  });
-}
-
-function erroView(msg) {
-  return `<div style="padding:24px;background:#fee2e2;border-radius:11px;color:#991b1b;font-size:13px">
-    <strong>Erro ao carregar:</strong> ${msg||'Tente novamente.'}
-    <br><button onclick="carregarView(APP.view)" class="bp" style="margin-top:10px;font-size:12px">Tentar novamente</button>
-  </div>`;
-}
-
-// =====================================================
-// NAVEGAÇÃO & CARREGAMENTO
-// =====================================================
-function buildNav() {
-  document.getElementById('nav').innerHTML = NAV.map(p =>
-    `<button class="nb${p.id===APP.view?' active':''}" onclick="go('${p.id}')">${p.label}</button>`
-  ).join('');
-}
-
-function go(v) { APP.view = v; buildNav(); carregarView(v); }
-
-async function carregarView(v) {
-  const c = document.getElementById('content');
-
-  if (v === 'auditoria') { c.innerHTML = renderAuditoria(); return; }
-  if (v === 'unidades')  { c.innerHTML = renderUnidades();  return; }
-
-  c.innerHTML = skeleton();
-
-  try {
-    if (v === 'dashboard') {
-      const d = await carregarDadosIniciais();
-      Object.assign(APP, d);
-      c.innerHTML = renderDashboard();
-    } else if (v === 'medicos') {
-      APP.medicos = await dbCarregarMedicos();
-      c.innerHTML = renderMedicos('');
-      initBusca('q-med', q => { c.innerHTML = renderMedicos(q); initBusca('q-med', q2=>{ c.innerHTML = renderMedicos(q2); }); });
-    } else if (v === 'requisitantes') {
-      APP.requisitantes = await dbCarregarRequisitantes();
-      c.innerHTML = renderRequisitantes('');
-      initBusca('q-req', q => { c.innerHTML = renderRequisitantes(q); initBusca('q-req', q2=>{ c.innerHTML = renderRequisitantes(q2); }); });
-    } else if (v === 'blocos') {
-      APP.blocos = await dbCarregarBlocos();
-      c.innerHTML = renderBlocos();
-    } else if (v === 'entregas') {
-      const d = await dbCarregarEntregas();
-      Object.assign(APP, d);
-      c.innerHTML = renderEntregas('');
-      initBusca('q-ent', q => { c.innerHTML = renderEntregas(q); initBusca('q-ent', q2=>{ c.innerHTML = renderEntregas(q2); }); });
-    }
-  } catch(e) {
-    c.innerHTML = erroView(e.message);
+// ── Registrar Entrega ──────────────────────
+async function dbRegistrarEntrega(d){
+  const medico=APP.medicos.find(m=>m.ID===d.idMedico);
+  if(!medico) return {ok:false,msg:'Médico não encontrado.'};
+  if(medico.STATUS!=='Ativo') return {ok:false,msg:'Médico inativo — entrega não permitida.'};
+  if(d.idRequisitante){
+    const req=APP.requisitantes.find(r=>r.ID===d.idRequisitante);
+    if(!req) return {ok:false,msg:'Requisitante não encontrado.'};
+    const aut=String(req.MEDICOS_AUTORIZADOS||'').split(';').map(x=>x.trim());
+    if(!aut.includes(d.idMedico)) return {ok:false,msg:'Requisitante não autorizado para este médico.'};
   }
+  const ids=Array.isArray(d.idsBlocos)?d.idsBlocos:[d.idsBlocos];
+  for(const id of ids){
+    const b=APP.blocos.find(b=>b.ID===id);
+    if(!b) return {ok:false,msg:'Bloco não encontrado.'};
+    if(b.STATUS!=='Disponivel') return {ok:false,msg:`Bloco ${b.NUMERO} não está disponível.`};
+  }
+  const protocolo=await gerarProtocolo();
+  const entId=gerarId('ENT');
+  const {error:e1}=await sb.from('entregas').insert({
+    id:entId,protocolo,medico_id:d.idMedico,
+    requisitante_id:d.idRequisitante||null,unidade_id:d.idUnidade,
+    emissor:USUARIO?.nome||'Sistema',observacoes:d.observacoes||'',
+    quantidade_blocos:ids.length
+  });
+  if(e1) return {ok:false,msg:e1.message};
+  const {error:e2}=await sb.from('entrega_blocos').insert(ids.map(bid=>({entrega_id:entId,bloco_id:bid})));
+  if(e2) return {ok:false,msg:e2.message};
+  const nums=ids.map(id=>{const b=APP.blocos.find(x=>x.ID===id);return b?'#'+b.NUMERO:'';}).filter(Boolean).join(', ');
+  await registrarLog(USUARIO?.nome||'Sistema','ENTREGA','Entrega '+protocolo,
+    `${ids.length} bloco(s) [${nums}] → ${trat(medico)} ${medico.NOME}`);
+  const dados=await dbEntregasCompleto();
+  return {ok:true,protocolo,entregaId:entId,dados};
 }
 
-async function recarregarDados() {
-  await carregarView(APP.view);
-  toast('Dados recarregados!', 'ok');
+// ── Dados do Termo ─────────────────────────
+async function dbGetTermo(entregaId){
+  const {data:ent}=await sb.from('entregas').select('*,entrega_blocos(bloco_id)').eq('id',entregaId).single();
+  if(!ent) return {ok:false,msg:'Entrega não encontrada.'};
+  const ids=(ent.entrega_blocos||[]).map(e=>e.bloco_id);
+  const [{data:med},{data:uni},{data:blocos}]=await Promise.all([
+    sb.from('medicos').select('*').eq('id',ent.medico_id).single(),
+    sb.from('unidades_saude').select('*').eq('id',ent.unidade_id).single(),
+    sb.from('blocos').select('*').in('id',ids)
+  ]);
+  let req=null;
+  if(ent.requisitante_id){ const {data:r}=await sb.from('requisitantes').select('*').eq('id',ent.requisitante_id).single(); req=r; }
+  const t=med&&med.sexo?.toLowerCase()==='feminino'?'Dra.':'Dr.';
+  return {
+    ok:true,
+    entrega:{id:ent.id,protocolo:ent.protocolo,dataHora:ent.data_hora,
+             emissor:ent.emissor||'',observacoes:ent.observacoes||'',quantidade:ent.quantidade_blocos||ids.length},
+    medico:med?{tratamento:t,nome:med.nome,nomeCompleto:t+' '+med.nome,crm:med.crm,uf_crm:med.uf_crm,cpf:med.cpf}:null,
+    requisitante:req?{nome:req.nome,cpf:req.cpf,rg:req.rg||''}:null,
+    unidade:uni?{nome:uni.nome,municipio:uni.municipio||'',uf:uni.uf||'',cnes:uni.cnes||'',telefone:uni.telefone||''}:null,
+    blocos:(blocos||[]).map(b=>({numero:b.numero,paginaInicial:b.pagina_inicial,paginaFinal:b.pagina_final})),
+    config:APP.config
+  };
 }
 
-// =====================================================
-// DASHBOARD
-// =====================================================
-function renderDashboard() {
-  const disp = APP.blocos.filter(b=>b.STATUS==='Disponivel').length;
-  const ent  = APP.blocos.filter(b=>b.STATUS==='Entregue').length;
-  const mAt  = APP.medicos.filter(m=>m.STATUS==='Ativo').length;
-  const rec  = [...APP.entregas].sort((a,b)=>new Date(b.DATA_HORA)-new Date(a.DATA_HORA)).slice(0,6);
+// ═══════════════════════════════════════════
+// RENDER — DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard(){
+  const disp=APP.blocos.filter(b=>b.STATUS==='Disponivel').length;
+  const entB=APP.blocos.filter(b=>b.STATUS==='Entregue').length;
+  const mAt=APP.medicos.filter(m=>m.STATUS==='Ativo').length;
+  const rec=[...APP.entregas].sort((a,b)=>new Date(b.DATA_HORA)-new Date(a.DATA_HORA)).slice(0,8);
+  const alerta=disp<10?`<div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;font-size:13px;color:#92400e;font-weight:500">⚠ Estoque baixo: apenas <strong>${disp}</strong> bloco(s) disponível(is). Considere adicionar mais blocos.</div>`:'';
   return `
 <div class="ph">
-  <div><div class="pt">Dashboard</div><div class="ps">12ª Regional de Saúde - SCVSAT - Umuarama-PR</div></div>
-  <button class="bg_" onclick="recarregarDados()" style="font-size:12px;padding:6px 12px">&lt;&lt; Atualizar</button>
+  <div class="ph-left"><div class="pt">Dashboard</div><div class="ps">12ª Regional de Saúde — SCVSAT — Umuarama-PR</div></div>
 </div>
-<div class="stats-row">
-  <div class="stat" style="background:#d1fae5"><div class="stat-lbl" style="color:#065f46">Blocos em Estoque</div><div class="stat-val" style="color:#065f46">${disp}</div></div>
-  <div class="stat" style="background:#fef3c7"><div class="stat-lbl" style="color:#92400e">Blocos Entregues</div><div class="stat-val" style="color:#92400e">${ent}</div></div>
-  <div class="stat" style="background:#dbeafe"><div class="stat-lbl" style="color:#1e40af">Médicos Ativos</div><div class="stat-val" style="color:#1e40af">${mAt}</div></div>
-  <div class="stat" style="background:#f1f5f9"><div class="stat-lbl" style="color:#334155">Total Protocolos</div><div class="stat-val" style="color:#334155">${APP.entregas.length}</div></div>
+${alerta}
+<div class="stats-grid">
+  <div class="stat-card stat-green"><div class="stat-lbl">Blocos em Estoque</div><div class="stat-val">${disp}</div></div>
+  <div class="stat-card stat-amber"><div class="stat-lbl">Blocos Entregues</div><div class="stat-val">${entB}</div></div>
+  <div class="stat-card stat-blue"><div class="stat-lbl">Médicos Ativos</div><div class="stat-val">${mAt}</div></div>
+  <div class="stat-card stat-slate"><div class="stat-lbl">Total Protocolos</div><div class="stat-val">${APP.entregas.length}</div></div>
 </div>
 <div class="card">
-  <div style="padding:12px 15px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-    <span style="font-weight:700;font-size:14px">Últimas Entregas</span>
-    <button class="bg_" style="padding:4px 11px;font-size:12px" onclick="go('entregas')">Ver todas</button>
+  <div class="card-header">
+    <span class="card-header-title">Últimas Entregas</span>
+    <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px" onclick="go('entregas')">Ver todas →</button>
   </div>
-  <table><thead><tr><th>Protocolo</th><th>Data/Hora</th><th>Médico</th><th>Blocos</th><th>Qtd</th></tr></thead><tbody>
-  ${rec.length===0
-    ? '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8">Nenhuma entrega registrada.</td></tr>'
-    : rec.map(e => {
-        const m = APP.medicos.find(x=>x.ID===e.ID_MEDICO);
-        const bNums = String(e.IDS_BLOCOS||'').split(';').map(id=>{const b=APP.blocos.find(x=>x.ID===id.trim());return b?'#'+b.NUMERO:'';}).filter(Boolean).join(', ');
-        return `<tr>
-          <td class="mono">${e.PROTOCOLO}</td>
-          <td style="font-size:12px">${fmtDt(e.DATA_HORA)}</td>
-          <td class="bold">${m?nomeMed(m):'-'}</td>
-          <td style="font-size:12px;color:#64748b">${bNums}</td>
-          <td style="text-align:center"><span class="badge bg-amber">${e.QUANTIDADE_BLOCOS||1}</span></td>
-        </tr>`;
-      }).join('')}
-  </tbody></table>
+  <div class="desktop-table"><table>
+    <thead><tr><th>Protocolo</th><th>Data/Hora</th><th>Médico</th><th>Blocos</th><th>Qtd</th></tr></thead>
+    <tbody>${rec.length===0?`<tr><td colspan="5"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Nenhuma entrega registrada.</div></div></td></tr>`
+    :rec.map(e=>{
+      const m=APP.medicos.find(x=>x.ID===e.ID_MEDICO);
+      const nums=String(e.IDS_BLOCOS||'').split(';').map(id=>{const b=APP.blocos.find(x=>x.ID===id.trim());return b?'#'+b.NUMERO:'';}).filter(Boolean).join(', ');
+      return `<tr><td class="mono">${e.PROTOCOLO}</td><td style="font-size:12px">${fmtDt(e.DATA_HORA)}</td>
+        <td class="bold">${m?nomeMed(m):'-'}</td>
+        <td style="font-size:12px;color:var(--muted)">${nums}</td>
+        <td><span class="badge b-amber">${e.QUANTIDADE_BLOCOS||1}</span></td></tr>`;
+    }).join('')}
+    </tbody>
+  </table></div>
+  <div class="mobile-cards" style="padding:8px">
+    ${rec.length===0?`<div class="empty"><div class="empty-text">Nenhuma entrega.</div></div>`
+    :rec.map(e=>{
+      const m=APP.medicos.find(x=>x.ID===e.ID_MEDICO);
+      return `<div class="m-card">
+        <div class="m-card-proto">${e.PROTOCOLO}</div>
+        <div class="m-card-title" style="margin-top:6px">${m?nomeMed(m):'-'}</div>
+        <div class="m-card-sub">${fmtDt(e.DATA_HORA)} · ${e.QUANTIDADE_BLOCOS||1} bloco(s)</div>
+      </div>`;
+    }).join('')}
+  </div>
 </div>`;
 }
 
-// =====================================================
-// MÉDICOS
-// =====================================================
-function renderMedicos(q) {
-  q = q || '';
-  const fil = APP.medicos.filter(m => (nomeMed(m)+String(m.CRM||'')).toLowerCase().includes(q.toLowerCase()));
+// ═══════════════════════════════════════════
+// RENDER — MÉDICOS
+// ═══════════════════════════════════════════
+function renderMedicos(q){
+  q=q||'';
+  const fil=APP.medicos.filter(m=>(nomeMed(m)+String(m.CRM||'')).toLowerCase().includes(q.toLowerCase()));
+  const wr=podeEscrever();
   return `
 <div class="ph">
-  <div><div class="pt">Médicos</div><div class="ps">Prescritores de Receituário A - 12ª Regional de Saúde</div></div>
-  <button class="bp" onclick="abrirFormMedico()">+ Novo Médico</button>
+  <div class="ph-left"><div class="pt">Médicos</div><div class="ps">Prescritores de Receituário A</div></div>
+  ${wr?`<div class="ph-actions"><button class="btn btn-primary" onclick="abrirFormMedico()">+ Novo Médico</button></div>`:''}
 </div>
-<div class="search-wrap">
-  <input id="q-med" placeholder="Buscar por nome ou CRM..." value="${esc(q)}">
-  <button class="search-x${q?' show':''}" title="Limpar">×</button>
+<div class="toolbar">
+  <div class="search-wrap"><input id="q-med" placeholder="Buscar nome ou CRM..." value="${esc(q)}"><button class="search-x${q?' show':''}" title="Limpar">×</button></div>
 </div>
-<div class="card"><table>
-  <thead><tr><th>Nome</th><th>CRM</th><th>Especialidades</th><th>Status</th><th>Ações</th></tr></thead>
-  <tbody>${fil.length===0
-    ? '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8">Nenhum resultado.</td></tr>'
-    : fil.map(m => {
-        const esps = String(m.ESPECIALIDADES||'').split(';').map(e=>e.trim()).filter(Boolean);
-        const espStr = esps.slice(0,2).join(', ')+(esps.length>2?' +'+(esps.length-2):'');
-        const mj = esc(JSON.stringify(m));
-        return `<tr>
-          <td class="bold">${nomeMed(m)}</td>
-          <td>${m.CRM||'-'}-${m.UF_CRM||''}</td>
-          <td style="font-size:12px;color:#64748b">${espStr||'-'}</td>
-          <td>${badge(m.STATUS)}</td>
-          <td><div style="display:flex;gap:4px">
-            <button class="bsm" style="background:#dbeafe;color:#1e40af" onclick='abrirFormMedico(JSON.parse(this.dataset.m))' data-m='${mj}'>Editar</button>
-            <button class="bsm" style="background:${m.STATUS==='Ativo'?'#fee2e2':'#d1fae5'};color:${m.STATUS==='Ativo'?'#991b1b':'#065f46'}" onclick="toggleMedico('${m.ID}','${m.STATUS==='Ativo'?'Inativo':'Ativo'}')">${m.STATUS==='Ativo'?'Inativar':'Ativar'}</button>
-          </div></td>
-        </tr>`;
-      }).join('')}
+<div class="card desktop-table"><table>
+  <thead><tr><th>Nome</th><th>CRM</th><th>Especialidades</th><th>Status</th>${wr?'<th>Ações</th>':''}</tr></thead>
+  <tbody>${fil.length===0?`<tr><td colspan="5"><div class="empty"><div class="empty-icon">⚕</div><div class="empty-text">Nenhum resultado.</div></div></td></tr>`
+  :fil.map(m=>{
+    const esps=String(m.ESPECIALIDADES||'').split(';').map(e=>e.trim()).filter(Boolean);
+    const es=esps.slice(0,2).join(', ')+(esps.length>2?' +'+(esps.length-2):'');
+    const mj=esc(JSON.stringify(m));
+    return `<tr>
+      <td class="bold">${nomeMed(m)}</td>
+      <td style="font-family:var(--mono);font-size:12px">${m.CRM||'-'}-${m.UF_CRM||''}</td>
+      <td style="font-size:12px;color:var(--muted)">${es||'-'}</td>
+      <td>${badge(m.STATUS)}</td>
+      ${wr?`<td><div style="display:flex;gap:4px">
+        <button class="btn-sm btn-edit" onclick='abrirFormMedico(JSON.parse(this.dataset.m))' data-m='${mj}'>Editar</button>
+        <button class="btn-sm ${m.STATUS==='Ativo'?'btn-danger':'btn-success'}" onclick="toggleMedico('${m.ID}','${m.STATUS==='Ativo'?'Inativo':'Ativo'}')">${m.STATUS==='Ativo'?'Inativar':'Ativar'}</button>
+      </div></td>`:''}
+    </tr>`;
+  }).join('')}
   </tbody>
-</table></div>`;
+</table></div>
+<div class="mobile-cards">
+  ${fil.length===0?`<div class="empty"><div class="empty-icon">⚕</div><div class="empty-text">Nenhum resultado.</div></div>`
+  :fil.map(m=>{
+    const esps=String(m.ESPECIALIDADES||'').split(';').filter(Boolean);
+    const mj=esc(JSON.stringify(m));
+    return `<div class="m-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div class="m-card-title">${nomeMed(m)}</div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:2px">CRM ${m.CRM||'-'}-${m.UF_CRM||''}</div></div>
+        ${badge(m.STATUS)}
+      </div>
+      ${esps.length?`<div style="font-size:11px;color:var(--muted);margin-top:6px">${esps.slice(0,2).join(' · ')}</div>`:''}
+      ${wr?`<div class="m-card-footer">
+        <button class="btn-sm btn-edit" onclick='abrirFormMedico(JSON.parse(this.dataset.m))' data-m='${mj}'>Editar</button>
+        <button class="btn-sm ${m.STATUS==='Ativo'?'btn-danger':'btn-success'}" onclick="toggleMedico('${m.ID}','${m.STATUS==='Ativo'?'Inativo':'Ativo'}')">${m.STATUS==='Ativo'?'Inativar':'Ativar'}</button>
+      </div>`:''}
+    </div>`;
+  }).join('')}
+</div>`;
 }
 
-function abrirFormMedico(m) {
-  m = m || {};
-  const ufs    = APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA===(m.UF_CRM||'PR')?' selected':''}>${e.SIGLA}</option>`).join('');
-  const ufsEnd = APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA===(m.UF||'PR')?' selected':''}>${e.SIGLA}</option>`).join('');
-  const esps   = ESPS.map(e=>`<label class="chkitem"><input type="checkbox" value="${esc(e)}"${String(m.ESPECIALIDADES||'').includes(e)?' checked':''}> ${e}</label>`).join('');
-  const unis   = APP.unidades.map(u=>`<label class="chkitem"><input type="checkbox" value="${u.ID}"${String(m.UNIDADES||'').includes(u.ID)?' checked':''}> ${u.NOME}</label>`).join('');
-  const muns   = APP.municipios.map(c=>`<option value="${c.NOME}">`).join('');
-
-  abrirModal(m.ID?'Editar Médico':'Novo Médico', `
-<div class="fg">
+function abrirFormMedico(m){
+  if(!podeEscrever()) return;
+  m=m||{};
+  const ufs=APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA===(m.UF_CRM||'PR')?' selected':''}>${e.SIGLA}</option>`).join('');
+  const ufsE=APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA===(m.UF||'PR')?' selected':''}>${e.SIGLA}</option>`).join('');
+  const esps=ESPS.map(e=>`<label class="chkitem"><input type="checkbox" value="${esc(e)}"${String(m.ESPECIALIDADES||'').includes(e)?' checked':''}> ${e}</label>`).join('');
+  const unis=APP.unidades.map(u=>`<label class="chkitem"><input type="checkbox" value="${u.ID}"${String(m.UNIDADES||'').includes(u.ID)?' checked':''}> ${u.NOME}</label>`).join('');
+  const muns=APP.municipios.map(c=>`<option value="${c.NOME}">`).join('');
+  abrirModal(m.ID?'Editar Médico':'Novo Médico',`
+<div class="form-grid">
   <div class="field s1"><label>Sexo <span class="req">*</span></label>
-    <select id="m-sexo">
-      <option value="Masculino"${(m.SEXO||'Masculino')==='Masculino'?' selected':''}>Masculino (Dr.)</option>
-      <option value="Feminino"${m.SEXO==='Feminino'?' selected':''}>Feminino (Dra.)</option>
-    </select>
-  </div>
+    <select id="m-sexo"><option value="Masculino"${(m.SEXO||'Masculino')==='Masculino'?' selected':''}>Masculino (Dr.)</option><option value="Feminino"${m.SEXO==='Feminino'?' selected':''}>Feminino (Dra.)</option></select></div>
   <div class="field s1"><label>Status</label>
-    <select id="m-status">
-      <option${(m.STATUS||'Ativo')==='Ativo'?' selected':''}>Ativo</option>
-      <option${m.STATUS==='Inativo'?' selected':''}>Inativo</option>
-    </select>
-  </div>
-  <div class="field s2"><label>Nome Completo (sem Dr./Dra.) <span class="req">*</span></label>
-    <input id="m-nome" value="${esc(m.NOME||'')}"><div class="err" id="e-m-nome"></div>
-  </div>
-  <div class="field s1"><label>CRM <span class="req">*</span></label>
-    <input id="m-crm" value="${esc(m.CRM||'')}"><div class="err" id="e-m-crm"></div>
-  </div>
+    <select id="m-status"><option${(m.STATUS||'Ativo')==='Ativo'?' selected':''}>Ativo</option><option${m.STATUS==='Inativo'?' selected':''}>Inativo</option><option${m.STATUS==='Suspenso'?' selected':''}>Suspenso</option></select></div>
+  <div class="field s2"><label>Nome Completo (sem Dr./Dra.) <span class="req">*</span></label><input id="m-nome" value="${esc(m.NOME||'')}"><div class="err" id="e-m-nome"></div></div>
+  <div class="field s1"><label>CRM <span class="req">*</span></label><input id="m-crm" value="${esc(m.CRM||'')}"><div class="err" id="e-m-crm"></div></div>
   <div class="field s1"><label>UF do CRM</label><select id="m-ufcrm">${ufs}</select></div>
   <div class="field s1"><label>CPF</label><input id="m-cpf" value="${esc(m.CPF||'')}" placeholder="000.000.000-00"></div>
   <div class="field s1"><label>RG</label><input id="m-rg" value="${esc(m.RG||'')}"></div>
   <div class="field s1"><label>E-mail</label><input type="email" id="m-email" value="${esc(m.EMAIL||'')}"></div>
   <div class="field s1"><label>Telefone</label><input id="m-tel" value="${esc(m.TELEFONE||'')}" placeholder="(44) 99900-0000"></div>
-  <div class="field s2" style="border-top:1px solid var(--border);padding-top:10px;margin-top:2px">
-    <label style="font-size:11px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0">Endereço — preencha o CEP para auto-completar</label>
-  </div>
-  <div class="field s1"><label>CEP</label>
-    <input id="m-cep" value="${esc(m.CEP||'')}" placeholder="00000-000" onblur="buscarCEP('m-cep',{logradouro:'m-log',bairro:'m-bairro',municipio:'m-mun',uf:'m-uf'})">
-  </div>
-  <div class="field s1"><label>UF</label><select id="m-uf">${ufsEnd}</select></div>
+  <div class="section-divider"><div class="section-divider-label">Endereço — preencha o CEP para auto-completar</div></div>
+  <div class="field s1"><label>CEP</label><input id="m-cep" value="${esc(m.CEP||'')}" placeholder="00000-000" onblur="buscarCEP('m-cep',{logradouro:'m-log',bairro:'m-bairro',municipio:'m-mun',uf:'m-uf'})"></div>
+  <div class="field s1"><label>UF</label><select id="m-uf">${ufsE}</select></div>
   <div class="field s2"><label>Logradouro</label><input id="m-log" value="${esc(m.LOGRADOURO||'')}"></div>
   <div class="field s1"><label>Número</label><input id="m-num" value="${esc(m.NUMERO||'')}"></div>
   <div class="field s1"><label>Complemento</label><input id="m-comp" value="${esc(m.COMPLEMENTO||'')}"></div>
   <div class="field s1"><label>Bairro</label><input id="m-bairro" value="${esc(m.BAIRRO||'')}"></div>
-  <div class="field s1"><label>Município</label>
-    <input id="m-mun" value="${esc(m.MUNICIPIO||'Umuarama')}" list="ml-mun">
-    <datalist id="ml-mun">${muns}</datalist>
-  </div>
+  <div class="field s1"><label>Município</label><input id="m-mun" value="${esc(m.MUNICIPIO||'Umuarama')}" list="ml-mun"><datalist id="ml-mun">${muns}</datalist></div>
   <div class="field s2"><label>Especialidades</label><div class="chklist" id="chk-esps">${esps}</div></div>
   <div class="field s2"><label>Unidades de Saúde Vinculadas</label>
-    <div class="chklist" id="chk-unis" style="grid-template-columns:1fr">
-      ${unis||'<span style="color:#94a3b8;font-size:12px">Nenhuma unidade cadastrada.</span>'}
-    </div>
-  </div>
+    <div class="chklist" id="chk-unis" style="grid-template-columns:1fr">${unis||'<span style="color:var(--muted2);font-size:12px">Nenhuma unidade cadastrada.</span>'}</div></div>
 </div>`,
-  `<button class="bg_" onclick="fecharModal()">Cancelar</button><button class="bp" onclick="salvarMedico('${m.ID||''}')">Salvar</button>`,
-  true);
+  `<button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarMedico('${m.ID||''}')">Salvar</button>`,true);
 }
 
-async function salvarMedico(id) {
-  const nome = (document.getElementById('m-nome')?.value||'').trim();
-  const crm  = (document.getElementById('m-crm')?.value||'').trim();
-  if (!nome) { document.getElementById('e-m-nome').textContent='Obrigatório'; return; }
-  if (!crm)  { document.getElementById('e-m-crm').textContent='Obrigatório'; return; }
-  const esps = [...document.querySelectorAll('#chk-esps input[type=checkbox]:checked')].map(x=>x.value);
-  const unis = [...document.querySelectorAll('#chk-unis input[type=checkbox]:checked')].map(x=>x.value);
-  const dados = {
-    id, sexo: document.getElementById('m-sexo').value, nome,
-    crm, uf_crm: document.getElementById('m-ufcrm').value,
-    cpf: document.getElementById('m-cpf').value, rg: document.getElementById('m-rg').value,
-    email: document.getElementById('m-email').value, telefone: document.getElementById('m-tel').value,
-    cep: document.getElementById('m-cep').value, logradouro: document.getElementById('m-log').value,
-    numero: document.getElementById('m-num').value, complemento: document.getElementById('m-comp').value,
-    bairro: document.getElementById('m-bairro').value, municipio: document.getElementById('m-mun').value,
-    uf: document.getElementById('m-uf').value, especialidades: esps, unidades: unis,
-    status: document.getElementById('m-status').value
-  };
-  mostrarLoading(true, 'Salvando médico...');
-  const r = await dbSalvarMedico(dados);
-  mostrarLoading(false);
-  if (r && r.ok) {
-    APP.medicos = r.dados || APP.medicos;
-    fecharModal();
-    const c = document.getElementById('content');
-    c.innerHTML = renderMedicos('');
-    initBusca('q-med', q => { c.innerHTML = renderMedicos(q); });
-    toast('Médico salvo com sucesso!', 'ok');
-  } else { toast('Erro: '+(r&&r.msg||'Falha ao salvar'), 'erro'); }
+async function salvarMedico(id){
+  const nome=(document.getElementById('m-nome')?.value||'').trim();
+  const crm=(document.getElementById('m-crm')?.value||'').trim();
+  if(!nome){document.getElementById('e-m-nome').textContent='Obrigatório';return;}
+  if(!crm){document.getElementById('e-m-crm').textContent='Obrigatório';return;}
+  const dados={id,sexo:document.getElementById('m-sexo').value,nome,crm,
+    uf_crm:document.getElementById('m-ufcrm').value,cpf:document.getElementById('m-cpf').value,
+    rg:document.getElementById('m-rg').value,email:document.getElementById('m-email').value,
+    telefone:document.getElementById('m-tel').value,cep:document.getElementById('m-cep').value,
+    logradouro:document.getElementById('m-log').value,numero:document.getElementById('m-num').value,
+    complemento:document.getElementById('m-comp').value,bairro:document.getElementById('m-bairro').value,
+    municipio:document.getElementById('m-mun').value,uf:document.getElementById('m-uf').value,
+    especialidades:[...document.querySelectorAll('#chk-esps input:checked')].map(x=>x.value),
+    unidades:[...document.querySelectorAll('#chk-unis input:checked')].map(x=>x.value),
+    status:document.getElementById('m-status').value};
+  mostrarLoading(true,'Salvando médico...');
+  const r=await dbSalvarMedico(dados); mostrarLoading(false);
+  if(r?.ok){APP.medicos=r.dados;fecharModal();const c=document.getElementById('content');c.innerHTML=renderMedicos('');initBusca('q-med',q=>{c.innerHTML=renderMedicos(q);});toast('Médico salvo!','ok');}
+  else toast('Erro: '+(r?.msg||'Falha'),'erro');
+}
+async function toggleMedico(id,status){
+  mostrarLoading(true,'Atualizando...');const r=await dbStatusMedico(id,status);mostrarLoading(false);
+  if(r?.ok){APP.medicos=r.dados;const c=document.getElementById('content');c.innerHTML=renderMedicos('');initBusca('q-med',q=>{c.innerHTML=renderMedicos(q);});toast('Status atualizado!','ok');}
 }
 
-async function toggleMedico(id, status) {
-  mostrarLoading(true, 'Atualizando status...');
-  const r = await dbAlterarStatusMedico(id, status);
-  mostrarLoading(false);
-  if (r && r.ok) {
-    APP.medicos = r.dados || APP.medicos;
-    const c = document.getElementById('content');
-    c.innerHTML = renderMedicos('');
-    initBusca('q-med', q => { c.innerHTML = renderMedicos(q); });
-    toast('Status atualizado!', 'ok');
-  }
-}
-
-// =====================================================
-// REQUISITANTES
-// =====================================================
-function renderRequisitantes(q) {
-  q = q || '';
-  const fil = APP.requisitantes.filter(r => String(r.NOME||'').toLowerCase().includes(q.toLowerCase()));
+// ═══════════════════════════════════════════
+// RENDER — REQUISITANTES
+// ═══════════════════════════════════════════
+function renderRequisitantes(q){
+  q=q||'';
+  const fil=APP.requisitantes.filter(r=>String(r.NOME||'').toLowerCase().includes(q.toLowerCase()));
+  const wr=podeEscrever();
   return `
 <div class="ph">
-  <div><div class="pt">Requisitantes</div><div class="ps">Autorizados pelos médicos a retirar blocos</div></div>
-  <button class="bp" onclick="abrirFormReq()">+ Novo Requisitante</button>
+  <div class="ph-left"><div class="pt">Requisitantes</div><div class="ps">Autorizados a retirar blocos em nome dos médicos</div></div>
+  ${wr?`<div class="ph-actions"><button class="btn btn-primary" onclick="abrirFormReq()">+ Novo Requisitante</button></div>`:''}
 </div>
-<div class="search-wrap">
-  <input id="q-req" placeholder="Buscar por nome..." value="${esc(q)}">
-  <button class="search-x${q?' show':''}" title="Limpar">×</button>
+<div class="toolbar">
+  <div class="search-wrap"><input id="q-req" placeholder="Buscar por nome..." value="${esc(q)}"><button class="search-x${q?' show':''}" title="Limpar">×</button></div>
 </div>
-<div class="card"><table>
-  <thead><tr><th>Nome</th><th>CPF</th><th>Médicos Autorizados</th><th>Status</th><th>Ações</th></tr></thead>
-  <tbody>${fil.length===0
-    ? '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8">Nenhum resultado.</td></tr>'
-    : fil.map(r => {
-        const meds = String(r.MEDICOS_AUTORIZADOS||'').split(';').map(id=>{const m=APP.medicos.find(x=>x.ID===id.trim());return m?nomeMed(m).split(' ').slice(0,2).join(' '):'';}).filter(Boolean).join(', ');
-        const rj = esc(JSON.stringify(r));
-        return `<tr>
-          <td class="bold">${r.NOME}</td><td>${r.CPF||'-'}</td>
-          <td style="font-size:12px;color:#64748b">${meds||'-'}</td>
-          <td>${badge(r.STATUS)}</td>
-          <td><div style="display:flex;gap:4px">
-            <button class="bsm" style="background:#dbeafe;color:#1e40af" onclick='abrirFormReq(JSON.parse(this.dataset.r))' data-r='${rj}'>Editar</button>
-            <button class="bsm" style="background:${r.STATUS==='Ativo'?'#fee2e2':'#d1fae5'};color:${r.STATUS==='Ativo'?'#991b1b':'#065f46'}" onclick="toggleRequisitante('${r.ID}','${r.STATUS==='Ativo'?'Inativo':'Ativo'}')">${r.STATUS==='Ativo'?'Inativar':'Ativar'}</button>
-          </div></td>
-        </tr>`;
-      }).join('')}
+<div class="card desktop-table"><table>
+  <thead><tr><th>Nome</th><th>CPF</th><th>Médicos Autorizados</th><th>Status</th>${wr?'<th>Ações</th>':''}</tr></thead>
+  <tbody>${fil.length===0?`<tr><td colspan="5"><div class="empty"><div class="empty-icon">👤</div><div class="empty-text">Nenhum resultado.</div></div></td></tr>`
+  :fil.map(r=>{
+    const meds=String(r.MEDICOS_AUTORIZADOS||'').split(';').map(id=>{const m=APP.medicos.find(x=>x.ID===id.trim());return m?nomeMed(m).split(' ').slice(0,2).join(' '):'';}).filter(Boolean).join(', ');
+    const rj=esc(JSON.stringify(r));
+    return `<tr>
+      <td class="bold">${r.NOME}</td><td style="font-size:12px">${r.CPF||'-'}</td>
+      <td style="font-size:12px;color:var(--muted)">${meds||'-'}</td>
+      <td>${badge(r.STATUS)}</td>
+      ${wr?`<td><div style="display:flex;gap:4px">
+        <button class="btn-sm btn-edit" onclick='abrirFormReq(JSON.parse(this.dataset.r))' data-r='${rj}'>Editar</button>
+        <button class="btn-sm ${r.STATUS==='Ativo'?'btn-danger':'btn-success'}" onclick="toggleReq('${r.ID}','${r.STATUS==='Ativo'?'Inativo':'Ativo'}')">${r.STATUS==='Ativo'?'Inativar':'Ativar'}</button>
+      </div></td>`:''}
+    </tr>`;
+  }).join('')}
   </tbody>
-</table></div>`;
+</table></div>
+<div class="mobile-cards">
+  ${fil.length===0?`<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">Nenhum resultado.</div></div>`
+  :fil.map(r=>{
+    const meds=String(r.MEDICOS_AUTORIZADOS||'').split(';').map(id=>{const m=APP.medicos.find(x=>x.ID===id.trim());return m?nomeMed(m).split(' ').slice(0,2).join(' '):'';}).filter(Boolean).join(', ');
+    const rj=esc(JSON.stringify(r));
+    return `<div class="m-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div class="m-card-title">${r.NOME}</div><div class="m-card-sub">${r.CPF||'-'}</div></div>
+        ${badge(r.STATUS)}
+      </div>
+      ${meds?`<div style="font-size:11px;color:var(--muted)">Autorizados: ${meds}</div>`:''}
+      ${wr?`<div class="m-card-footer">
+        <button class="btn-sm btn-edit" onclick='abrirFormReq(JSON.parse(this.dataset.r))' data-r='${rj}'>Editar</button>
+        <button class="btn-sm ${r.STATUS==='Ativo'?'btn-danger':'btn-success'}" onclick="toggleReq('${r.ID}','${r.STATUS==='Ativo'?'Inativo':'Ativo'}')">${r.STATUS==='Ativo'?'Inativar':'Ativar'}</button>
+      </div>`:''}
+    </div>`;
+  }).join('')}
+</div>`;
 }
 
-function abrirFormReq(r) {
-  r = r || {};
-  const ufsEnd = APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA===(r.UF||'PR')?' selected':''}>${e.SIGLA}</option>`).join('');
-  const meds   = APP.medicos.map(m=>`<label class="chkitem"><input type="checkbox" value="${m.ID}"${String(r.MEDICOS_AUTORIZADOS||'').includes(m.ID)?' checked':''}> ${nomeMed(m)} - CRM ${m.CRM}-${m.UF_CRM}</label>`).join('');
-  const muns   = APP.municipios.map(c=>`<option value="${c.NOME}">`).join('');
-  abrirModal(r.ID?'Editar Requisitante':'Novo Requisitante', `
-<div class="fg">
+function abrirFormReq(r){
+  if(!podeEscrever()) return;
+  r=r||{};
+  const ufs=APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA===(r.UF||'PR')?' selected':''}>${e.SIGLA}</option>`).join('');
+  const meds=APP.medicos.map(m=>`<label class="chkitem"><input type="checkbox" value="${m.ID}"${String(r.MEDICOS_AUTORIZADOS||'').includes(m.ID)?' checked':''}> ${nomeMed(m)} — CRM ${m.CRM}-${m.UF_CRM}</label>`).join('');
+  const muns=APP.municipios.map(c=>`<option value="${c.NOME}">`).join('');
+  abrirModal(r.ID?'Editar Requisitante':'Novo Requisitante',`
+<div class="form-grid">
   <div class="field s2"><label>Nome Completo <span class="req">*</span></label><input id="r-nome" value="${esc(r.NOME||'')}"><div class="err" id="e-r-nome"></div></div>
   <div class="field s1"><label>CPF <span class="req">*</span></label><input id="r-cpf" value="${esc(r.CPF||'')}" placeholder="000.000.000-00"><div class="err" id="e-r-cpf"></div></div>
   <div class="field s1"><label>RG</label><input id="r-rg" value="${esc(r.RG||'')}"></div>
   <div class="field s1"><label>E-mail</label><input type="email" id="r-email" value="${esc(r.EMAIL||'')}"></div>
   <div class="field s1"><label>Telefone</label><input id="r-tel" value="${esc(r.TELEFONE||'')}"></div>
   <div class="field s1"><label>CEP</label><input id="r-cep" value="${esc(r.CEP||'')}" onblur="buscarCEP('r-cep',{logradouro:'r-log',bairro:'r-bairro',municipio:'r-mun',uf:'r-uf'})"></div>
-  <div class="field s1"><label>UF</label><select id="r-uf">${ufsEnd}</select></div>
+  <div class="field s1"><label>UF</label><select id="r-uf">${ufs}</select></div>
   <div class="field s2"><label>Logradouro</label><input id="r-log" value="${esc(r.LOGRADOURO||'')}"></div>
   <div class="field s1"><label>Número</label><input id="r-num" value="${esc(r.NUMERO||'')}"></div>
   <div class="field s1"><label>Bairro</label><input id="r-bairro" value="${esc(r.BAIRRO||'')}"></div>
   <div class="field s1"><label>Município</label><input id="r-mun" value="${esc(r.MUNICIPIO||'Umuarama')}" list="rl-mun"><datalist id="rl-mun">${muns}</datalist></div>
   <div class="field s1"><label>Status</label><select id="r-status"><option${(r.STATUS||'Ativo')==='Ativo'?' selected':''}>Ativo</option><option${r.STATUS==='Inativo'?' selected':''}>Inativo</option></select></div>
   <div class="field s2"><label>Médicos que autorizam este requisitante</label>
-    <div class="chklist" id="chk-r-meds" style="grid-template-columns:1fr;max-height:150px">${meds||'<span style="color:#94a3b8;font-size:12px">Nenhum médico cadastrado.</span>'}</div>
-  </div>
+    <div class="chklist" id="chk-r-meds" style="grid-template-columns:1fr;max-height:150px">${meds||'<span style="color:var(--muted2);font-size:12px">Nenhum médico cadastrado.</span>'}</div></div>
 </div>`,
-  `<button class="bg_" onclick="fecharModal()">Cancelar</button><button class="bp" onclick="salvarRequisitante('${r.ID||''}')">Salvar</button>`,
-  true);
+  `<button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarReq('${r.ID||''}')">Salvar</button>`,true);
 }
 
-async function salvarRequisitante(id) {
-  const nome = (document.getElementById('r-nome')?.value||'').trim();
-  const cpf  = (document.getElementById('r-cpf')?.value||'').trim();
-  if (!nome) { document.getElementById('e-r-nome').textContent='Obrigatório'; return; }
-  if (!cpf)  { document.getElementById('e-r-cpf').textContent='Obrigatório'; return; }
-  const meds = [...document.querySelectorAll('#chk-r-meds input[type=checkbox]:checked')].map(x=>x.value);
-  const dados = {
-    id, nome, cpf, rg: document.getElementById('r-rg').value,
-    email: document.getElementById('r-email').value, telefone: document.getElementById('r-tel').value,
-    cep: document.getElementById('r-cep').value, logradouro: document.getElementById('r-log').value,
-    numero: document.getElementById('r-num').value, bairro: document.getElementById('r-bairro').value,
-    municipio: document.getElementById('r-mun').value, uf: document.getElementById('r-uf').value,
-    medicos_autorizados: meds, status: document.getElementById('r-status').value
-  };
-  mostrarLoading(true, 'Salvando...');
-  const r = await dbSalvarRequisitante(dados);
-  mostrarLoading(false);
-  if (r && r.ok) {
-    APP.requisitantes = r.dados;
-    fecharModal();
-    const c = document.getElementById('content');
-    c.innerHTML = renderRequisitantes('');
-    initBusca('q-req', q => { c.innerHTML = renderRequisitantes(q); });
-    toast('Salvo!', 'ok');
-  } else { toast('Erro: '+(r&&r.msg), 'erro'); }
+async function salvarReq(id){
+  const nome=(document.getElementById('r-nome')?.value||'').trim();
+  const cpf=(document.getElementById('r-cpf')?.value||'').trim();
+  if(!nome){document.getElementById('e-r-nome').textContent='Obrigatório';return;}
+  if(!cpf){document.getElementById('e-r-cpf').textContent='Obrigatório';return;}
+  const dados={id,nome,cpf,rg:document.getElementById('r-rg').value,email:document.getElementById('r-email').value,
+    telefone:document.getElementById('r-tel').value,cep:document.getElementById('r-cep').value,
+    logradouro:document.getElementById('r-log').value,numero:document.getElementById('r-num').value,
+    bairro:document.getElementById('r-bairro').value,municipio:document.getElementById('r-mun').value,
+    uf:document.getElementById('r-uf').value,status:document.getElementById('r-status').value,
+    medicos_autorizados:[...document.querySelectorAll('#chk-r-meds input:checked')].map(x=>x.value)};
+  mostrarLoading(true,'Salvando...');const r=await dbSalvarRequisitante(dados);mostrarLoading(false);
+  if(r?.ok){APP.requisitantes=r.dados;fecharModal();const c=document.getElementById('content');c.innerHTML=renderRequisitantes('');initBusca('q-req',q=>{c.innerHTML=renderRequisitantes(q);});toast('Salvo!','ok');}
+  else toast('Erro: '+(r?.msg||'Falha'),'erro');
+}
+async function toggleReq(id,status){
+  mostrarLoading(true,'Atualizando...');const r=await dbStatusRequisitante(id,status);mostrarLoading(false);
+  if(r?.ok){APP.requisitantes=r.dados;const c=document.getElementById('content');c.innerHTML=renderRequisitantes('');initBusca('q-req',q=>{c.innerHTML=renderRequisitantes(q);});toast('Status atualizado!','ok');}
 }
 
-async function toggleRequisitante(id, status) {
-  mostrarLoading(true, 'Atualizando...');
-  const r = await dbAlterarStatusRequisitante(id, status);
-  mostrarLoading(false);
-  if (r && r.ok) {
-    APP.requisitantes = r.dados;
-    const c = document.getElementById('content');
-    c.innerHTML = renderRequisitantes('');
-    initBusca('q-req', q => { c.innerHTML = renderRequisitantes(q); });
-    toast('Status atualizado!', 'ok');
-  }
-}
-
-// =====================================================
-// UNIDADES DE SAÚDE
-// =====================================================
-function renderUnidades() {
+// ═══════════════════════════════════════════
+// RENDER — UNIDADES
+// ═══════════════════════════════════════════
+function renderUnidades(){
+  const wr=podeEscrever();
   return `
 <div class="ph">
-  <div><div class="pt">Unidades de Saúde</div><div class="ps">Estabelecimentos vinculados ao sistema</div></div>
-  <button class="bp" onclick="abrirFormUnidade()">+ Nova Unidade</button>
+  <div class="ph-left"><div class="pt">Unidades de Saúde</div><div class="ps">Estabelecimentos vinculados ao sistema</div></div>
+  ${wr?`<div class="ph-actions"><button class="btn btn-primary" onclick="abrirFormUnidade()">+ Nova Unidade</button></div>`:''}
 </div>
-${APP.unidades.length===0
-  ? '<div style="padding:24px;text-align:center;color:#94a3b8;background:#fff;border-radius:11px;border:1px solid var(--border)">Nenhuma unidade cadastrada.</div>'
-  : APP.unidades.map(u => {
-      const end = [u.LOGRADOURO,u.NUMERO,u.BAIRRO].filter(Boolean).join(', ');
-      const uj = esc(JSON.stringify(u));
-      return `<div class="unit-card">
-        <div>
-          <div style="font-weight:700;margin-bottom:3px">${u.NOME}${u.CNES?` <span style="font-size:11px;color:#94a3b8;font-weight:400">CNES: ${u.CNES}</span>`:''}</div>
-          <div style="font-size:12px;color:#94a3b8">${end?end+' - ':''}${u.MUNICIPIO||''}/${u.UF||''} . Tel: ${u.TELEFONE||'-'}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          ${badge(u.STATUS)}
-          <button class="bsm" style="background:#dbeafe;color:#1e40af" onclick='abrirFormUnidade(JSON.parse(this.dataset.u))' data-u='${uj}'>Editar</button>
-          <button class="bsm" style="background:${u.STATUS==='Ativo'?'#fee2e2':'#d1fae5'};color:${u.STATUS==='Ativo'?'#991b1b':'#065f46'}" onclick="toggleUnidade('${u.ID}','${u.STATUS==='Ativo'?'Inativo':'Ativo'}')">${u.STATUS==='Ativo'?'Inativar':'Ativar'}</button>
-        </div>
-      </div>`;
-    }).join('')}`;
+${APP.unidades.length===0?`<div class="empty" style="background:var(--surface);border-radius:var(--radius);border:1.5px solid var(--border);padding:40px"><div class="empty-icon">🏥</div><div class="empty-text">Nenhuma unidade cadastrada.</div></div>`
+:APP.unidades.map(u=>{
+  const end=[u.LOGRADOURO,u.NUMERO,u.BAIRRO].filter(Boolean).join(', ');
+  const uj=esc(JSON.stringify(u));
+  return `<div class="unit-card">
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:600;font-size:14px;margin-bottom:2px">${u.NOME}${u.CNES?` <span style="font-size:10px;color:var(--muted2);font-weight:400;background:var(--bg);padding:1px 6px;border-radius:4px">CNES ${u.CNES}</span>`:''}</div>
+      <div style="font-size:12px;color:var(--muted)">${end?end+' · ':''}${u.MUNICIPIO||''}/${u.UF||''}</div>
+      ${u.TELEFONE?`<div style="font-size:12px;color:var(--muted2);margin-top:2px">📞 ${u.TELEFONE}</div>`:''}
+    </div>
+    <div class="unit-actions">
+      ${badge(u.STATUS)}
+      ${wr?`<button class="btn-sm btn-edit" onclick='abrirFormUnidade(JSON.parse(this.dataset.u))' data-u='${uj}'>Editar</button>
+      <button class="btn-sm ${u.STATUS==='Ativo'?'btn-danger':'btn-success'}" onclick="toggleUnidade('${u.ID}','${u.STATUS==='Ativo'?'Inativo':'Ativo'}')">${u.STATUS==='Ativo'?'Inativar':'Ativar'}</button>`:''}
+    </div>
+  </div>`;
+}).join('')}`;
 }
 
-function abrirFormUnidade(u) {
-  u = u || {};
-  const ufsEnd = APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA===(u.UF||'PR')?' selected':''}>${e.SIGLA}</option>`).join('');
-  const muns   = APP.municipios.map(c=>`<option value="${c.NOME}">`).join('');
-  abrirModal(u.ID?'Editar Unidade':'Nova Unidade', `
-<div class="fg">
+function abrirFormUnidade(u){
+  if(!podeEscrever()) return;
+  u=u||{};
+  const ufs=APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA===(u.UF||'PR')?' selected':''}>${e.SIGLA}</option>`).join('');
+  const muns=APP.municipios.map(c=>`<option value="${c.NOME}">`).join('');
+  abrirModal(u.ID?'Editar Unidade':'Nova Unidade',`
+<div class="form-grid">
   <div class="field s2"><label>Nome da Unidade <span class="req">*</span></label><input id="u-nome" value="${esc(u.NOME||'')}"></div>
   <div class="field s1"><label>CNES (7 dígitos)</label><input id="u-cnes" value="${esc(u.CNES||'')}" placeholder="0000000" maxlength="7"></div>
   <div class="field s1"><label>Telefone</label><input id="u-tel" value="${esc(u.TELEFONE||'')}" placeholder="(44) 3600-0000"></div>
   <div class="field s1"><label>CEP</label><input id="u-cep" value="${esc(u.CEP||'')}" onblur="buscarCEP('u-cep',{logradouro:'u-log',bairro:'u-bairro',municipio:'u-mun',uf:'u-uf'})"></div>
-  <div class="field s1"><label>UF</label><select id="u-uf">${ufsEnd}</select></div>
+  <div class="field s1"><label>UF</label><select id="u-uf">${ufs}</select></div>
   <div class="field s2"><label>Logradouro</label><input id="u-log" value="${esc(u.LOGRADOURO||'')}"></div>
   <div class="field s1"><label>Número</label><input id="u-num" value="${esc(u.NUMERO||'')}"></div>
   <div class="field s1"><label>Complemento</label><input id="u-comp" value="${esc(u.COMPLEMENTO||'')}"></div>
@@ -1079,178 +1131,181 @@ function abrirFormUnidade(u) {
   <div class="field s1"><label>Município</label><input id="u-mun" value="${esc(u.MUNICIPIO||'Umuarama')}" list="ul-mun"><datalist id="ul-mun">${muns}</datalist></div>
   <div class="field s1"><label>Status</label><select id="u-status"><option${(u.STATUS||'Ativo')==='Ativo'?' selected':''}>Ativo</option><option${u.STATUS==='Inativo'?' selected':''}>Inativo</option></select></div>
 </div>`,
-  `<button class="bg_" onclick="fecharModal()">Cancelar</button><button class="bp" onclick="salvarUnidade('${u.ID||''}')">Salvar</button>`,
-  true);
+  `<button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarUnidade('${u.ID||''}')">Salvar</button>`,true);
 }
 
-async function salvarUnidade(id) {
-  const nome = (document.getElementById('u-nome')?.value||'').trim();
-  if (!nome) { alert('Nome é obrigatório.'); return; }
-  const dados = {
-    id, nome, cnes: document.getElementById('u-cnes').value,
-    telefone: document.getElementById('u-tel').value,
-    cep: document.getElementById('u-cep').value,
-    logradouro: document.getElementById('u-log').value,
-    numero: document.getElementById('u-num').value,
-    complemento: document.getElementById('u-comp').value,
-    bairro: document.getElementById('u-bairro').value,
-    municipio: document.getElementById('u-mun').value,
-    uf: document.getElementById('u-uf').value,
-    status: document.getElementById('u-status').value
-  };
-  mostrarLoading(true, 'Salvando...');
-  const r = await dbSalvarUnidade(dados);
-  mostrarLoading(false);
-  if (r && r.ok) {
-    APP.unidades = r.dados;
-    fecharModal();
-    document.getElementById('content').innerHTML = renderUnidades();
-    toast('Unidade salva!', 'ok');
-  } else { toast('Erro: '+(r&&r.msg), 'erro'); }
+async function salvarUnidade(id){
+  const nome=(document.getElementById('u-nome')?.value||'').trim();
+  if(!nome){alert('Nome é obrigatório.');return;}
+  const dados={id,nome,cnes:document.getElementById('u-cnes').value,telefone:document.getElementById('u-tel').value,
+    cep:document.getElementById('u-cep').value,logradouro:document.getElementById('u-log').value,
+    numero:document.getElementById('u-num').value,complemento:document.getElementById('u-comp').value,
+    bairro:document.getElementById('u-bairro').value,municipio:document.getElementById('u-mun').value,
+    uf:document.getElementById('u-uf').value,status:document.getElementById('u-status').value};
+  mostrarLoading(true,'Salvando...');const r=await dbSalvarUnidade(dados);mostrarLoading(false);
+  if(r?.ok){APP.unidades=r.dados;fecharModal();document.getElementById('content').innerHTML=renderUnidades();toast('Unidade salva!','ok');}
+  else toast('Erro: '+(r?.msg||'Falha'),'erro');
+}
+async function toggleUnidade(id,status){
+  mostrarLoading(true,'Atualizando...');const r=await dbStatusUnidade(id,status);mostrarLoading(false);
+  if(r?.ok){APP.unidades=r.dados;document.getElementById('content').innerHTML=renderUnidades();toast('Status atualizado!','ok');}
 }
 
-async function toggleUnidade(id, status) {
-  mostrarLoading(true, 'Atualizando...');
-  const r = await dbAlterarStatusUnidade(id, status);
-  mostrarLoading(false);
-  if (r && r.ok) {
-    APP.unidades = r.dados;
-    document.getElementById('content').innerHTML = renderUnidades();
-    toast('Status atualizado!', 'ok');
-  }
-}
-
-// =====================================================
-// BLOCOS
-// =====================================================
-function renderBlocos() {
-  const lista = APP.blocoFiltro==='Todos' ? APP.blocos : APP.blocos.filter(b=>b.STATUS===APP.blocoFiltro);
-  const sc = {Disponivel:'#059669',Entregue:'#d97706',Extraviado:'#dc2626',Cancelado:'#94a3b8'};
-  const filtros = ['Todos','Disponivel','Entregue','Extraviado','Cancelado'].map(s=>
-    `<button class="fb${s===APP.blocoFiltro?' active':''}" onclick="APP.blocoFiltro='${s}';document.getElementById('content').innerHTML=renderBlocos()">${s}</button>`).join('');
+// ═══════════════════════════════════════════
+// RENDER — BLOCOS
+// ═══════════════════════════════════════════
+function renderBlocos(){
+  const wr=podeEscrever();
+  const lista=APP.blocoFiltro==='Todos'?APP.blocos:APP.blocos.filter(b=>b.STATUS===APP.blocoFiltro);
+  const sc={Disponivel:'#059669',Entregue:'#d97706',Extraviado:'#dc2626',Cancelado:'#94a3b8'};
+  const filtros=['Todos','Disponivel','Entregue','Extraviado','Cancelado'].map(s=>
+    `<button class="filter-btn${s===APP.blocoFiltro?' active':''}" onclick="APP.blocoFiltro='${s}';document.getElementById('content').innerHTML=renderBlocos()">${s}</button>`).join('');
   return `
 <div class="ph">
-  <div><div class="pt">Estoque de Blocos</div><div class="ps">Inventário e rastreabilidade dos receituários</div></div>
-  <button class="bp" onclick="abrirEntradaBlocos()">+ Entrada de Blocos</button>
+  <div class="ph-left"><div class="pt">Estoque de Blocos</div><div class="ps">Inventário e rastreabilidade dos receituários</div></div>
+  ${wr?`<div class="ph-actions"><button class="btn btn-primary" onclick="abrirEntradaBlocos()">+ Entrada de Blocos</button></div>`:''}
 </div>
-<div class="filter-wrap">${filtros}</div>
-<div class="card"><table>
-  <thead><tr><th>Bloco</th><th>Páginas</th><th>Folhas</th><th>Status</th><th>Entregue a</th></tr></thead>
-  <tbody>${lista.length===0
-    ? '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8">Nenhum bloco nesta categoria.</td></tr>'
-    : lista.map(b => {
-        const ent = APP.entregas.find(e=>String(e.IDS_BLOCOS||'').split(';').map(x=>x.trim()).includes(b.ID));
-        const med = APP.medicos.find(m=>m.ID===(ent ? ent.ID_MEDICO : null));
-        return `<tr style="border-left:4px solid ${sc[b.STATUS]||'#e2e8f0'}">
-          <td style="font-weight:700;color:#0f172a">Bloco ${pad(b.NUMERO)}</td>
-          <td>${b.PAGINA_INICIAL} - ${b.PAGINA_FINAL}</td>
-          <td style="text-align:center"><span class="badge bg-gray">20</span></td>
-          <td>${badge(b.STATUS)}</td>
-          <td style="font-size:12px;color:#64748b">${med?nomeMed(med):'-'}</td>
-        </tr>`;
-      }).join('')}
+<div class="toolbar">${filtros}</div>
+<div class="card desktop-table"><table>
+  <thead><tr><th>Bloco</th><th>Pág. Inicial</th><th>Pág. Final</th><th>Folhas</th><th>Status</th><th>Entregue a</th></tr></thead>
+  <tbody>${lista.length===0?`<tr><td colspan="6"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Nenhum bloco nesta categoria.</div></div></td></tr>`
+  :lista.map(b=>{
+    const ent=APP.entregas.find(e=>String(e.IDS_BLOCOS||'').split(';').includes(b.ID));
+    const med=APP.medicos.find(m=>m.ID===(ent?.ID_MEDICO));
+    return `<tr style="border-left:3px solid ${sc[b.STATUS]||'var(--border)'}">
+      <td class="bold">Bloco ${pad(b.NUMERO)}</td>
+      <td>${b.PAGINA_INICIAL}</td><td>${b.PAGINA_FINAL}</td>
+      <td><span class="badge b-gray">20</span></td>
+      <td>${badge(b.STATUS)}</td>
+      <td style="font-size:12px">${med?nomeMed(med):'-'}</td>
+    </tr>`;
+  }).join('')}
   </tbody>
-</table></div>`;
+</table></div>
+<div class="mobile-cards">
+  ${lista.length===0?`<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Nenhum bloco nesta categoria.</div></div>`
+  :lista.map(b=>{
+    const ent=APP.entregas.find(e=>String(e.IDS_BLOCOS||'').split(';').includes(b.ID));
+    const med=APP.medicos.find(m=>m.ID===(ent?.ID_MEDICO));
+    return `<div class="m-card" style="border-left:3px solid ${sc[b.STATUS]||'var(--border)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="m-card-title">Bloco ${pad(b.NUMERO)}</div>
+        ${badge(b.STATUS)}
+      </div>
+      <div class="m-card-sub">Págs. ${b.PAGINA_INICIAL}–${b.PAGINA_FINAL} · 20 folhas</div>
+      ${med?`<div style="font-size:11px;color:var(--muted)">Entregue a: ${nomeMed(med)}</div>`:''}
+    </div>`;
+  }).join('')}
+</div>`;
 }
 
-function abrirEntradaBlocos() {
-  const ultimo = APP.blocos.reduce((a,b)=>parseInt(b.NUMERO||0)>parseInt(a.NUMERO||0)?b:a, {NUMERO:'0',PAGINA_FINAL:'0'});
-  abrirModal('Entrada de Blocos no Estoque', `
-<p style="color:#64748b;font-size:13px;margin-bottom:12px">A numeração é calculada automaticamente.</p>
-${APP.blocos.length>0?`<div style="background:#f8fafc;border-radius:7px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#475569">Último: <strong>Bloco ${pad(ultimo.NUMERO)}</strong> . Págs. ${ultimo.PAGINA_INICIAL}-${ultimo.PAGINA_FINAL}</div>`:''}
+function abrirEntradaBlocos(){
+  if(!podeEscrever()) return;
+  const ult=APP.blocos.reduce((a,b)=>parseInt(b.NUMERO||0)>parseInt(a.NUMERO||0)?b:a,{NUMERO:'0',PAGINA_FINAL:'0'});
+  abrirModal('Entrada de Blocos no Estoque',`
+<p style="color:var(--muted);font-size:13px;margin-bottom:14px">A numeração é calculada automaticamente em sequência.</p>
+${APP.blocos.length>0?`<div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--muted)">Último registrado: <strong>Bloco ${pad(ult.NUMERO)}</strong> · Págs. ${ult.PAGINA_INICIAL}–${ult.PAGINA_FINAL}</div>`:''}
 <div class="field"><label>Quantidade de Blocos <span class="req">*</span></label>
-  <input type="number" id="b-qtd" min="1" max="500" value="1">
+  <input type="number" id="b-qtd" min="1" max="500" value="1" style="font-size:18px;font-weight:600;text-align:center;padding:12px">
 </div>`,
-  `<button class="bg_" onclick="fecharModal()">Cancelar</button><button class="bp" onclick="salvarEntradaBlocos()">Adicionar ao Estoque</button>`);
+  `<button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarEntradaBlocos()">Adicionar ao Estoque</button>`);
 }
 
-async function salvarEntradaBlocos() {
-  const qtd = parseInt(document.getElementById('b-qtd')?.value||'1')||1;
-  mostrarLoading(true, 'Adicionando blocos...');
-  const r = await dbAdicionarBlocos(qtd);
-  mostrarLoading(false);
-  if (r && r.ok) {
-    APP.blocos = r.dados;
-    fecharModal();
-    document.getElementById('content').innerHTML = renderBlocos();
-    toast(qtd + ' bloco(s) adicionado(s)!', 'ok');
-  } else { toast('Erro: '+(r&&r.msg), 'erro'); }
+async function salvarEntradaBlocos(){
+  const qtd=parseInt(document.getElementById('b-qtd')?.value||'1')||1;
+  mostrarLoading(true,'Adicionando blocos...');const r=await dbAdicionarBlocos(qtd);mostrarLoading(false);
+  if(r?.ok){APP.blocos=r.dados;fecharModal();document.getElementById('content').innerHTML=renderBlocos();toast(`${qtd} bloco(s) adicionado(s)!`,'ok');}
+  else toast('Erro: '+(r?.msg||'Falha'),'erro');
 }
 
-// =====================================================
-// ENTREGAS
-// =====================================================
-function renderEntregas(q) {
-  q = q || '';
-  const lista = [...APP.entregas].filter(e=>{
-    const m = APP.medicos.find(x=>x.ID===e.ID_MEDICO);
-    return (m?nomeMed(m):'').toLowerCase().includes(q.toLowerCase()) || String(e.PROTOCOLO||'').toLowerCase().includes(q.toLowerCase());
+// ═══════════════════════════════════════════
+// RENDER — ENTREGAS
+// ═══════════════════════════════════════════
+function renderEntregas(q){
+  q=q||'';
+  const lista=[...APP.entregas].filter(e=>{
+    const m=APP.medicos.find(x=>x.ID===e.ID_MEDICO);
+    return (m?nomeMed(m):'').toLowerCase().includes(q.toLowerCase())||String(e.PROTOCOLO||'').toLowerCase().includes(q.toLowerCase());
   }).sort((a,b)=>new Date(b.DATA_HORA)-new Date(a.DATA_HORA));
+  const wr=podeEscrever();
   return `
 <div class="ph">
-  <div><div class="pt">Entregas</div><div class="ps">Protocolos de entrega com rastreabilidade completa</div></div>
-  <button class="bp" onclick="abrirNovaEntrega()">+ Nova Entrega</button>
+  <div class="ph-left"><div class="pt">Entregas</div><div class="ps">Protocolos de entrega com rastreabilidade completa</div></div>
+  ${wr?`<div class="ph-actions"><button class="btn btn-primary" onclick="abrirNovaEntrega()">+ Nova Entrega</button></div>`:''}
 </div>
-<div class="search-wrap">
-  <input id="q-ent" placeholder="Buscar por médico ou protocolo..." value="${esc(q)}">
-  <button class="search-x${q?' show':''}" title="Limpar">×</button>
+<div class="toolbar">
+  <div class="search-wrap"><input id="q-ent" placeholder="Buscar médico ou protocolo..." value="${esc(q)}"><button class="search-x${q?' show':''}" title="Limpar">×</button></div>
 </div>
-<div class="card"><table>
+<div class="card desktop-table"><table>
   <thead><tr><th>Protocolo</th><th>Data/Hora</th><th>Médico</th><th>Blocos</th><th>Qtd</th><th>Unidade</th><th></th></tr></thead>
-  <tbody>${lista.length===0
-    ? '<tr><td colspan="7" style="text-align:center;padding:24px;color:#94a3b8">Nenhuma entrega registrada.</td></tr>'
-    : lista.map(e => {
-        const m = APP.medicos.find(x=>x.ID===e.ID_MEDICO);
-        const u = APP.unidades.find(x=>x.ID===e.ID_UNIDADE);
-        const bNums = String(e.IDS_BLOCOS||'').split(';').map(id=>{const b=APP.blocos.find(x=>x.ID===id.trim());return b?'#'+b.NUMERO:'';}).filter(Boolean).join(', ');
-        return `<tr>
-          <td class="mono">${e.PROTOCOLO}</td>
-          <td style="font-size:12px">${fmtDt(e.DATA_HORA)}</td>
-          <td class="bold" style="font-size:13px">${m?nomeMed(m):'-'}</td>
-          <td style="font-size:12px;color:#64748b">${bNums}</td>
-          <td style="text-align:center"><span class="badge bg-amber">${e.QUANTIDADE_BLOCOS||1}</span></td>
-          <td style="font-size:12px;color:#64748b">${u?u.NOME:'-'}</td>
-          <td><button class="bsm" style="background:#fef3c7;color:#92400e" onclick="verTermo('${e.ID}')">🖨 Termo</button></td>
-        </tr>`;
-      }).join('')}
+  <tbody>${lista.length===0?`<tr><td colspan="7"><div class="empty"><div class="empty-icon">📦</div><div class="empty-text">Nenhuma entrega registrada.</div></div></td></tr>`
+  :lista.map(e=>{
+    const m=APP.medicos.find(x=>x.ID===e.ID_MEDICO);
+    const u=APP.unidades.find(x=>x.ID===e.ID_UNIDADE);
+    const nums=String(e.IDS_BLOCOS||'').split(';').map(id=>{const b=APP.blocos.find(x=>x.ID===id.trim());return b?'#'+b.NUMERO:'';}).filter(Boolean).join(', ');
+    return `<tr>
+      <td class="mono">${e.PROTOCOLO}</td>
+      <td style="font-size:12px">${fmtDt(e.DATA_HORA)}</td>
+      <td class="bold">${m?nomeMed(m):'-'}</td>
+      <td style="font-size:12px;color:var(--muted)">${nums}</td>
+      <td><span class="badge b-amber">${e.QUANTIDADE_BLOCOS||1}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${u?u.NOME:'-'}</td>
+      <td><button class="btn-sm btn-warn" onclick="verTermo('${e.ID}')">🖨 Termo</button></td>
+    </tr>`;
+  }).join('')}
   </tbody>
-</table></div>`;
+</table></div>
+<div class="mobile-cards">
+  ${lista.length===0?`<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">Nenhuma entrega registrada.</div></div>`
+  :lista.map(e=>{
+    const m=APP.medicos.find(x=>x.ID===e.ID_MEDICO);
+    const u=APP.unidades.find(x=>x.ID===e.ID_UNIDADE);
+    return `<div class="m-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div><div class="m-card-proto">${e.PROTOCOLO}</div>
+        <div class="m-card-title" style="margin-top:6px">${m?nomeMed(m):'-'}</div>
+        <div class="m-card-sub">${fmtDt(e.DATA_HORA)}</div></div>
+        <span class="badge b-amber">${e.QUANTIDADE_BLOCOS||1} bloco(s)</span>
+      </div>
+      ${u?`<div style="font-size:11px;color:var(--muted);margin-top:4px">🏥 ${u.NOME}</div>`:''}
+      <div class="m-card-footer">
+        <button class="btn-sm btn-warn" onclick="verTermo('${e.ID}')">🖨 Termo</button>
+      </div>
+    </div>`;
+  }).join('')}
+</div>`;
 }
 
-function abrirNovaEntrega() {
-  const disponiveis = APP.blocos.filter(b=>b.STATUS==='Disponivel').sort((a,b)=>parseInt(a.NUMERO)-parseInt(b.NUMERO));
-  if (disponiveis.length===0) { alert('Sem blocos disponíveis.\nAcesse Estoque de Blocos → Entrada de Blocos.'); return; }
-  const ativos  = APP.medicos.filter(m=>m.STATUS==='Ativo');
-  const medOpts = ativos.map(m=>`<option value="${m.ID}">${nomeMed(m)} - CRM ${m.CRM}-${m.UF_CRM}</option>`).join('');
-
-  abrirModal('Nova Entrega de Bloco', `
-<div style="display:flex;flex-direction:column;gap:13px">
+function abrirNovaEntrega(){
+  if(!podeEscrever()) return;
+  const disp=APP.blocos.filter(b=>b.STATUS==='Disponivel').sort((a,b)=>parseInt(a.NUMERO)-parseInt(b.NUMERO));
+  if(!disp.length){alert('Sem blocos disponíveis.\nAcesse Estoque de Blocos → Entrada de Blocos.');return;}
+  const ativos=APP.medicos.filter(m=>m.STATUS==='Ativo');
+  abrirModal('Nova Entrega de Bloco',`
+<div style="display:flex;flex-direction:column;gap:14px">
   <div class="field">
     <label>Médico Destinatário <span class="req">*</span></label>
     <select id="e-med" onchange="atualizarReqEUni()">
-      <option value="">Selecionar médico...</option>${medOpts}
+      <option value="">Selecionar médico...</option>
+      ${ativos.map(m=>`<option value="${m.ID}">${nomeMed(m)} — CRM ${m.CRM}-${m.UF_CRM}</option>`).join('')}
     </select>
     <div class="err" id="e-e-med"></div>
   </div>
   <div class="field">
     <label>Requisitante (quem está retirando)</label>
     <select id="e-req"><option value="">Próprio médico / sem requisitante</option></select>
-    <div id="e-req-warn" class="warn-box" style="display:none">
-      ⚠ Nenhum requisitante vinculado. <a href="#" onclick="go('requisitantes');fecharModal();return false">Cadastrar</a>
-    </div>
+    <div id="e-req-warn" class="warn-box" style="display:none">⚠ Nenhum requisitante vinculado. <a href="#" onclick="go('requisitantes');fecharModal();return false">Cadastrar</a></div>
   </div>
   <div class="field">
     <label>Unidade de Saúde <span class="req">*</span></label>
     <select id="e-uni"><option value="">Selecione o médico primeiro...</option></select>
-    <div id="e-uni-warn" class="warn-box" style="display:none">
-      ⚠ Nenhuma unidade vinculada ao médico. <a href="#" onclick="go('medicos');fecharModal();return false">Ir ao cadastro</a>
-    </div>
+    <div id="e-uni-warn" class="warn-box" style="display:none">⚠ Nenhuma unidade vinculada. <a href="#" onclick="go('medicos');fecharModal();return false">Ir ao cadastro</a></div>
     <div class="err" id="e-e-uni"></div>
   </div>
   <div class="field">
     <label>Quantidade de Blocos <span class="req">*</span></label>
-    <input type="number" id="e-qtd" min="1" max="${disponiveis.length}" value="1" oninput="atualizarSelBlocos()">
-    <div style="font-size:11px;color:#64748b;margin-top:3px">${disponiveis.length} disponível(is) em estoque</div>
+    <input type="number" id="e-qtd" min="1" max="${disp.length}" value="1" oninput="atualizarSelBlocos()">
+    <div style="font-size:11px;color:var(--muted);margin-top:3px">${disp.length} disponível(is) em estoque</div>
   </div>
   <div class="field">
     <label>Blocos Selecionados</label>
@@ -1260,278 +1315,200 @@ function abrirNovaEntrega() {
   <div class="field"><label>Observações</label><textarea id="e-obs" placeholder="Observações opcionais..."></textarea></div>
   <div class="info-box">ℹ O Termo de Recebimento abrirá automaticamente após salvar.</div>
 </div>`,
-  `<button class="bg_" onclick="fecharModal()">Cancelar</button><button class="bp" onclick="salvarEntrega()">Registrar Entrega</button>`,
-  true);
-
+  `<button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarEntrega()">Registrar Entrega</button>`,true);
   atualizarSelBlocos();
 }
 
-function atualizarReqEUni() {
-  const mid  = document.getElementById('e-med')?.value || '';
-  const selR = document.getElementById('e-req');
-  const warnR = document.getElementById('e-req-warn');
-  const selU = document.getElementById('e-uni');
-  const warnU = document.getElementById('e-uni-warn');
-  if (!mid) return;
-
-  const reqs = APP.requisitantes.filter(r=>r.STATUS==='Ativo'&&String(r.MEDICOS_AUTORIZADOS||'').split(';').map(x=>x.trim()).includes(mid));
-  selR.innerHTML = '<option value="">Próprio médico / sem requisitante</option>'+reqs.map(r=>`<option value="${r.ID}">${r.NOME} - CPF ${r.CPF}</option>`).join('');
-  if (warnR) warnR.style.display = reqs.length===0 ? 'block' : 'none';
-
-  const med  = APP.medicos.find(m=>m.ID===mid);
-  const uIds = med ? String(med.UNIDADES||'').split(';').map(x=>x.trim()).filter(Boolean) : [];
-  const unis = uIds.length>0 ? APP.unidades.filter(u=>uIds.includes(u.ID)&&u.STATUS==='Ativo') : [];
-  selU.innerHTML = unis.length>0
-    ? '<option value="">Selecionar unidade...</option>'+unis.map(u=>`<option value="${u.ID}">${u.NOME} - ${u.MUNICIPIO||''}/${u.UF||''}</option>`).join('')
-    : '<option value="">Nenhuma unidade vinculada</option>';
-  if (warnU) warnU.style.display = unis.length===0 ? 'block' : 'none';
-  if (unis.length===1) selU.value = unis[0].ID;
+function atualizarReqEUni(){
+  const mid=document.getElementById('e-med')?.value||'';
+  if(!mid) return;
+  const selR=document.getElementById('e-req'),wR=document.getElementById('e-req-warn');
+  const selU=document.getElementById('e-uni'),wU=document.getElementById('e-uni-warn');
+  const reqs=APP.requisitantes.filter(r=>r.STATUS==='Ativo'&&String(r.MEDICOS_AUTORIZADOS||'').split(';').map(x=>x.trim()).includes(mid));
+  selR.innerHTML='<option value="">Próprio médico / sem requisitante</option>'+reqs.map(r=>`<option value="${r.ID}">${r.NOME} — CPF ${r.CPF}</option>`).join('');
+  if(wR) wR.style.display=reqs.length===0?'block':'none';
+  const med=APP.medicos.find(m=>m.ID===mid);
+  const uIds=med?String(med.UNIDADES||'').split(';').map(x=>x.trim()).filter(Boolean):[];
+  const unis=APP.unidades.filter(u=>uIds.includes(u.ID)&&u.STATUS==='Ativo');
+  selU.innerHTML=unis.length?'<option value="">Selecionar unidade...</option>'+unis.map(u=>`<option value="${u.ID}">${u.NOME} — ${u.MUNICIPIO}/${u.UF}</option>`).join(''):'<option value="">Nenhuma unidade vinculada</option>';
+  if(wU) wU.style.display=unis.length===0?'block':'none';
+  if(unis.length===1) selU.value=unis[0].ID;
 }
 
-function atualizarSelBlocos() {
-  const qtdEl = document.getElementById('e-qtd');
-  const wrap  = document.getElementById('e-blocos-wrap');
-  const info  = document.getElementById('e-blocos-info');
-  if (!qtdEl || !wrap) return;
-
-  const disponiveis = APP.blocos.filter(b=>b.STATUS==='Disponivel').sort((a,b)=>parseInt(a.NUMERO)-parseInt(b.NUMERO));
-  const qtd = Math.min(Math.max(1,parseInt(qtdEl.value)||1), disponiveis.length);
-  qtdEl.value = qtd;
-
-  const selecionados = disponiveis.slice(0, qtd);
-  wrap.innerHTML = selecionados.map((b,i) => `
+function atualizarSelBlocos(){
+  const qtdEl=document.getElementById('e-qtd'),wrap=document.getElementById('e-blocos-wrap'),info=document.getElementById('e-blocos-info');
+  if(!qtdEl||!wrap) return;
+  const disp=APP.blocos.filter(b=>b.STATUS==='Disponivel').sort((a,b)=>parseInt(a.NUMERO)-parseInt(b.NUMERO));
+  const qtd=Math.min(Math.max(1,parseInt(qtdEl.value)||1),disp.length); qtdEl.value=qtd;
+  wrap.innerHTML=disp.slice(0,qtd).map((b,i)=>`
     <div class="bloco-item">
-      <span style="font-size:11px;color:#94a3b8;min-width:18px">${i+1}.</span>
+      <span style="font-size:11px;color:var(--muted2);min-width:18px">${i+1}.</span>
       <select id="eb-${i}" style="flex:1;font-size:12px">
-        ${disponiveis.map(x=>`<option value="${x.ID}"${x.ID===b.ID?' selected':''}>Bloco ${pad(x.NUMERO)} - Págs. ${x.PAGINA_INICIAL}-${x.PAGINA_FINAL}</option>`).join('')}
+        ${disp.map(x=>`<option value="${x.ID}"${x.ID===b.ID?' selected':''}>Bloco ${pad(x.NUMERO)} · Págs. ${x.PAGINA_INICIAL}–${x.PAGINA_FINAL}</option>`).join('')}
       </select>
-      <span class="bloco-pags" id="ebp-${i}">${b.PAGINA_INICIAL}-${b.PAGINA_FINAL} (20 fls.)</span>
+      <span class="bloco-pags" id="ebp-${i}">${b.PAGINA_INICIAL}–${b.PAGINA_FINAL}</span>
     </div>`).join('');
-
-  for (let i=0;i<qtd;i++) {
-    const sel = document.getElementById('eb-'+i);
-    if (sel) sel.addEventListener('change', function() {
-      const b2 = APP.blocos.find(x=>x.ID===this.value);
-      const el = document.getElementById('ebp-'+i);
-      if (el && b2) el.textContent = b2.PAGINA_INICIAL+'-'+b2.PAGINA_FINAL+' (20 fls.)';
-    });
+  for(let i=0;i<qtd;i++){
+    const s=document.getElementById('eb-'+i);
+    if(s) s.addEventListener('change',function(){const b2=APP.blocos.find(x=>x.ID===this.value);const el=document.getElementById('ebp-'+i);if(el&&b2) el.textContent=b2.PAGINA_INICIAL+'–'+b2.PAGINA_FINAL;});
   }
-
-  if (info) info.textContent = qtd+' bloco(s) . '+(disponiveis.length-qtd)+' restante(s) em estoque';
+  if(info) info.textContent=`${qtd} bloco(s) selecionado(s) · ${disp.length-qtd} restante(s) em estoque`;
 }
 
-async function salvarEntrega() {
-  const mid = document.getElementById('e-med')?.value || '';
-  const uid = document.getElementById('e-uni')?.value || '';
-  const qtd = parseInt(document.getElementById('e-qtd')?.value||'1')||1;
-  let ok = true;
-  if (!mid) { document.getElementById('e-e-med').textContent='Selecione um médico'; ok=false; }
-  if (!uid) { document.getElementById('e-e-uni').textContent='Selecione a unidade'; ok=false; }
-  if (!ok) return;
-
-  const idsBlocos = [];
-  for (let i=0;i<qtd;i++) { const s=document.getElementById('eb-'+i); if(s) idsBlocos.push(s.value); }
-  if (new Set(idsBlocos).size !== idsBlocos.length) { alert('Há blocos duplicados. Corrija antes de salvar.'); return; }
-
-  const dados = {
-    idMedico: mid,
-    idRequisitante: document.getElementById('e-req')?.value || '',
-    idsBlocos,
-    idUnidade: uid,
-    observacoes: document.getElementById('e-obs')?.value || '',
-    emissor: 'Sistema'
-  };
-
-  mostrarLoading(true, 'Registrando entrega...');
-  const r = await dbRegistrarEntrega(dados);
+async function salvarEntrega(){
+  const mid=document.getElementById('e-med')?.value||'';
+  const uid=document.getElementById('e-uni')?.value||'';
+  const qtd=parseInt(document.getElementById('e-qtd')?.value||'1')||1;
+  let ok=true;
+  if(!mid){document.getElementById('e-e-med').textContent='Selecione um médico';ok=false;}
+  if(!uid){document.getElementById('e-e-uni').textContent='Selecione a unidade';ok=false;}
+  if(!ok) return;
+  const ids=[];
+  for(let i=0;i<qtd;i++){const s=document.getElementById('eb-'+i);if(s) ids.push(s.value);}
+  if(new Set(ids).size!==ids.length){alert('Há blocos duplicados. Corrija antes de salvar.');return;}
+  mostrarLoading(true,'Registrando entrega...');
+  const r=await dbRegistrarEntrega({idMedico:mid,idRequisitante:document.getElementById('e-req')?.value||'',
+    idsBlocos:ids,idUnidade:uid,observacoes:document.getElementById('e-obs')?.value||''});
   mostrarLoading(false);
-  if (r && r.ok) {
-    APP.entregas = r.dados.entregas || APP.entregas;
-    APP.blocos   = r.dados.blocos   || APP.blocos;
-    APP.logs     = r.dados.logs     || APP.logs;
-    fecharModal();
-    const c = document.getElementById('content');
-    c.innerHTML = renderEntregas('');
-    initBusca('q-ent', q => { c.innerHTML = renderEntregas(q); });
-    toast('Entrega registrada - ' + r.protocolo, 'ok');
-    setTimeout(() => verTermo(r.entregaId), 400);
-  } else { toast('Erro: '+(r&&r.msg||'Falha'), 'erro'); }
+  if(r?.ok){
+    Object.assign(APP,r.dados);fecharModal();
+    const c=document.getElementById('content');c.innerHTML=renderEntregas('');
+    initBusca('q-ent',q=>{c.innerHTML=renderEntregas(q);});
+    toast('Entrega registrada — '+r.protocolo,'ok');
+    setTimeout(()=>verTermo(r.entregaId),400);
+  } else toast('Erro: '+(r?.msg||'Falha'),'erro');
 }
 
-// =====================================================
-// AUDITORIA / LOGS
-// =====================================================
-function renderAuditoria() {
-  const acCor = {
-    ENTREGA:{bg:'#fef3c7',c:'#92400e'}, CADASTRO:{bg:'#dbeafe',c:'#1e40af'},
-    EDICAO:{bg:'#ede9fe',c:'#4c1d95'}, STATUS:{bg:'#fee2e2',c:'#991b1b'},
+// ═══════════════════════════════════════════
+// RENDER — AUDITORIA
+// ═══════════════════════════════════════════
+function renderAuditoria(){
+  const ac={
+    ENTREGA:{bg:'#fef3c7',c:'#92400e'},CADASTRO:{bg:'#dbeafe',c:'#1e40af'},
+    EDICAO:{bg:'#ede9fe',c:'#4c1d95'},STATUS:{bg:'#fee2e2',c:'#991b1b'},
     ENTRADA:{bg:'#d1fae5',c:'#065f46'}
   };
   return `
 <div class="ph">
-  <div><div class="pt">Auditoria / Logs</div><div class="ps">Histórico imutável de todas as ações</div></div>
-  <button class="bg_" onclick="carregarView('auditoria')" style="font-size:12px;padding:6px 12px">&lt;&lt; Atualizar</button>
+  <div class="ph-left"><div class="pt">Auditoria / Logs</div><div class="ps">Histórico imutável de todas as ações</div></div>
 </div>
-<div class="card"><table>
-  <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Entidade</th><th>Detalhe</th></tr></thead>
-  <tbody>${APP.logs.length===0
-    ? '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8">Nenhum registro.</td></tr>'
-    : APP.logs.map(l => {
-        const a = acCor[l.ACAO]||{bg:'#f1f5f9',c:'#475569'};
-        return `<tr>
-          <td style="font-size:12px">${fmtDt(l.DATA_HORA)}</td>
-          <td style="font-size:12px">${l.USUARIO||'-'}</td>
-          <td><span class="badge" style="background:${a.bg};color:${a.c}">${l.ACAO}</span></td>
-          <td style="font-size:12px;font-weight:600;color:#0f172a">${l.ENTIDADE}</td>
-          <td style="font-size:12px;color:#64748b">${l.DETALHE}</td>
-        </tr>`;
-      }).join('')}
-  </tbody>
-</table></div>`;
+<div class="card">
+  ${APP.logs.length===0?`<div class="empty" style="padding:40px"><div class="empty-icon">🔍</div><div class="empty-text">Nenhum registro.</div></div>`
+  :APP.logs.map(l=>{
+    const a=ac[l.ACAO]||{bg:'#f1f5f9',c:'var(--muted)'};
+    return `<div class="log-row">
+      <div class="log-time">${fmtDt(l.DATA_HORA)}</div>
+      <div class="log-tag"><span class="badge" style="background:${a.bg};color:${a.c}">${l.ACAO}</span></div>
+      <div style="flex:1;min-width:0">
+        <div class="log-entity">${l.ENTIDADE}</div>
+        <div class="log-text">${l.DETALHE} <span style="color:var(--muted2);font-size:11px">· ${l.USUARIO||'Sistema'}</span></div>
+      </div>
+    </div>`;
+  }).join('')}
+</div>`;
 }
 
-// =====================================================
+// ═══════════════════════════════════════════
 // TERMO DE RECEBIMENTO
-// =====================================================
-async function verTermo(entregaId) {
-  mostrarLoading(true, 'Gerando Termo...');
-  const r = await dbGetDadosTermo(entregaId);
-  mostrarLoading(false);
-  if (!r || !r.ok) { toast('Erro ao gerar Termo: '+(r&&r.msg||'Falha'), 'erro'); return; }
+// ═══════════════════════════════════════════
+async function verTermo(entregaId){
+  mostrarLoading(true,'Gerando Termo...');
+  const r=await dbGetTermo(entregaId); mostrarLoading(false);
+  if(!r?.ok){toast('Erro ao gerar Termo: '+(r?.msg||'Falha'),'erro');return;}
   renderizarTermo(r);
   document.getElementById('termo-overlay').classList.add('open');
 }
 
-function renderizarTermo(d) {
-  const med = d.medico, req = d.requisitante, uni = d.unidade, ent = d.entrega, bls = d.blocos, cfg = d.config;
-  const recebedor    = req ? req.nome  : (med?med.nomeCompleto:'-');
-  const recebedorCPF = req ? req.cpf   : (med?med.cpf:'-');
-  const recebedorRG  = req ? req.rg    : '-';
-  const totalFolhas  = (parseInt(ent.quantidade)||bls.length) * 20;
-
-  const blocosList = bls.map(b=>`
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px dashed #e2e8f0">
-      <div>Bloco <strong>${pad(b.numero)}</strong></div>
-      <div>Pág. inicial: <strong>${b.paginaInicial}</strong></div>
-      <div>Pág. final: <strong>${b.paginaFinal}</strong></div>
-    </div>`).join('');
-
-  document.getElementById('termo-body').innerHTML = `
-<div style="padding:13px 16px;display:flex;gap:8px;border-bottom:1px solid var(--border)" class="no-print">
-  <button class="bp" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
-  <button class="bg_" onclick="fecharTermo()">Fechar</button>
+function renderizarTermo(d){
+  const {entrega:ent,medico:med,requisitante:req,unidade:uni,blocos:bls,config:cfg}=d;
+  const recNome=req?req.nome:med?.nomeCompleto||'-';
+  const recCPF=req?req.cpf:med?.cpf||'-';
+  const recRG=req?req.rg:'-';
+  const totalFolhas=(parseInt(ent.quantidade)||bls.length)*20;
+  document.getElementById('termo-body').innerHTML=`
+<div style="padding:12px 16px;display:flex;gap:8px;border-bottom:1.5px solid var(--border)" class="no-print">
+  <button class="btn btn-primary" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+  <button class="btn btn-secondary" onclick="fecharTermo()">Fechar</button>
 </div>
 <div style="padding:18px">
 <div class="termo-doc">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px">
-    <div style="flex:1">
+    <div>
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#64748b">Estado do Paraná</div>
-      <div style="font-size:13px;font-weight:700;margin-top:2px">${cfg.SECRETARIA||'12ª Regional de Saúde - SCVSAT'}</div>
+      <div style="font-size:13px;font-weight:700;margin-top:2px">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div>
       <div style="font-size:11px;color:#64748b">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div>
     </div>
-    <div style="width:110px;text-align:right;flex-shrink:0">
+    <div style="width:110px;text-align:right">
       <img src="https://www.saude.pr.gov.br/sites/default/files/2020-09/logo_governo_do_estado.png"
-           onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='block'"
-           style="max-width:100px;max-height:55px;object-fit:contain" alt="Governo do Paraná">
-      <div id="logo-fallback" style="display:none;border:1px dashed #ccc;padding:5px 8px;font-size:9px;color:#94a3b8;border-radius:4px;text-align:center">Governo<br>do Paraná</div>
+           onerror="this.style.display='none'" style="max-width:100px;max-height:55px;object-fit:contain" alt="Governo do Paraná">
     </div>
   </div>
-
   <div style="text-align:center;border-top:2px solid #1e293b;border-bottom:2px solid #1e293b;padding:8px 0;margin-bottom:16px">
     <div style="font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Termo de Recebimento de Receituário A</div>
-    <div style="font-size:10px;color:#64748b;margin-top:3px">Notificação de Receita A - Portaria SVS/MS nº 344/98</div>
+    <div style="font-size:10px;color:#64748b;margin-top:3px">Notificação de Receita A — Portaria SVS/MS nº 344/98</div>
   </div>
-
-  <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:14px;color:#475569;border-bottom:1px solid #f1f5f9;padding-bottom:10px">
+  <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:14px;color:#475569;border-bottom:1px solid #f1f5f9;padding-bottom:10px;flex-wrap:wrap;gap:6px">
     <span>Protocolo: <strong style="font-family:monospace;color:#92400e;font-size:13px">${ent.protocolo}</strong></span>
     <span>Data/Hora: <strong>${fmtDt(ent.dataHora)}</strong></span>
     <span>Município: <strong>${uni?uni.municipio+'/'+uni.uf:'-'}</strong></span>
   </div>
-
   <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:7px;padding:12px 14px;margin-bottom:14px">
     <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#92400e;margin-bottom:8px">
-      Identificação dos Blocos - Quantidade: <strong>${ent.quantidade}</strong> bloco(s) . Total: <strong>${totalFolhas}</strong> folhas
+      Blocos — Quantidade: <strong>${ent.quantidade}</strong> · Total de folhas: <strong>${totalFolhas}</strong>
     </div>
-    ${blocosList}
+    ${bls.map(b=>`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px dashed #e2e8f0">
+      <div>Bloco <strong>${pad(b.numero)}</strong></div>
+      <div>Pág. inicial: <strong>${b.paginaInicial}</strong></div>
+      <div>Pág. final: <strong>${b.paginaFinal}</strong></div>
+    </div>`).join('')}
   </div>
-
   <div style="margin-bottom:12px">
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:8px">Médico Destinatário</div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:8px">Médico Destinatário</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:13px">
-      <div>${med?med.tratamento:''} Nome: <strong>${med?med.nome:'-'}</strong></div>
+      <div>${med?.tratamento||''} Nome: <strong>${med?.nome||'-'}</strong></div>
       <div>CRM: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong></div>
-      <div>CPF: <strong>${med?med.cpf:'-'}</strong></div>
-      <div>Unidade: <strong>${uni?uni.nome:'-'}</strong></div>
+      <div>CPF: <strong>${med?.cpf||'-'}</strong></div>
+      <div>Unidade: <strong>${uni?.nome||'-'}</strong></div>
     </div>
   </div>
-
   <div style="margin-bottom:14px">
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:8px">Recebedor</div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:8px">Recebedor</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:13px">
-      <div>Nome: <strong>${recebedor}</strong></div>
-      <div>CPF: <strong>${recebedorCPF}</strong></div>
-      <div>RG: <strong>${recebedorRG}</strong></div>
+      <div>Nome: <strong>${recNome}</strong></div>
+      <div>CPF: <strong>${recCPF}</strong></div>
+      <div>RG: <strong>${recRG}</strong></div>
     </div>
   </div>
-
-  ${ent.observacoes?`<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:6px">Observações</div><p style="font-size:13px">${ent.observacoes}</p></div>`:''}
-
-  <div style="background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:10px 13px;font-size:11px;color:#475569;line-height:1.75;margin-bottom:22px">
-    <strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita A numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.
+  ${ent.observacoes?`<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:6px">Observações</div><p style="font-size:13px">${ent.observacoes}</p></div>`:''}
+  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 13px;font-size:11px;color:#475569;line-height:1.75;margin-bottom:22px">
+    <strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita A numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes.
   </div>
-
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:8px">
-    <div style="text-align:center">
-      <div style="border-top:2px solid #1e293b;padding-top:9px">
-        <div style="font-size:12px;font-weight:600">${recebedor}</div>
-        <div style="font-size:11px;color:#64748b;margin-top:2px">Recebedor . CPF: ${recebedorCPF}</div>
-      </div>
-    </div>
-    <div style="text-align:center">
-      <div style="border-top:2px solid #1e293b;padding-top:9px">
-        <div style="font-size:12px;font-weight:600">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div>
-        <div style="font-size:11px;color:#64748b;margin-top:2px">Responsável pela Entrega . SCVSAT</div>
-      </div>
-    </div>
-    <div style="text-align:center">
-      <div style="border:2px dashed #94a3b8;border-radius:8px;min-height:72px;display:flex;align-items:center;justify-content:center;padding:8px">
-        <div style="font-size:10px;color:#94a3b8;text-align:center;line-height:1.5">
-          Carimbo da Unidade<br>de Atendimento<br>
-          <span style="font-size:9px">(mesmo carimbo das páginas do bloco)</span>
-        </div>
-      </div>
-      <div style="font-size:10px;color:#94a3b8;margin-top:4px">${uni?uni.nome:''}</div>
-    </div>
+    <div style="text-align:center"><div style="border-top:2px solid #1e293b;padding-top:9px">
+      <div style="font-size:12px;font-weight:600">${recNome}</div>
+      <div style="font-size:11px;color:#64748b;margin-top:2px">Recebedor · CPF: ${recCPF}</div>
+    </div></div>
+    <div style="text-align:center"><div style="border-top:2px solid #1e293b;padding-top:9px">
+      <div style="font-size:12px;font-weight:600">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div>
+      <div style="font-size:11px;color:#64748b;margin-top:2px">Responsável pela Entrega · SCVSAT</div>
+    </div></div>
+    <div style="text-align:center"><div style="border:2px dashed #94a3b8;border-radius:8px;min-height:72px;display:flex;align-items:center;justify-content:center;padding:8px">
+      <div style="font-size:10px;color:#94a3b8;line-height:1.5">Carimbo da Unidade<br>de Atendimento</div>
+    </div><div style="font-size:10px;color:#94a3b8;margin-top:4px">${uni?.nome||''}</div></div>
   </div>
-
   <div style="text-align:center;font-size:10px;color:#94a3b8;margin-top:18px;border-top:1px solid #f1f5f9;padding-top:10px">
-    Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} . Sistema SCVSAT . ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}
+    Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}
   </div>
-</div>
-</div>`;
+</div></div>`;
 }
 
-// =====================================================
+// ═══════════════════════════════════════════
 // INICIALIZAÇÃO
-// =====================================================
+// ═══════════════════════════════════════════
 window.onload = async () => {
-  buildNav();
-  mostrarLoading(true, 'Conectando ao Supabase...');
-  try {
-    const dados = await carregarDadosIniciais();
-    Object.assign(APP, dados);
-    APP.carregado = true;
-    mostrarLoading(false);
-    carregarView('dashboard');
-  } catch(e) {
-    mostrarLoading(false);
-    document.getElementById('content').innerHTML = `
-      <div style="padding:20px;color:#dc2626;font-weight:700;font-size:13px">
-        Erro de conexão: ${e.message}<br>
-        <small style="font-weight:400">Verifique SUPABASE_URL e SUPABASE_ANON_KEY no topo do arquivo.</small>
-        <br><button onclick="location.reload()" class="bp" style="margin-top:12px;font-size:12px">Tentar novamente</button>
-      </div>`;
-  }
+  mostrarLoading(true,'Iniciando sistema...');
+  try { await iniciarSessao(); } catch(e){ mostrarLogin('Erro de conexão. Verifique as configurações.'); }
+  mostrarLoading(false);
 };
 </script>
 </body>
