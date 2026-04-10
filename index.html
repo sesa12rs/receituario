@@ -49,6 +49,21 @@ a{color:var(--amber);text-decoration:none}
 .login-erro{color:var(--red);font-size:12px;margin-top:8px;min-height:18px;font-weight:500}
 .login-footer{text-align:center;font-size:11px;color:var(--muted2);margin-top:20px}
 
+/* ── Definir Senha (primeiro acesso / recovery) ─────────────── */
+#tela-senha{display:none;position:fixed;inset:0;z-index:2100;background:var(--slate);align-items:center;justify-content:center;padding:20px}
+#tela-senha.show{display:flex}
+.senha-card{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:420px;padding:36px;box-shadow:var(--shadow-lg)}
+.senha-steps{display:flex;gap:6px;margin-bottom:24px}
+.senha-step{flex:1;height:4px;border-radius:2px;background:var(--border)}
+.senha-step.done{background:var(--green)}
+.senha-step.active{background:var(--amber)}
+.senha-strength{height:4px;border-radius:2px;margin-top:6px;transition:all .3s;background:var(--border)}
+.senha-req{font-size:11px;color:var(--muted2);margin-top:8px;display:flex;flex-direction:column;gap:3px}
+.senha-req span{display:flex;align-items:center;gap:5px}
+.senha-req span.ok{color:var(--green)}
+.senha-req span.ok::before{content:'✓'}
+.senha-req span:not(.ok)::before{content:'○';color:var(--muted2)}
+
 /* ── App Shell ──────────────────────────────────────────────── */
 #app{display:none;height:100dvh;overflow:hidden}
 #app.show{display:flex}
@@ -295,6 +310,44 @@ td.mono{font-family:var(--mono);font-weight:500;color:#92400e;font-size:12px}
     <div id="login-erro" class="login-erro"></div>
     <button class="login-btn" id="login-btn" onclick="tentarLogin()">Entrar</button>
     <div class="login-footer">Receituário A · Sistema Interno Restrito</div>
+  </div>
+</div>
+
+<!-- ══════════════ DEFINIR SENHA ══════════════ -->
+<div id="tela-senha">
+  <div class="senha-card">
+    <div class="login-brand">
+      <div class="login-ico">🔑</div>
+      <div>
+        <div class="login-title" id="senha-titulo">Defina sua senha</div>
+        <div class="login-sub" id="senha-sub">Crie uma senha segura para acessar o sistema</div>
+      </div>
+    </div>
+    <div class="senha-steps">
+      <div class="senha-step done"></div>
+      <div class="senha-step active"></div>
+    </div>
+    <div class="login-field">
+      <label>Nova Senha</label>
+      <input type="password" id="nova-senha" placeholder="Mínimo 8 caracteres"
+             oninput="verificarForca()" onkeydown="if(event.key==='Enter')salvarNovaSenha()">
+      <div class="senha-strength" id="senha-strength"></div>
+      <div class="senha-req" id="senha-req">
+        <span id="req-len">Mínimo 8 caracteres</span>
+        <span id="req-num">Pelo menos 1 número</span>
+        <span id="req-upper">Pelo menos 1 letra maiúscula</span>
+      </div>
+    </div>
+    <div class="login-field">
+      <label>Confirmar Senha</label>
+      <input type="password" id="conf-senha" placeholder="Repita a senha"
+             onkeydown="if(event.key==='Enter')salvarNovaSenha()">
+    </div>
+    <div id="senha-erro" class="login-erro"></div>
+    <button class="login-btn" id="senha-btn" onclick="salvarNovaSenha()">Salvar senha e entrar</button>
+    <div class="login-footer" id="senha-info" style="color:var(--muted);font-size:11px;margin-top:12px;text-align:left;line-height:1.5">
+      Após salvar, você poderá entrar sempre com seu e-mail e esta senha.
+    </div>
   </div>
 </div>
 
@@ -1681,11 +1734,133 @@ function renderizarTermo(d){
 }
 
 // ═══════════════════════════════════════════
-// INICIALIZAÇÃO
+// INICIALIZAÇÃO — detecta tipo de acesso
 // ═══════════════════════════════════════════
+
+// Verifica requisitos de força da senha em tempo real
+function verificarForca(){
+  const v = document.getElementById('nova-senha')?.value||'';
+  const len   = v.length >= 8;
+  const num   = /\d/.test(v);
+  const upper = /[A-Z]/.test(v);
+  const toggle = (id, ok) => document.getElementById(id)?.classList.toggle('ok', ok);
+  toggle('req-len',   len);
+  toggle('req-num',   num);
+  toggle('req-upper', upper);
+  const score = [len, num, upper].filter(Boolean).length;
+  const bar   = document.getElementById('senha-strength');
+  if(bar){
+    const cores = ['','#ef4444','#f59e0b','#22c55e'];
+    bar.style.width = (score*33.3)+'%';
+    bar.style.background = cores[score]||'';
+  }
+}
+
+// Mostra o formulário de definição de senha
+function mostrarDefinirSenha(subtitulo){
+  document.getElementById('tela-login').classList.remove('show');
+  document.getElementById('app').classList.remove('show');
+  if(subtitulo) document.getElementById('senha-sub').textContent = subtitulo;
+  document.getElementById('nova-senha').value = '';
+  document.getElementById('conf-senha').value = '';
+  document.getElementById('senha-erro').textContent = '';
+  document.getElementById('tela-senha').classList.add('show');
+  setTimeout(()=>document.getElementById('nova-senha')?.focus(), 100);
+}
+
+// Salva a nova senha e entra no sistema
+async function salvarNovaSenha(){
+  const nova = document.getElementById('nova-senha')?.value||'';
+  const conf = document.getElementById('conf-senha')?.value||'';
+  const erroEl = document.getElementById('senha-erro');
+  erroEl.textContent = '';
+
+  if(nova.length < 8){ erroEl.textContent = 'A senha precisa ter pelo menos 8 caracteres.'; return; }
+  if(!/\d/.test(nova)){ erroEl.textContent = 'A senha precisa ter pelo menos 1 número.'; return; }
+  if(!/[A-Z]/.test(nova)){ erroEl.textContent = 'A senha precisa ter pelo menos 1 letra maiúscula.'; return; }
+  if(nova !== conf){ erroEl.textContent = 'As senhas não coincidem.'; return; }
+
+  const btn = document.getElementById('senha-btn');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  const {error} = await sb.auth.updateUser({password: nova});
+  btn.disabled = false; btn.textContent = 'Salvar senha e entrar';
+
+  if(error){ erroEl.textContent = 'Erro: '+error.message; return; }
+
+  // Senha definida — prossegue para carregar o sistema
+  document.getElementById('tela-senha').classList.remove('show');
+  const {data:{session}} = await sb.auth.getSession();
+  if(session?.user?.email){
+    await carregarUsuario(session.user.email);
+  } else {
+    mostrarLogin('Senha definida! Faça login para continuar.');
+  }
+}
+
 window.onload = async () => {
-  mostrarLoading(true,'Iniciando sistema...');
-  try { await iniciarSessao(); } catch(e){ mostrarLogin('Erro de conexão. Verifique as configurações.'); }
+  mostrarLoading(true, 'Iniciando sistema...');
+
+  // ── Escuta eventos de autenticação do Supabase ──────────────
+  // Isso intercepta cliques em links de e-mail (magic link, recovery, invite)
+  sb.auth.onAuthStateChange(async (event, session) => {
+
+    // PASSWORD_RECOVERY → usuário clicou em "Redefinir senha"
+    if(event === 'PASSWORD_RECOVERY'){
+      mostrarLoading(false);
+      document.getElementById('tela-senha').querySelector('.login-title').textContent = 'Redefinir senha';
+      mostrarDefinirSenha('Crie uma nova senha para acessar o sistema');
+      return;
+    }
+
+    // SIGNED_IN via link de e-mail (primeiro acesso por convite ou magic link)
+    if(event === 'SIGNED_IN' && session){
+      // Detecta se veio de um link de e-mail verificando o hash da URL
+      const hash = window.location.hash;
+      const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : '');
+      const tipo = params.get('type');
+
+      // Se veio de magic link / signup / invite → pede para definir senha
+      if(tipo === 'magiclink' || tipo === 'signup' || tipo === 'invite'){
+        mostrarLoading(false);
+        // Limpa o hash da URL para não reprocessar num refresh
+        history.replaceState(null, '', window.location.pathname);
+        document.getElementById('tela-senha').querySelector('.login-title').textContent = 'Bem-vindo! Defina sua senha';
+        mostrarDefinirSenha('Para acessar o sistema no futuro, crie uma senha pessoal agora.');
+        return;
+      }
+
+      // Login normal (email+senha) — limpa hash e carrega sistema
+      history.replaceState(null, '', window.location.pathname);
+      mostrarLoading(false);
+      await carregarUsuario(session.user.email);
+      return;
+    }
+  });
+
+  // ── Verifica se já há sessão ativa (usuário que não saiu) ───
+  try {
+    const {data:{session}} = await sb.auth.getSession();
+    if(session?.user?.email){
+      // Sessão ativa sem evento — carrega direto
+      const hash = window.location.hash;
+      const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : '');
+      const tipo = params.get('type');
+      if(tipo === 'recovery'){
+        mostrarLoading(false);
+        history.replaceState(null, '', window.location.pathname);
+        mostrarDefinirSenha('Crie uma nova senha para acessar o sistema');
+        return;
+      }
+      await carregarUsuario(session.user.email);
+    } else {
+      // Sem sessão — mostra login (onAuthStateChange vai tratar links de e-mail)
+      mostrarLogin();
+    }
+  } catch(e){
+    mostrarLogin('Erro de conexão. Verifique as configurações.');
+  }
+
   mostrarLoading(false);
 };
 </script>
