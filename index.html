@@ -427,8 +427,8 @@ td.mono{font-family:var(--mono);font-weight:500;color:#92400e;font-size:12px}
 // ║  ⚙️  CONFIGURAÇÃO — preencha seus dados  ║
 // ║  Supabase → Project Settings → API       ║
 // ╚══════════════════════════════════════════╝
-const SUPABASE_URL      = 'https://xxvwvvjckjpeiocceeae.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_D71tqfg_UcaSY_DQf6pyog_l_XG2tvo';
+const SUPABASE_URL      = 'https://SEU-PROJETO.supabase.co';
+const SUPABASE_ANON_KEY = 'SUA-CHAVE-ANON-AQUI';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ═══════════════════════════════════════════
@@ -1801,67 +1801,68 @@ async function salvarNovaSenha(){
 window.onload = async () => {
   mostrarLoading(true, 'Iniciando sistema...');
 
-  // ── Escuta eventos de autenticação do Supabase ──────────────
-  // Isso intercepta cliques em links de e-mail (magic link, recovery, invite)
-  sb.auth.onAuthStateChange(async (event, session) => {
+  // ── Passo 1: verificar se há token no hash da URL ────────────
+  // Isso acontece quando o usuário clicou em um link de e-mail
+  const hash = window.location.hash;
+  if(hash && hash.includes('access_token')){
+    const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : '');
+    const tipo   = params.get('type');
+    // Limpa o hash da URL imediatamente para não reprocessar num F5
+    history.replaceState(null, '', window.location.pathname);
 
-    // PASSWORD_RECOVERY → usuário clicou em "Redefinir senha"
+    // Deixa o Supabase processar o token do hash e estabelecer a sessão
+    await new Promise(r => setTimeout(r, 300));
+
+    mostrarLoading(false);
+
+    // Recovery → usuário clicou em "Redefinir senha"
+    if(tipo === 'recovery'){
+      document.getElementById('tela-senha').querySelector('.login-title').textContent = 'Redefinir senha';
+      mostrarDefinirSenha('Crie uma nova senha para acessar o sistema.');
+      return;
+    }
+
+    // Magiclink / signup / invite → primeiro acesso, pede para criar senha
+    if(tipo === 'magiclink' || tipo === 'signup' || tipo === 'invite'){
+      document.getElementById('tela-senha').querySelector('.login-title').textContent = 'Bem-vindo! Defina sua senha';
+      mostrarDefinirSenha('Para entrar no sistema no futuro, crie uma senha pessoal agora.');
+      return;
+    }
+
+    // Outro tipo de link — tenta carregar sessão normalmente
+    try {
+      const {data:{session}} = await sb.auth.getSession();
+      if(session?.user?.email){ await carregarUsuario(session.user.email); return; }
+    } catch(_){}
+    mostrarLogin();
+    return;
+  }
+
+  // ── Passo 2: sem token no hash — fluxo normal ────────────────
+  // Registra listener só para PASSWORD_RECOVERY (link de e-mail de reset
+  // sem hash visível — Supabase processa internamente e dispara o evento)
+  sb.auth.onAuthStateChange((event, session) => {
     if(event === 'PASSWORD_RECOVERY'){
       mostrarLoading(false);
       document.getElementById('tela-senha').querySelector('.login-title').textContent = 'Redefinir senha';
-      mostrarDefinirSenha('Crie uma nova senha para acessar o sistema');
-      return;
-    }
-
-    // SIGNED_IN via link de e-mail (primeiro acesso por convite ou magic link)
-    if(event === 'SIGNED_IN' && session){
-      // Detecta se veio de um link de e-mail verificando o hash da URL
-      const hash = window.location.hash;
-      const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : '');
-      const tipo = params.get('type');
-
-      // Se veio de magic link / signup / invite → pede para definir senha
-      if(tipo === 'magiclink' || tipo === 'signup' || tipo === 'invite'){
-        mostrarLoading(false);
-        // Limpa o hash da URL para não reprocessar num refresh
-        history.replaceState(null, '', window.location.pathname);
-        document.getElementById('tela-senha').querySelector('.login-title').textContent = 'Bem-vindo! Defina sua senha';
-        mostrarDefinirSenha('Para acessar o sistema no futuro, crie uma senha pessoal agora.');
-        return;
-      }
-
-      // Login normal (email+senha) — limpa hash e carrega sistema
-      history.replaceState(null, '', window.location.pathname);
-      mostrarLoading(false);
-      await carregarUsuario(session.user.email);
-      return;
+      mostrarDefinirSenha('Crie uma nova senha para acessar o sistema.');
     }
   });
 
-  // ── Verifica se já há sessão ativa (usuário que não saiu) ───
   try {
     const {data:{session}} = await sb.auth.getSession();
+    mostrarLoading(false);
     if(session?.user?.email){
-      // Sessão ativa sem evento — carrega direto
-      const hash = window.location.hash;
-      const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : '');
-      const tipo = params.get('type');
-      if(tipo === 'recovery'){
-        mostrarLoading(false);
-        history.replaceState(null, '', window.location.pathname);
-        mostrarDefinirSenha('Crie uma nova senha para acessar o sistema');
-        return;
-      }
+      // Sessão ativa (usuário não fez logout) — carrega sistema direto
       await carregarUsuario(session.user.email);
     } else {
-      // Sem sessão — mostra login (onAuthStateChange vai tratar links de e-mail)
+      // Sem sessão — mostra tela de login
       mostrarLogin();
     }
   } catch(e){
-    mostrarLogin('Erro de conexão. Verifique as configurações.');
+    mostrarLoading(false);
+    mostrarLogin('Erro de conexão: ' + e.message);
   }
-
-  mostrarLoading(false);
 };
 </script>
 </body>
