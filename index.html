@@ -399,7 +399,7 @@ td.mono{font-family:var(--mono);font-weight:500;color:#92400e;font-size:12px}
 </div>
 
 <!-- ══════════════ MODAL ══════════════ -->
-<div id="overlay" onclick="if(event.target===this)fecharModal()">
+<div id="overlay">
   <div id="modal">
     <div class="modal-head">
       <span class="modal-head-title" id="modal-titulo"></span>
@@ -411,7 +411,7 @@ td.mono{font-family:var(--mono);font-weight:500;color:#92400e;font-size:12px}
 </div>
 
 <!-- ══════════════ TERMO ══════════════ -->
-<div id="termo-overlay" onclick="if(event.target===this)fecharTermo()">
+<div id="termo-overlay">
   <div id="termo-box">
     <div class="modal-head no-print">
       <span class="modal-head-title">Termo de Recebimento</span>
@@ -434,7 +434,6 @@ td.mono{font-family:var(--mono);font-weight:500;color:#92400e;font-size:12px}
 const SUPABASE_URL      = 'https://xxvwvvjckjpeiocceeae.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_D71tqfg_UcaSY_DQf6pyog_l_XG2tvo';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 
 // ═══════════════════════════════════════════
 // ESTADO GLOBAL
@@ -568,14 +567,36 @@ function erroView(msg){
     <br><button onclick="carregarView(APP.view)" class="btn btn-primary" style="margin-top:10px;font-size:12px">Tentar novamente</button>
   </div>`;
 }
-function initBusca(id,fn){
-  const inp=document.getElementById(id); if(!inp) return;
-  // Remove listener antigo para evitar acúmulo
-  if(inp._buscaClone){ inp.parentNode.replaceChild(inp._buscaClone.cloneNode(true),inp); }
-  const fresh=document.getElementById(id); if(!fresh) return;
-  const x=fresh.closest('.search-wrap')?.querySelector('.search-x'); let t;
-  fresh.addEventListener('input',()=>{ clearTimeout(t); x?.classList.toggle('show',!!fresh.value); t=setTimeout(()=>fn(fresh.value),260); });
-  if(x) x.addEventListener('click',()=>{ fresh.value=''; x.classList.remove('show'); fn(''); fresh.focus(); });
+// Mapa de buscas ativas: id → função de callback
+const _buscaFns = {};
+// Delegação global: um único listener no document detecta todos os inputs de busca
+document.addEventListener('input', e => {
+  const inp = e.target;
+  if(!inp.dataset.buscaId) return;
+  const fn = _buscaFns[inp.dataset.buscaId];
+  if(!fn) return;
+  clearTimeout(inp._bt);
+  const x = inp.closest('.search-wrap')?.querySelector('.search-x');
+  x?.classList.toggle('show', !!inp.value);
+  inp._bt = setTimeout(() => fn(inp.value), 260);
+});
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.search-x');
+  if(!btn) return;
+  const wrap = btn.closest('.search-wrap');
+  const inp = wrap?.querySelector('input[data-busca-id]');
+  if(!inp) return;
+  const fn = _buscaFns[inp.dataset.buscaId];
+  inp.value = ''; btn.classList.remove('show');
+  if(fn) fn('');
+  inp.focus();
+});
+function initBusca(id, fn){
+  // Registra o callback — o listener já está no document
+  _buscaFns[id] = fn;
+  // Garante que o input tenha o atributo data-busca-id
+  const inp = document.getElementById(id);
+  if(inp && !inp.dataset.buscaId) inp.dataset.buscaId = id;
 }
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('show'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('show'); }
@@ -662,15 +683,15 @@ async function carregarView(v){
       const d=await carregarDadosIniciais(); Object.assign(APP,d); c.innerHTML=renderDashboard();
     } else if (v==='medicos'){
       APP.medicos=await dbMedicos(); c.innerHTML=renderMedicos('');
-      initBusca('q-med',q=>{ c.innerHTML=renderMedicos(q); initBusca('q-med',q2=>{ c.innerHTML=renderMedicos(q2); }); });
+      initBusca('q-med',q=>{ c.innerHTML=renderMedicos(q); });
     } else if (v==='requisitantes'){
       APP.requisitantes=await dbRequisitantes(); c.innerHTML=renderRequisitantes('');
-      initBusca('q-req',q=>{ c.innerHTML=renderRequisitantes(q); initBusca('q-req',q2=>{ c.innerHTML=renderRequisitantes(q2); }); });
+      initBusca('q-req',q=>{ c.innerHTML=renderRequisitantes(q); });
     } else if (v==='blocos'){
       APP.blocos=await dbBlocos(); c.innerHTML=renderBlocos();
     } else if (v==='entregas'){
       const d=await dbEntregasCompleto(); Object.assign(APP,d); c.innerHTML=renderEntregas('');
-      initBusca('q-ent',q=>{ c.innerHTML=renderEntregas(q); initBusca('q-ent',q2=>{ c.innerHTML=renderEntregas(q2); }); });
+      initBusca('q-ent',q=>{ c.innerHTML=renderEntregas(q); });
     }
   } catch(e){ c.innerHTML=erroView(e.message); }
 }
@@ -952,7 +973,7 @@ function renderMedicos(q){
   ${wr?`<div class="ph-actions"><button class="btn btn-primary" onclick="abrirFormMedico()">+ Novo Médico</button></div>`:''}
 </div>
 <div class="toolbar">
-  <div class="search-wrap"><input id="q-med" placeholder="Buscar nome ou CRM..." value="${esc(q)}"><button class="search-x${q?' show':''}" title="Limpar">×</button></div>
+  <div class="search-wrap"><input id="q-med" data-busca-id="q-med" placeholder="Buscar nome ou CRM..." value="${esc(q)}"><button class="search-x${q?' show':''}" title="Limpar">×</button></div>
 </div>
 <div class="card desktop-table"><table>
   <thead><tr><th>Nome</th><th>CRM</th><th>Especialidades</th><th>Status</th>${wr?'<th>Ações</th>':''}</tr></thead>
@@ -1018,7 +1039,7 @@ function abrirFormMedico(m){
   <div class="field s2">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
       <label style="margin:0">Unidades de Saúde Vinculadas</label>
-      <button type="button" class="btn-sm btn-edit" onclick="fecharModal();setTimeout(()=>{go('unidades');setTimeout(abrirFormUnidade,400)},150)" title="Cadastrar nova unidade">+ Nova Unidade</button>
+      <button type="button" class="btn-sm btn-edit" onclick="abrirFormUnidadeDoMedico()" title="Cadastrar nova unidade sem perder os dados">+ Nova Unidade</button>
     </div>
     <div class="chklist" id="chk-unis" style="grid-template-columns:1fr">${unis||'<span style="color:var(--muted2);font-size:12px">Nenhuma unidade cadastrada. Use "+ Nova Unidade" acima.</span>'}</div>
   </div>
@@ -1040,12 +1061,110 @@ async function salvarMedico(id){
     status:document.getElementById('m-status').value};
   mostrarLoading(true,'Salvando médico...');
   const r=await dbSalvarMedico(dados); mostrarLoading(false);
-  if(r?.ok){APP.medicos=r.dados;fecharModal();const c=document.getElementById('content');c.innerHTML=renderMedicos('');initBusca('q-med',q=>{c.innerHTML=renderMedicos(q);initBusca('q-med',q2=>{c.innerHTML=renderMedicos(q2);});});toast('Médico salvo!','ok');}
+  if(r?.ok){APP.medicos=r.dados;fecharModal();const c=document.getElementById('content');c.innerHTML=renderMedicos('');initBusca('q-med',q=>{c.innerHTML=renderMedicos(q);});toast('Médico salvo!','ok');}
   else toast('Erro: '+(r?.msg||'Falha'),'erro');
 }
+// Salva estado do formulário de médico, abre form de unidade, depois restaura
+function abrirFormUnidadeDoMedico(){
+  // Captura todos os valores preenchidos no form atual
+  const estado = {
+    sexo:   document.getElementById('m-sexo')?.value,
+    status: document.getElementById('m-status')?.value,
+    nome:   document.getElementById('m-nome')?.value,
+    crm:    document.getElementById('m-crm')?.value,
+    ufcrm:  document.getElementById('m-ufcrm')?.value,
+    cpf:    document.getElementById('m-cpf')?.value,
+    rg:     document.getElementById('m-rg')?.value,
+    email:  document.getElementById('m-email')?.value,
+    tel:    document.getElementById('m-tel')?.value,
+    esps:   [...document.querySelectorAll('#chk-esps input:checked')].map(x=>x.value),
+    unis:   [...document.querySelectorAll('#chk-unis input:checked')].map(x=>x.value),
+    id:     document.querySelector('#modal-corpo')?.dataset?.medicoId||''
+  };
+  // Guarda o título do modal (saber se era edição ou criação)
+  estado.titulo = document.getElementById('modal-titulo')?.textContent||'';
+  // Fecha a modal atual e abre o form de unidade
+  fecharModal();
+  // Após o form de unidade ser salvo, _estadoMedico será restaurado
+  window._estadoMedico = estado;
+  // Abre o form de unidade com callback de retorno
+  setTimeout(()=>{ abrirFormUnidadeComRetorno(); }, 150);
+}
+
+// Form de unidade com botão "Salvar e Voltar ao Médico"
+function abrirFormUnidadeComRetorno(){
+  const ufs=APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA==='PR'?' selected':''}>${e.SIGLA}</option>`).join('');
+  const muns=APP.municipios.map(c=>`<option value="${c.NOME}">`).join('');
+  abrirModal('Nova Unidade de Saúde',`
+<div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:#92400e;margin-bottom:14px">
+  📋 Os dados do médico estão salvos. Após cadastrar a unidade, você retornará ao formulário automaticamente.
+</div>
+<div class="form-grid">
+  <div class="field s2"><label>Nome da Unidade <span class="req">*</span></label><input id="u-nome" value=""></div>
+  <div class="field s1"><label>CNES (7 dígitos)</label><input id="u-cnes" value="" placeholder="0000000" maxlength="7"></div>
+  <div class="field s1"><label>Telefone</label><input id="u-tel" value="" placeholder="(44) 3600-0000"></div>
+  <div class="field s1"><label>CEP</label><input id="u-cep" value="" onblur="buscarCEP('u-cep',{logradouro:'u-log',bairro:'u-bairro',municipio:'u-mun',uf:'u-uf'})"></div>
+  <div class="field s1"><label>UF</label><select id="u-uf">${ufs}</select></div>
+  <div class="field s2"><label>Logradouro</label><input id="u-log" value=""></div>
+  <div class="field s1"><label>Número</label><input id="u-num" value=""></div>
+  <div class="field s1"><label>Complemento</label><input id="u-comp" value=""></div>
+  <div class="field s1"><label>Bairro</label><input id="u-bairro" value=""></div>
+  <div class="field s1"><label>Município</label><input id="u-mun" value="Umuarama" list="ul-mun"><datalist id="ul-mun">${muns}</datalist></div>
+  <div class="field s1"><label>Status</label><select id="u-status"><option selected>Ativo</option><option>Inativo</option></select></div>
+</div>`,
+  `<button class="btn btn-secondary" onclick="cancelarNovaUnidadeDoMedico()">← Voltar sem salvar</button>
+   <button class="btn btn-primary" onclick="salvarUnidadeEVoltarMedico()">Salvar e Voltar ao Médico</button>`,true);
+}
+
+function cancelarNovaUnidadeDoMedico(){
+  fecharModal();
+  if(window._estadoMedico){ setTimeout(()=>restaurarFormMedico(window._estadoMedico),100); }
+}
+
+async function salvarUnidadeEVoltarMedico(){
+  const nome=(document.getElementById('u-nome')?.value||'').trim();
+  if(!nome){ toast('Nome da unidade é obrigatório.','erro'); return; }
+  const dados={
+    nome, cnes:document.getElementById('u-cnes').value,
+    telefone:document.getElementById('u-tel').value,
+    cep:document.getElementById('u-cep').value,
+    logradouro:document.getElementById('u-log').value,
+    numero:document.getElementById('u-num').value,
+    complemento:document.getElementById('u-comp').value,
+    bairro:document.getElementById('u-bairro').value,
+    municipio:document.getElementById('u-mun').value,
+    uf:document.getElementById('u-uf').value,
+    status:document.getElementById('u-status').value
+  };
+  mostrarLoading(true,'Salvando unidade...');
+  const r=await dbSalvarUnidade(dados); mostrarLoading(false);
+  if(!r?.ok){ toast('Erro: '+(r?.msg||'Falha'),'erro'); return; }
+  APP.unidades=r.dados;
+  // Recarrega lista de unidades na página se estiver nela
+  if(APP.view==='unidades') document.getElementById('content').innerHTML=renderUnidades();
+  toast('Unidade cadastrada!','ok');
+  fecharModal();
+  if(window._estadoMedico){ setTimeout(()=>restaurarFormMedico(window._estadoMedico),120); }
+}
+
+function restaurarFormMedico(estado){
+  // Reabre o form do médico com os dados salvos
+  // Recria um objeto m compatível com abrirFormMedico
+  const m={
+    ID:estado.id||'',
+    SEXO:estado.sexo,STATUS:estado.status,NOME:estado.nome,
+    CRM:estado.crm,UF_CRM:estado.ufcrm,CPF:estado.cpf,
+    RG:estado.rg,EMAIL:estado.email,TELEFONE:estado.tel,
+    ESPECIALIDADES:estado.esps?.join(';')||'',
+    UNIDADES:estado.unis?.join(';')||''
+  };
+  abrirFormMedico(m.ID?m:Object.assign(m,{ID:undefined}));
+  window._estadoMedico=null;
+}
+
 async function toggleMedico(id,status){
   mostrarLoading(true,'Atualizando...');const r=await dbStatusMedico(id,status);mostrarLoading(false);
-  if(r?.ok){APP.medicos=r.dados;const c=document.getElementById('content');c.innerHTML=renderMedicos('');initBusca('q-med',q=>{c.innerHTML=renderMedicos(q);initBusca('q-med',q2=>{c.innerHTML=renderMedicos(q2);});});toast('Status atualizado!','ok');}
+  if(r?.ok){APP.medicos=r.dados;const c=document.getElementById('content');c.innerHTML=renderMedicos('');initBusca('q-med',q=>{c.innerHTML=renderMedicos(q);});toast('Status atualizado!','ok');}
 }
 
 // ═══════════════════════════════════════════
@@ -1061,7 +1180,7 @@ function renderRequisitantes(q){
   ${wr?`<div class="ph-actions"><button class="btn btn-primary" onclick="abrirFormReq()">+ Novo Requisitante</button></div>`:''}
 </div>
 <div class="toolbar">
-  <div class="search-wrap"><input id="q-req" placeholder="Buscar por nome..." value="${esc(q)}"><button class="search-x${q?' show':''}" title="Limpar">×</button></div>
+  <div class="search-wrap"><input id="q-req" data-busca-id="q-req" placeholder="Buscar por nome..." value="${esc(q)}"><button class="search-x${q?' show':''}" title="Limpar">×</button></div>
 </div>
 <div class="card desktop-table"><table>
   <thead><tr><th>Nome</th><th>CPF</th><th>Médicos Autorizados</th><th>Status</th>${wr?'<th>Ações</th>':''}</tr></thead>
@@ -1291,7 +1410,7 @@ function renderEntregas(q){
   ${wr?`<div class="ph-actions"><button class="btn btn-primary" onclick="abrirNovaEntrega()">+ Nova Entrega</button></div>`:''}
 </div>
 <div class="toolbar">
-  <div class="search-wrap"><input id="q-ent" placeholder="Buscar médico ou protocolo..." value="${esc(q)}"><button class="search-x${q?' show':''}" title="Limpar">×</button></div>
+  <div class="search-wrap"><input id="q-ent" data-busca-id="q-ent" placeholder="Buscar médico ou protocolo..." value="${esc(q)}"><button class="search-x${q?' show':''}" title="Limpar">×</button></div>
 </div>
 <div class="card desktop-table"><table>
   <thead><tr><th>Protocolo</th><th>Data/Hora</th><th>Médico</th><th>Blocos</th><th>Qtd</th><th>Unidade</th><th></th></tr></thead>
@@ -1461,7 +1580,7 @@ function renderUsuarios(q){
   O acesso é controlado pelo <strong>Status</strong> e pelo <strong>Papel</strong>.
 </div>
 <div class="toolbar">
-  <div class="search-wrap"><input id="q-usr" placeholder="Buscar por nome ou e-mail..." value="${esc(q)}"><button class="search-x${q?' show':''}" title="Limpar">×</button></div>
+  <div class="search-wrap"><input id="q-usr" data-busca-id="q-usr" placeholder="Buscar por nome ou e-mail..." value="${esc(q)}"><button class="search-x${q?' show':''}" title="Limpar">×</button></div>
 </div>
 <div class="card desktop-table"><table>
   <thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead>
@@ -1665,54 +1784,78 @@ function imprimirTermo(){
   }, 1200);
 }
 
-// Modal para registrar livro e página do termo físico colado
-function abrirModalLivro(entregaId, protocolo){
+// Abre modal de registro físico com sugestão automática de livro e página
+async function abrirModalLivro(entregaId, protocolo){
+  // Busca o último registro físico para sugerir próxima página
+  const {data:ultimo} = await sb.from('registros_fisicos')
+    .select('numero_livro,numero_pagina')
+    .order('criado_em',{ascending:false})
+    .limit(1)
+    .maybeSingle();
+
+  const livroSug  = ultimo?.numero_livro  || 1;
+  const paginaSug = ultimo ? (parseInt(ultimo.numero_pagina)||0) + 1 : 1;
+
+  // Verifica se já existe registro para esta entrega
+  const {data:jaExiste} = await sb.from('registros_fisicos')
+    .select('numero_livro,numero_pagina')
+    .eq('entrega_id',entregaId)
+    .maybeSingle();
+
+  const livroVal  = jaExiste?.numero_livro  ?? livroSug;
+  const paginaVal = jaExiste?.numero_pagina ?? paginaSug;
+
   abrirModal('Registro Físico do Termo',`
-<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">
-  Informe em qual livro e página o Termo de Recebimento do protocolo
+<p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+  Confira onde o Termo de Recebimento do protocolo
   <strong style="font-family:var(--mono);color:#92400e">${protocolo}</strong>
-  foi colado para rastreio físico.
-</div>
+  foi colado e ajuste se necessário.
+</p>
 <div class="form-grid">
   <div class="field s1">
-    <label>Número do Livro <span class="req">*</span></label>
-    <input type="text" id="reg-livro" placeholder="Ex: Livro 3" autofocus>
-    <div class="err" id="e-reg-livro"></div>
+    <label>Nº do Livro <span class="req">*</span></label>
+    <input type="number" id="reg-livro" value="${livroVal}" min="1" style="font-size:22px;font-weight:700;text-align:center;padding:12px">
   </div>
   <div class="field s1">
     <label>Página <span class="req">*</span></label>
-    <input type="number" id="reg-pagina" placeholder="Ex: 47" min="1">
-    <div class="err" id="e-reg-pagina"></div>
+    <input type="number" id="reg-pagina" value="${paginaVal}" min="1" style="font-size:22px;font-weight:700;text-align:center;padding:12px">
   </div>
 </div>
-<div class="info-box" style="margin-top:4px">
-  ℹ Esta informação ficará salva no registro da entrega e nos logs de auditoria.
+${jaExiste?`<div class="warn-box" style="margin-top:8px">⚠ Esta entrega já possui registro: Livro ${jaExiste.numero_livro}, pág. ${jaExiste.numero_pagina}. Salvar irá atualizar.</div>`:''}
+<div class="info-box" style="margin-top:8px">
+  ℹ Os números foram preenchidos com base no último registro. Ajuste se necessário.
 </div>`,
   `<button class="btn btn-secondary" onclick="fecharModal()">Pular</button>
-   <button class="btn btn-primary" onclick="salvarRegistroFisico('${entregaId}','${protocolo}')">Salvar Registro</button>`);
+   <button class="btn btn-primary" onclick="salvarRegistroFisico('${entregaId}','${protocolo}',${jaExiste?'true':'false'})">Confirmar Registro</button>`);
 }
 
-async function salvarRegistroFisico(entregaId, protocolo){
-  const livro=(document.getElementById('reg-livro')?.value||'').trim();
-  const pag=(document.getElementById('reg-pagina')?.value||'').trim();
-  if(!livro){document.getElementById('e-reg-livro').textContent='Obrigatório';return;}
-  if(!pag){document.getElementById('e-reg-pagina').textContent='Obrigatório';return;}
-  // Salva como observação no log de auditoria
+async function salvarRegistroFisico(entregaId, protocolo, atualizar){
+  const livro = parseInt(document.getElementById('reg-livro')?.value||'0');
+  const pag   = parseInt(document.getElementById('reg-pagina')?.value||'0');
+  if(!livro||livro<1){ toast('Informe um número de livro válido.','erro'); return; }
+  if(!pag  ||pag<1)  { toast('Informe um número de página válido.','erro'); return; }
+
+  mostrarLoading(true,'Salvando registro...');
+
+  if(atualizar){
+    await sb.from('registros_fisicos')
+      .update({numero_livro:livro, numero_pagina:pag, usuario:USUARIO?.nome||'Sistema'})
+      .eq('entrega_id',entregaId);
+  } else {
+    await sb.from('registros_fisicos').insert({
+      entrega_id:entregaId, numero_livro:livro,
+      numero_pagina:pag, usuario:USUARIO?.nome||'Sistema'
+    });
+  }
+
   await registrarLog(
-    USUARIO?.nome||'Sistema',
-    'REGISTRO_FISICO',
-    'Entrega '+protocolo,
-    'Termo colado no '+livro+', página '+pag
+    USUARIO?.nome||'Sistema','REGISTRO_FISICO',
+    'Entrega '+protocolo,'Livro '+livro+', pág. '+pag
   );
-  // Também salva nas observações da entrega (append)
-  const {data:entAtual} = await sb.from('entregas').select('observacoes').eq('id',entregaId).single();
-  const obsAtual = entAtual?.observacoes||'';
-  const novaObs = obsAtual
-    ? obsAtual+'\n[Registro físico: '+livro+', pág. '+pag+']'
-    : '[Registro físico: '+livro+', pág. '+pag+']';
-  await sb.from('entregas').update({observacoes:novaObs}).eq('id',entregaId);
+
+  mostrarLoading(false);
   fecharModal();
-  toast('Registro físico salvo — '+livro+', pág. '+pag,'ok');
+  toast('Registro físico salvo — Livro '+livro+', pág. '+pag,'ok');
 }
 
 function renderizarTermo(d){
@@ -1789,26 +1932,27 @@ function renderizarTermo(d){
     Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}
   </div>`;
 
-  // Gera uma página por grupo de blocos
+  // Gera uma página por grupo de blocos — cada página tem informações COMPLETAS
   const paginasHtml=paginas.map((blsPag,pi)=>{
-    const isUltima=pi===paginas.length-1;
     const blsList=blsPag.map(b=>`
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;padding:4px 0;border-bottom:1px dashed #e2e8f0">
         <div>Bloco <strong>${pad(b.numero)}</strong></div>
         <div>Pág. inicial: <strong>${b.paginaInicial}</strong></div>
         <div>Pág. final: <strong>${b.paginaFinal}</strong></div>
       </div>`).join('');
+    const infoExtra = paginas.length>1
+      ? ` — Folha ${pi+1} de ${paginas.length}`
+      : '';
     return `
-    <div class="termo-page termo-doc" style="margin-bottom:${isUltima?0:20}px">
+    <div class="termo-page termo-doc">
       ${cabecalho}
-      <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:10px 12px;margin-bottom:12px">
+      <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:10px 12px;margin-bottom:10px">
         <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#92400e;margin-bottom:6px">
-          Blocos ${pi===0?'(Página '+(pi+1)+' de '+paginas.length+')':'(Continuação — Página '+(pi+1)+' de '+paginas.length+')'}
-          — Total geral: <strong>${bls.length}</strong> bloco(s) / <strong>${totalFolhas}</strong> folhas
+          Blocos${infoExtra} — Total: <strong>${bls.length}</strong> bloco(s) / <strong>${totalFolhas}</strong> folhas
         </div>
         ${blsList}
       </div>
-      ${isUltima?rodape:`<div style="text-align:center;font-size:10px;color:#94a3b8;padding-top:8px;border-top:1px solid #f1f5f9">Continua na próxima página...</div>`}
+      ${rodape}
     </div>`;
   }).join('');
 
