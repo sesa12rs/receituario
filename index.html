@@ -337,13 +337,14 @@ const APP = {
   usuarios:[],
   blocoFiltro:'Todos',
   // Paginação por view
-  pg:{ medicos:1, requisitantes:1, blocos:1, entregas:1, usuarios:1, auditoria:1 },
+  pg:{ medicos:1, requisitantes:1, blocos:1, entregas:1, usuarios:1, auditoria:1, unidades:1 },
   pgSz:20,
   // Ordenação por view
   sort:{
     medicos:{k:'NOME',d:1}, requisitantes:{k:'NOME',d:1},
     blocos:{k:'NUMERO',d:1}, entregas:{k:'DATA_HORA',d:-1},
-    usuarios:{k:'nome',d:1}, auditoria:{k:'DATA_HORA',d:-1}
+    usuarios:{k:'nome',d:1}, auditoria:{k:'DATA_HORA',d:-1},
+    unidades:{k:'NOME',d:1}
   },
   // Busca por view
   q:{ medicos:'', requisitantes:'', blocos:'', entregas:'', usuarios:'', auditoria:'', unidades:'' }
@@ -435,7 +436,7 @@ function abrirModal(titulo,corpo,rodape,larga){
   document.getElementById('modal').className=larga?'wide':'';
   document.getElementById('overlay').classList.add('open');
   // Re-inicializar TagSelects dentro do modal
-  setTimeout(()=>{ document.querySelectorAll('#modal-corpo .ts-wrap[data-tsid]').forEach(el=>tsWire(el.dataset.tsid)); },50);
+  setTimeout(()=>{ document.querySelectorAll('#modal-corpo .ts-wrap[data-tsid]').forEach(el=>tsWire(el.dataset.tsid)); initMasks(); },50);
 }
 function skeleton(){ return '<div style="padding:20px">'+['40%','100%','100%','80%'].map(w=>`<div class="sk" style="width:${w};height:${w==='40%'?22:40}px;margin-bottom:8px"></div>`).join('')+'</div>'; }
 function erroView(msg){ return `<div style="padding:20px;background:#fee2e2;border-radius:var(--r);color:#991b1b;font-size:13px"><strong>Erro:</strong> ${esc(msg)}<br><button onclick="carregarView(APP.view)" class="btn btn-p" style="margin-top:10px;font-size:12px">Tentar novamente</button></div>`; }
@@ -451,21 +452,94 @@ function paginate(items, page, size) {
   return { items:items.slice((page-1)*size,page*size), total, pages, page };
 }
 function renderPag(pages, cur, view, total, shown) {
-  if(pages<=1&&total<=APP.pgSz) return '';
+  // Sempre exibe o seletor de tamanho de página; oculta botões de navegação somente quando há 1 página
   const btns=[];
-  if(cur>1){ btns.push(`<button class="pag-btn" onclick="changePage('${view}',1)">«</button>`); btns.push(`<button class="pag-btn" onclick="changePage('${view}',${cur-1})">‹</button>`); }
-  const start=Math.max(1,cur-2), end=Math.min(pages,cur+2);
-  for(let i=start;i<=end;i++) btns.push(`<button class="pag-btn${i===cur?' cur':''}" onclick="changePage('${view}',${i})">${i}</button>`);
-  if(cur<pages){ btns.push(`<button class="pag-btn" onclick="changePage('${view}',${cur+1})">›</button>`); btns.push(`<button class="pag-btn" onclick="changePage('${view}',${pages})">»</button>`); }
+  if(pages>1){
+    if(cur>1){ btns.push(`<button class="pag-btn" onclick="changePage('${view}',1)">«</button>`); btns.push(`<button class="pag-btn" onclick="changePage('${view}',${cur-1})">‹</button>`); }
+    const start=Math.max(1,cur-2), end=Math.min(pages,cur+2);
+    for(let i=start;i<=end;i++) btns.push(`<button class="pag-btn${i===cur?' cur':''}" onclick="changePage('${view}',${i})">${i}</button>`);
+    if(cur<pages){ btns.push(`<button class="pag-btn" onclick="changePage('${view}',${cur+1})">›</button>`); btns.push(`<button class="pag-btn" onclick="changePage('${view}',${pages})">»</button>`); }
+  }
   return `<div class="pag">
     <span class="pag-info">Mostrando ${shown} de ${total} registros</span>
     <div class="pag-size"><select onchange="changePageSize(${esc('"'+view+'"')},this.value)">${[10,20,50,100].map(n=>`<option value="${n}"${n===APP.pgSz?' selected':''}>${n}/pág</option>`).join('')}</select></div>
-    <div style="display:flex;gap:4px">${btns.join('')}</div>
+    ${btns.length?`<div style="display:flex;gap:4px">${btns.join('')}</div>`:''}
   </div>`;
 }
 function changePage(view,p){ APP.pg[view]=p; refreshView(view); }
 function changePageSize(view,sz){ APP.pgSz=parseInt(sz); APP.pg[view]=1; refreshView(view); }
 function sortItems(items,k,d){ return [...items].sort((a,b)=>{ const va=String(a[k]||'').toLowerCase(),vb=String(b[k]||'').toLowerCase(); return d*va.localeCompare(vb,'pt-BR'); }); }
+
+// ══════════════════════════════════════════════════════
+// MÁSCARAS DE CAMPO
+// ══════════════════════════════════════════════════════
+function maskCPF(v){ v=v.replace(/\D/g,'').slice(0,11); if(v.length>9) v=v.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4'); else if(v.length>6) v=v.replace(/^(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3'); else if(v.length>3) v=v.replace(/^(\d{3})(\d{0,3})/,'$1.$2'); return v; }
+function maskFone(v){ v=v.replace(/\D/g,'').slice(0,11); if(v.length>10) v=v.replace(/^(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3'); else if(v.length>6) v=v.replace(/^(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3'); else if(v.length>2) v=v.replace(/^(\d{2})(\d*)/,'($1) $2'); return v; }
+function maskCEP(v){ v=v.replace(/\D/g,'').slice(0,8); if(v.length>5) v=v.replace(/^(\d{5})(\d{0,3})/,'$1-$2'); return v; }
+function maskDigits(v,max){ return v.replace(/\D/g,'').slice(0,max||99); }
+function maskRG(v){ return v.replace(/[^0-9Xx\-\.\/]/g,'').slice(0,14); }
+function applyMask(el,type){
+  if(!el||el._masked) return; el._masked=true;
+  el.addEventListener('input',function(){
+    const pos=this.selectionStart, old=this.value, len=old.length;
+    if(type==='cpf')   this.value=maskCPF(this.value);
+    else if(type==='fone') this.value=maskFone(this.value);
+    else if(type==='cep')  this.value=maskCEP(this.value);
+    else if(type==='digits') this.value=maskDigits(this.value);
+    else if(type==='rg') this.value=maskRG(this.value);
+    // adjust cursor
+    const diff=this.value.length-len;
+    try{ this.setSelectionRange(pos+diff,pos+diff); }catch(e){}
+  });
+}
+function initMasks(){
+  // CPF
+  document.querySelectorAll('#modal-corpo input[id$="-cpf"],#modal-corpo input[id="u-cpf"]').forEach(el=>applyMask(el,'cpf'));
+  // Telefone
+  document.querySelectorAll('#modal-corpo input[id$="-tel"],#modal-corpo input[id$="-telefone"]').forEach(el=>applyMask(el,'fone'));
+  // CEP
+  document.querySelectorAll('#modal-corpo input[id$="-cep"]').forEach(el=>applyMask(el,'cep'));
+  // CRM / CNES (somente dígitos)
+  document.querySelectorAll('#modal-corpo input[id$="-crm"],#modal-corpo input[id$="-cnes"]').forEach(el=>applyMask(el,'digits'));
+  // RG
+  document.querySelectorAll('#modal-corpo input[id$="-rg"]').forEach(el=>applyMask(el,'rg'));
+}
+
+// ══════════════════════════════════════════════════════
+// VERIFICAÇÃO DE DUPLICADOS
+// ══════════════════════════════════════════════════════
+function duploMedico(crm, ufCrm, cpf, idAtual){
+  const crmUp=crm.trim().toUpperCase(), cpfClean=cpf.replace(/\D/g,'');
+  for(const m of APP.medicos){
+    if(m.ID===idAtual) continue;
+    if(m.CRM.trim().toUpperCase()===crmUp && (m.UF_CRM||'PR')===(ufCrm||'PR'))
+      return `CRM ${crm}-${ufCrm} já cadastrado para ${m.NOME}.`;
+    if(cpfClean && cpfClean.length===11 && m.CPF.replace(/\D/g,'')===cpfClean)
+      return `CPF ${cpf} já cadastrado para ${m.NOME}.`;
+  }
+  return null;
+}
+function duploReq(cpf, idAtual){
+  const cpfClean=cpf.replace(/\D/g,'');
+  if(!cpfClean || cpfClean.length!==11) return null;
+  for(const r of APP.requisitantes){
+    if(r.ID===idAtual) continue;
+    if(r.CPF.replace(/\D/g,'')===cpfClean)
+      return `CPF ${cpf} já cadastrado para ${r.NOME}.`;
+  }
+  return null;
+}
+function duploUnidade(nome, cnes, idAtual){
+  const nomeUp=nome.trim().toLowerCase(), cnesClean=(cnes||'').trim();
+  for(const u of APP.unidades){
+    if(u.ID===idAtual) continue;
+    if(u.NOME.trim().toLowerCase()===nomeUp)
+      return `Unidade "${nome}" já cadastrada.`;
+    if(cnesClean && u.CNES && u.CNES.trim()===cnesClean)
+      return `CNES ${cnes} já cadastrado para ${u.NOME}.`;
+  }
+  return null;
+}
 function thSort(view,k,label){ const s=APP.sort[view]; const dir=s.k===k?-s.d:1; const ico=s.k===k?(dir===1?'↑':'↓'):'↕'; return `<th class="${s.k===k?'sorted':''}" onclick="setSort('${view}','${k}',${dir})">${label}<span class="sort-ico">${ico}</span></th>`; }
 function setSort(view,k,d){ APP.sort[view]={k,d}; APP.pg[view]=1; refreshView(view); }
 
@@ -988,6 +1062,10 @@ async function salvarMedico(id){
   const crm=(document.getElementById('m-crm')?.value||'').trim();
   if(!nome){document.getElementById('e-m-nome').textContent='Obrigatório';return;}
   if(!crm){document.getElementById('e-m-crm').textContent='Obrigatório';return;}
+  const ufCrm=document.getElementById('m-ufcrm').value;
+  const cpf=document.getElementById('m-cpf').value;
+  const duplo=duploMedico(crm,ufCrm,cpf,id);
+  if(duplo){toast(duplo,'erro');return;}
   const espsNomes=tsGet('ts-esps');
   const unisNomes=tsGet('ts-unis');
   const unisIds=unisNomes.map(n=>{const u=APP.unidades.find(x=>x.NOME===n);return u?u.ID:'';}).filter(Boolean);
@@ -1060,6 +1138,8 @@ async function salvarReq(id){
   const cpf=(document.getElementById('r-cpf')?.value||'').trim();
   if(!nome){document.getElementById('e-r-nome').textContent='Obrigatório';return;}
   if(!cpf){document.getElementById('e-r-cpf').textContent='Obrigatório';return;}
+  const duploR=duploReq(cpf,id);
+  if(duploR){toast(duploR,'erro');return;}
   const medNomes=tsGet('ts-rmeds');
   const medIds=medNomes.map(n=>{const m=APP.medicos.find(x=>(nomeMed(x)+' — CRM '+x.CRM+'-'+x.UF_CRM)===n);return m?m.ID:'';}).filter(Boolean);
   const dados={id,nome,cpf,rg:document.getElementById('r-rg').value,email:document.getElementById('r-email').value,telefone:document.getElementById('r-tel').value,status:document.getElementById('r-status').value,medicos:medIds};
@@ -1088,23 +1168,29 @@ function renderUnidades(){
 <div id="unidades-body">${buildUnidadesBody('')}</div>`;
 }
 function buildUnidadesBody(q){
-  const fil=APP.unidades.filter(u=>!q||(u.NOME+u.MUNICIPIO+u.CNES).toLowerCase().includes(q.toLowerCase()));
-  return fil.length===0?`<div class="empty" style="background:var(--surface);border-radius:var(--r);border:1.5px solid var(--border);padding:40px"><div class="empty-ico">🏥</div><div class="empty-txt">Nenhuma unidade encontrada.</div></div>`
-  :fil.map(u=>{
-    const end=[u.LOGRADOURO,u.NUMERO,u.BAIRRO].filter(Boolean).join(', ');
+  const wr=podeEscrever();
+  let fil=APP.unidades.filter(u=>!q||(u.NOME+u.MUNICIPIO+u.CNES).toLowerCase().includes(q.toLowerCase()));
+  fil=sortItems(fil,APP.sort.unidades.k,APP.sort.unidades.d);
+  const {items,total,pages,page}=paginate(fil,APP.pg.unidades,APP.pgSz);
+  if(items.length===0) return `<div class="card dtbl"><div class="empty"><div class="empty-ico">🏥</div><div class="empty-txt">Nenhuma unidade encontrada.</div></div>${renderPag(pages,page,'unidades',total,0)}</div>`;
+  const rows=items.map(u=>{
     const uj=esc(JSON.stringify(u));
-    return `<div class="uc">
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:14px;margin-bottom:2px">${u.NOME}${u.CNES?` <span style="font-size:10px;color:var(--muted2);font-weight:400;background:var(--bg);padding:1px 6px;border-radius:4px">CNES ${u.CNES}</span>`:''}</div>
-        <div style="font-size:12px;color:var(--muted)">${end?end+' · ':''}${u.MUNICIPIO||''}/${u.UF||''}</div>
-        ${u.TELEFONE?`<div style="font-size:12px;color:var(--muted2);margin-top:2px">📞 ${u.TELEFONE}</div>`:''}
-      </div>
-      <div class="uc-act">
-        ${badge(u.STATUS)}
-        ${podeEscrever()?`<button class="btn-sm btn-e" onclick='abrirFormUnidade(JSON.parse(this.dataset.u))' data-u='${uj}'>Editar</button><button class="btn-sm ${u.STATUS==='Ativo'?'btn-d':'btn-ok'}" onclick="toggleUnidade('${u.ID}','${u.STATUS==='Ativo'?'Inativo':'Ativo'}')">${u.STATUS==='Ativo'?'Inativar':'Ativar'}</button>`:''}
-      </div>
-    </div>`;
+    return `<tr>
+      <td class="bold">${u.NOME}${u.CNES?` <span style="font-size:10px;color:var(--muted2);font-weight:400;background:var(--bg);padding:1px 6px;border-radius:4px;margin-left:4px">CNES ${u.CNES}</span>`:''}</td>
+      <td style="font-size:12px">${u.MUNICIPIO||''}${u.UF?' / '+u.UF:''}</td>
+      <td style="font-size:12px">${u.TELEFONE||'-'}</td>
+      <td>${badge(u.STATUS)}</td>
+      ${wr?`<td style="white-space:nowrap"><button class="btn-sm btn-e" onclick='abrirFormUnidade(JSON.parse(this.dataset.u))' data-u='${uj}'>Editar</button> <button class="btn-sm ${u.STATUS==='Ativo'?'btn-d':'btn-ok'}" onclick="toggleUnidade('${u.ID}','${u.STATUS==='Ativo'?'Inativo':'Ativo'}')">${u.STATUS==='Ativo'?'Inativar':'Ativar'}</button></td>`:''}
+    </tr>`;
   }).join('');
+  return `<div class="card dtbl"><table>
+    <thead><tr>${thSort('unidades','NOME','Nome')}${thSort('unidades','MUNICIPIO','Município')}<th>Telefone</th>${thSort('unidades','STATUS','Status')}${wr?'<th>Ações</th>':''}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table>${renderPag(pages,page,'unidades',total,items.length)}</div>
+  <div class="mcards">${items.map(u=>{
+    const uj=esc(JSON.stringify(u));
+    return `<div class="mc"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="mc-title">${u.NOME}</div><div class="mc-sub">${u.MUNICIPIO||''}${u.UF?' / '+u.UF:''}${u.CNES?' · CNES '+u.CNES:''}</div></div>${badge(u.STATUS)}</div>${u.TELEFONE?`<div style="font-size:11px;color:var(--muted)">📞 ${u.TELEFONE}</div>`:''}${wr?`<div class="mc-foot"><button class="btn-sm btn-e" onclick='abrirFormUnidade(JSON.parse(this.dataset.u))' data-u='${uj}'>Editar</button><button class="btn-sm ${u.STATUS==='Ativo'?'btn-d':'btn-ok'}" onclick="toggleUnidade('${u.ID}','${u.STATUS==='Ativo'?'Inativo':'Ativo'}')">${u.STATUS==='Ativo'?'Inativar':'Ativar'}</button></div>`:''}</div>`;
+  }).join('')||`<div class="empty"><div class="empty-ico">🏥</div><div class="empty-txt">Nenhuma unidade.</div></div>`}${renderPag(pages,page,'unidades',total,items.length)}</div>`;
 }
 function abrirFormUnidade(u){
   if(!podeEscrever()) return; u=u||{};
@@ -1129,6 +1215,9 @@ function abrirFormUnidade(u){
 async function salvarUnidade(id){
   const nome=(document.getElementById('u-nome')?.value||'').trim();
   if(!nome){toast('Nome é obrigatório.','erro');return;}
+  const cnes=(document.getElementById('u-cnes')?.value||'').trim();
+  const duploU=duploUnidade(nome,cnes,id);
+  if(duploU){toast(duploU,'erro');return;}
   const dados={id,nome,cnes:document.getElementById('u-cnes').value,telefone:document.getElementById('u-tel').value,cep:document.getElementById('u-cep').value,logradouro:document.getElementById('u-log').value,numero:document.getElementById('u-num').value,complemento:document.getElementById('u-comp').value,bairro:document.getElementById('u-bairro').value,municipio:document.getElementById('u-mun').value,uf:document.getElementById('u-uf').value,status:document.getElementById('u-status').value};
   loading(true,'Salvando...');const r=await dbSalvarUnidade(dados);loading(false);
   if(r?.ok){APP.unidades=await dbUnidades();fecharModal();document.getElementById('unidades-body').innerHTML=buildUnidadesBody(APP.q.unidades);toast('Unidade salva!','ok');
