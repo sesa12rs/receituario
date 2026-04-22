@@ -648,6 +648,29 @@ function tsGet(id){ return TS[id]?[...TS[id].selected]:[]; }
 document.addEventListener('click',e=>{ Object.keys(TS).forEach(id=>{ const w=document.getElementById(id); if(w&&!w.contains(e.target)) tsClose(id); }); });
 
 // ══════════════════════════════════════════════════════
+// SINGLE SELECT COM BUSCA (SS)
+// items = [{id, label}]  |  ssGet(id) retorna o ID selecionado
+// ══════════════════════════════════════════════════════
+const SS = {};
+function ssHTML(id, items, placeholder, selectedId){
+  selectedId=selectedId||'';
+  const sel=items.find(x=>x.id===selectedId);
+  SS[id]={items:[...items],selectedId,filter:''};
+  return '<div class="ts-wrap" id="ss-'+id+'" data-ssid="'+id+'"><div class="ts-inner" style="flex-wrap:nowrap"><input class="ts-input" id="ss-'+id+'-inp" placeholder="'+(placeholder||'Buscar...')+'" value="'+(sel?sel.label:'')+'" autocomplete="off" oninput="ssFilter(\''+id+'\',this.value)" onfocus="ssOpen(\''+id+'\')" onkeydown="ssKey(event,\''+id+'\')">'+(selectedId?'<button type="button" style="background:none;border:none;color:var(--muted2);font-size:16px;padding:0 4px;flex-shrink:0;cursor:pointer" onmousedown="event.preventDefault();ssClear(\''+id+'\')">x</button>':'')+'</div><div class="ts-drop" id="ss-'+id+'-drop"></div></div>';
+}
+function ssOpen(id){const w=document.getElementById('ss-'+id);if(!w)return;w.classList.add('focused');ssRenderDrop(id);document.getElementById('ss-'+id+'-drop')?.classList.add('open');}
+function ssClose(id){const st=SS[id];if(!st)return;document.getElementById('ss-'+id)?.classList.remove('focused');document.getElementById('ss-'+id+'-drop')?.classList.remove('open');const inp=document.getElementById('ss-'+id+'-inp');if(inp){const sel=st.items.find(x=>x.id===st.selectedId);inp.value=sel?sel.label:'';}st.filter='';}
+function ssFilter(id,val){const st=SS[id];if(!st)return;st.filter=val.toLowerCase();st.selectedId='';ssRenderDrop(id);ssOpen(id);}
+function ssRenderDrop(id){const st=SS[id];const drop=document.getElementById('ss-'+id+'-drop');if(!st||!drop)return;const opts=st.items.filter(o=>!st.filter||o.label.toLowerCase().includes(st.filter));if(!opts.length){drop.innerHTML='<div class="ts-empty">Nenhum resultado</div>';return;}drop.innerHTML=opts.map(o=>'<div class="ts-opt'+(o.id===st.selectedId?' selected':'')+'" onmousedown="event.preventDefault();ssSelect(\''+id+'\',\''+esc(o.id)+'\')">'+esc(o.label)+'</div>').join('');}
+function ssSelect(id,val){const st=SS[id];if(!st)return;st.selectedId=val;const sel=st.items.find(x=>x.id===val);const inp=document.getElementById('ss-'+id+'-inp');if(inp)inp.value=sel?sel.label:'';const inner=document.querySelector('#ss-'+id+' .ts-inner');if(inner){let btn=inner.querySelector('button');if(val&&!btn)inner.insertAdjacentHTML('beforeend','<button type="button" style="background:none;border:none;color:var(--muted2);font-size:16px;padding:0 4px;flex-shrink:0;cursor:pointer" onmousedown="event.preventDefault();ssClear(\''+id+'\')">x</button>');else if(!val&&btn)btn.remove();}ssClose(id);if(st.onChange)st.onChange(val);}
+function ssClear(id){ssSelect(id,'');}
+function ssGet(id){return SS[id]?.selectedId||'';}
+function ssSetItems(id,items){if(!SS[id])return;SS[id].items=[...items];ssRenderDrop(id);}
+function ssKey(e,id){if(e.key==='Escape'){ssClose(id);return;}if(e.key==='Enter'){const st=SS[id];if(!st)return;const opts=st.items.filter(o=>!st.filter||o.label.toLowerCase().includes(st.filter));if(opts.length)ssSelect(id,opts[0].id);}}
+document.addEventListener('click',e=>{Object.keys(SS).forEach(id=>{const w=document.getElementById('ss-'+id);if(w&&!w.contains(e.target))ssClose(id);});});
+
+
+// ══════════════════════════════════════════════════════
 // BUSCA — event delegation sem perda de foco
 // ══════════════════════════════════════════════════════
 const _bFns = {};
@@ -1510,86 +1533,107 @@ function buildEntregasBody(q){
 function abrirNovaEntrega(){
   if(!podeEscrever()) return;
   const disp=APP.blocos.filter(b=>b.STATUS==='Disponivel').sort((a,b)=>parseInt(a.NUMERO)-parseInt(b.NUMERO));
-  if(!disp.length){toast('Sem blocos dispon\u00edveis. Acesse Estoque \u2192 Entrada de Blocos.','erro');return;}
-  const ativos=APP.medicos.filter(m=>m.STATUS==='Ativo');
+  if(!disp.length){toast('Sem blocos disponíveis. Acesse Estoque → Entrada de Blocos.','erro');return;}
   const hoje=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
+  const medItems=APP.medicos.filter(m=>m.STATUS==='Ativo').map(m=>({id:m.ID,label:nomeMed(m)+' — CRM '+m.CRM+'-'+m.UF_CRM}));
   abrirModal('Nova Entrega de Bloco',`
 <div style="display:flex;flex-direction:column;gap:13px">
   <div class="fi">
-    <label>M\u00e9dico Destinat\u00e1rio <span class="req">*</span></label>
-    <select id="e-med" onchange="atualizarReqEUni()">
-      <option value="">Selecionar m\u00e9dico...</option>
-      ${ativos.map(m=>`<option value="${m.ID}">${nomeMed(m)} \u2014 CRM ${m.CRM}-${m.UF_CRM}</option>`).join('')}
-    </select>
+    <label>Médico Destinatário <span class="req">*</span></label>
+    ${ssHTML('e-med',medItems,'Digitar nome ou CRM do médico...')}
     <div class="err" id="e-e-med"></div>
   </div>
   <div class="fi">
-    <label>Quem est\u00e1 retirando <span class="req">*</span></label>
-    <select id="e-req" onchange="atualizarProcuracao()">
-      <option value="">Pr\u00f3prio m\u00e9dico</option>
-    </select>
-    <div id="e-req-warn" class="wbox" style="display:none">\u26a0 Nenhum requisitante vinculado. <a href="#" onclick="go('requisitantes');fecharModal();return false">Cadastrar requisitante</a></div>
+    <label>Quem está retirando</label>
+    ${ssHTML('e-req',[],'Próprio médico (selecione após escolher o médico)')}
+    <div id="e-req-warn" class="wbox" style="display:none">⚠ Nenhum requisitante vinculado. <a href="#" onclick="go('requisitantes');fecharModal();return false">Cadastrar requisitante</a></div>
   </div>
   <div id="proc-box" style="display:none;background:var(--amber-bg);border:1.5px solid #fed7aa;border-radius:var(--r);padding:14px;flex-direction:column;gap:10px">
-    <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:2px">\ud83d\udcc4 Dados da Procura\u00e7\u00e3o</div>
+    <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:2px">Dados da Procuração</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fi" style="margin:0">
-        <label>Data da Procura\u00e7\u00e3o <span class="req">*</span></label>
+        <label>Data da Procuração <span class="req">*</span></label>
         <input type="date" id="e-proc-data" max="${hoje}">
         <div class="err" id="e-e-proc"></div>
       </div>
       <div class="fi" style="margin:0">
-        <label>Qtd autorizada na procura\u00e7\u00e3o</label>
-        <input type="number" id="e-proc-qtd" min="1" placeholder="Ex: 2">
+        <label>Qtd autorizada na procuração</label>
+        <input type="number" id="e-proc-qtd" min="1" placeholder="Ex: 2" oninput="atualizarLimiteQtd()">
       </div>
     </div>
     <div class="fi" style="margin:0">
-      <label>Observa\u00e7\u00f5es da procura\u00e7\u00e3o</label>
-      <input id="e-proc-obs" placeholder="Ex: conforme procura\u00e7\u00e3o em anexo...">
+      <label>Observações da procuração</label>
+      <input id="e-proc-obs" placeholder="Ex: conforme procuração em anexo...">
     </div>
   </div>
   <div class="fi">
-    <label>Unidade de Sa\u00fade <span class="req">*</span></label>
-    <select id="e-uni"><option value="">Selecione o m\u00e9dico primeiro...</option></select>
-    <div id="e-uni-warn" class="wbox" style="display:none">\u26a0 Nenhuma unidade vinculada. <a href="#" onclick="go('medicos');fecharModal();return false">Ir ao cadastro do m\u00e9dico</a></div>
+    <label>Unidade de Saúde <span class="req">*</span></label>
+    ${ssHTML('e-uni',[],'Selecione o médico primeiro...')}
+    <div id="e-uni-warn" class="wbox" style="display:none">⚠ Nenhuma unidade vinculada. <a href="#" onclick="go('medicos');fecharModal();return false">Ir ao cadastro do médico</a></div>
     <div class="err" id="e-e-uni"></div>
   </div>
   <div class="fi">
     <label>Quantidade de Blocos <span class="req">*</span></label>
     <input type="number" id="e-qtd" min="1" max="${disp.length}" value="1" oninput="atualizarSelBlocos()">
-    <div style="font-size:11px;color:var(--muted);margin-top:3px">${disp.length} dispon\u00edvel(is) em estoque</div>
+    <div id="e-qtd-info" style="font-size:11px;color:var(--muted);margin-top:3px">${disp.length} disponível(is) em estoque</div>
   </div>
   <div class="fi">
     <label>Blocos Selecionados</label>
     <div class="bloco-sel" id="e-blocos-wrap"></div>
     <div id="e-blocos-info" class="ibox" style="margin-top:6px"></div>
   </div>
-  <div class="fi"><label>Observa\u00e7\u00f5es gerais</label><textarea id="e-obs" placeholder="Observa\u00e7\u00f5es opcionais..."></textarea></div>
-  <div class="ibox">\u2139 O Termo de Recebimento abrir\u00e1 automaticamente ap\u00f3s salvar.</div>
+  <div class="fi"><label>Observações gerais</label><textarea id="e-obs" placeholder="Observações opcionais..."></textarea></div>
+  <div class="ibox">ℹ O Termo de Recebimento abrirá automaticamente após salvar.</div>
 </div>`,
   `<button class="btn btn-s" onclick="fecharModal()">Cancelar</button><button class="btn btn-p" onclick="salvarEntrega()">Registrar Entrega</button>`,true);
+  if(SS['e-med']) SS['e-med'].onChange=(mid)=>atualizarReqEUni(mid);
   atualizarSelBlocos();
 }
 function atualizarProcuracao(){
-  const req=document.getElementById('e-req')?.value||'';
+  const reqId=ssGet('e-req');
   const box=document.getElementById('proc-box');
   if(!box) return;
-  box.style.display=req?'flex':'none';
+  box.style.display=reqId?'flex':'none';
+  atualizarLimiteQtd();
 }
-function atualizarReqEUni(){
-  const mid=document.getElementById('e-med')?.value||''; if(!mid) return;
-  const selR=document.getElementById('e-req'),wR=document.getElementById('e-req-warn');
-  const selU=document.getElementById('e-uni'),wU=document.getElementById('e-uni-warn');
+function atualizarLimiteQtd(){
+  const disp=APP.blocos.filter(b=>b.STATUS==='Disponivel').length;
+  const procQtd=parseInt(document.getElementById('e-proc-qtd')?.value||'0')||0;
+  const reqId=ssGet('e-req');
+  const maximo=(reqId&&procQtd>0)?Math.min(disp,procQtd):disp;
+  const qtdEl=document.getElementById('e-qtd');
+  const info=document.getElementById('e-qtd-info');
+  if(qtdEl){
+    qtdEl.max=maximo;
+    if(parseInt(qtdEl.value)>maximo) qtdEl.value=maximo;
+    if(info){
+      if(reqId&&procQtd>0)
+        info.innerHTML='<span style="color:var(--amber);font-weight:600">Limite da procuração: '+procQtd+' bloco(s)</span>&nbsp;&middot;&nbsp;'+disp+' disponível(is) em estoque';
+      else
+        info.textContent=disp+' disponível(is) em estoque';
+    }
+  }
+  atualizarSelBlocos();
+}
+function atualizarReqEUni(mid){
+  if(!mid) return;
+  const wR=document.getElementById('e-req-warn');
+  const wU=document.getElementById('e-uni-warn');
   const reqs=APP.requisitantes.filter(r=>r.STATUS==='Ativo'&&String(r.MEDICOS_AUTORIZADOS||'').split(';').map(x=>x.trim()).includes(mid));
-  selR.innerHTML='<option value="">Pr\u00f3prio m\u00e9dico</option>'+reqs.map(r=>`<option value="${r.ID}">${r.NOME} \u2014 CPF ${r.CPF}</option>`).join('');
+  const reqItems=reqs.map(r=>({id:r.ID,label:r.NOME+' — CPF '+r.CPF}));
+  ssSetItems('e-req',reqItems);
+  ssSelect('e-req','');
+  if(SS['e-req']) SS['e-req'].onChange=(rid)=>atualizarProcuracao();
   if(wR) wR.style.display=reqs.length===0?'block':'none';
-  atualizarProcuracao();
   const med=APP.medicos.find(m=>m.ID===mid);
   const uIds=med?String(med.UNIDADES||'').split(';').map(x=>x.trim()).filter(Boolean):[];
   const unis=APP.unidades.filter(u=>uIds.includes(u.ID)&&u.STATUS==='Ativo');
-  selU.innerHTML=unis.length?'<option value="">Selecionar unidade...</option>'+unis.map(u=>`<option value="${u.ID}">${u.NOME} \u2014 ${u.MUNICIPIO}/${u.UF}</option>`).join(''):'<option value="">Nenhuma unidade vinculada</option>';
+  const uniItems=unis.map(u=>({id:u.ID,label:u.NOME+' — '+u.MUNICIPIO+'/'+u.UF}));
+  ssSetItems('e-uni',uniItems);
+  if(unis.length===1) ssSelect('e-uni',unis[0].ID);
+  else ssSelect('e-uni','');
   if(wU) wU.style.display=unis.length===0?'block':'none';
-  if(unis.length===1) selU.value=unis[0].ID;
+  atualizarProcuracao();
 }
 function atualizarSelBlocos(){
   const qtdEl=document.getElementById('e-qtd'),wrap=document.getElementById('e-blocos-wrap'),info=document.getElementById('e-blocos-info');
@@ -1601,14 +1645,13 @@ function atualizarSelBlocos(){
   if(info) info.textContent=`${qtd} bloco(s) · ${disp.length-qtd} restante(s) em estoque`;
 }
 async function salvarEntrega(){
-  const mid=document.getElementById('e-med')?.value||'';
-  const uid3=document.getElementById('e-uni')?.value||'';
-  const reqId=document.getElementById('e-req')?.value||'';
+  const mid=ssGet('e-med');
+  const uid3=ssGet('e-uni');
+  const reqId=ssGet('e-req');
   const qtd=parseInt(document.getElementById('e-qtd')?.value||'1')||1;
   let ok=true;
   if(!mid){document.getElementById('e-e-med').textContent='Selecione um médico';ok=false;}
   if(!uid3){document.getElementById('e-e-uni').textContent='Selecione a unidade';ok=false;}
-  // Validação da procuração quando há requisitante
   if(reqId){
     const procData=document.getElementById('e-proc-data')?.value||'';
     if(!procData){document.getElementById('e-e-proc').textContent='Data da procuração é obrigatória';ok=false;}
