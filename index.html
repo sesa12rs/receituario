@@ -183,6 +183,13 @@ td.mono{font-family:var(--mono);font-weight:500;color:#92400e;font-size:12px}
 #modal.wide{max-width:740px}
 .mh{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1.5px solid var(--border);flex-shrink:0}
 .mh span{font-weight:700;font-size:14px}
+
+/* ── MODAL SECUNDÁRIO (abre por cima do principal) ── */
+#overlay2{display:none;position:fixed;inset:0;z-index:600;background:rgba(15,23,42,.45);align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(1px)}
+#overlay2.open{display:flex}
+#modal2{background:var(--surface);border-radius:var(--rl);width:100%;max-width:660px;max-height:90dvh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35);border:2px solid var(--amber)}
+#modal2.wide{max-width:740px}
+.mh2-badge{font-size:10px;background:var(--amber-bg);color:var(--amber);border:1px solid #fed7aa;border-radius:4px;padding:2px 7px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-left:8px}
 .mx{background:none;border:none;font-size:20px;color:var(--muted2);line-height:1;padding:2px;border-radius:5px}
 .mx:hover{background:var(--bg);color:var(--text)}
 .mb{overflow-y:auto;flex:1;padding:18px}
@@ -311,6 +318,13 @@ td.mono{font-family:var(--mono);font-weight:500;color:#92400e;font-size:12px}
   <div class="mf" id="modal-rodape"></div>
 </div></div>
 
+<!-- Modal secundário: abre por cima do principal sem perder dados -->
+<div id="overlay2"><div id="modal2">
+  <div class="mh"><span id="modal2-titulo"></span><span class="mh2-badge">↩ volta ao formulário anterior</span><button class="mx" onclick="fecharModal2()">×</button></div>
+  <div class="mb" id="modal2-corpo"></div>
+  <div class="mf" id="modal2-rodape"></div>
+</div></div>
+
 <div id="termo-overlay"><div id="termo-box">
   <div class="mh no-print"><span>Termo de Recebimento</span><button class="mx" onclick="fecharTermo()">×</button></div>
   <div id="termo-body"></div>
@@ -429,6 +443,24 @@ function toast(msg,tipo){ const t=document.getElementById('toast'); t.textConten
 function loading(s,msg){ const el=document.getElementById('loading'); el.classList.toggle('show',!!s); if(msg) document.getElementById('loading-msg').textContent=msg; }
 function fecharModal(){ document.getElementById('overlay').classList.remove('open'); }
 function fecharTermo(){ document.getElementById('termo-overlay').classList.remove('open'); }
+
+// Modal secundário — abre por cima do modal principal sem fechar nem navegar
+function abrirModal2(titulo, corpo, rodape, larga){
+  document.getElementById('modal2-titulo').textContent = titulo;
+  document.getElementById('modal2-corpo').innerHTML = corpo;
+  document.getElementById('modal2-rodape').innerHTML = rodape || '';
+  document.getElementById('modal2').className = larga ? 'wide' : '';
+  document.getElementById('overlay2').classList.add('open');
+  setTimeout(()=>{ document.querySelectorAll('#modal2-corpo .ts-wrap[data-tsid]').forEach(el=>tsWire(el.dataset.tsid)); initMasks2(); }, 50);
+}
+function fecharModal2(){ document.getElementById('overlay2').classList.remove('open'); }
+function initMasks2(){
+  document.querySelectorAll('#modal2-corpo input[id$="-cpf"]').forEach(el=>applyMask(el,'cpf'));
+  document.querySelectorAll('#modal2-corpo input[id$="-tel"],#modal2-corpo input[id$="-telefone"]').forEach(el=>applyMask(el,'fone'));
+  document.querySelectorAll('#modal2-corpo input[id$="-cep"]').forEach(el=>applyMask(el,'cep'));
+  document.querySelectorAll('#modal2-corpo input[id$="-crm"],#modal2-corpo input[id$="-cnes"]').forEach(el=>applyMask(el,'digits'));
+  document.querySelectorAll('#modal2-corpo input[id$="-rg"]').forEach(el=>applyMask(el,'rg'));
+}
 function abrirModal(titulo,corpo,rodape,larga){
   document.getElementById('modal-titulo').textContent=titulo;
   document.getElementById('modal-corpo').innerHTML=corpo;
@@ -1106,7 +1138,7 @@ function abrirFormMedico(m){
   <div class="fi s2">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
       <label style="margin:0">Unidades de Saúde Vinculadas</label>
-      <button type="button" class="btn-sm btn-e" onclick="salvarMedicoTemp();fecharModal();setTimeout(()=>{go('unidades');setTimeout(abrirFormUnidade,350)},150)">+ Nova Unidade</button>
+      <button type="button" class="btn-sm btn-e" onclick="abrirNovaUnidadeSecundaria()">+ Nova Unidade</button>
     </div>
     ${tsHTML('ts-unis',uniOpts,uniSel,'Buscar unidade...')}
   </div>
@@ -1202,7 +1234,7 @@ function abrirFormReq(r){
   <div class="fi s2">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <label style="margin:0">Médicos que autorizam este requisitante</label>
-      <button type="button" class="btn-sm btn-e" onclick="salvarReqTemp();fecharModal();setTimeout(()=>{go('medicos');setTimeout(abrirFormMedico,350)},150)">+ Novo Médico</button>
+      <button type="button" class="btn-sm btn-e" onclick="abrirNovoMedicoSecundario()">+ Novo Médico</button>
     </div>
     ${tsHTML('ts-rmeds',medOpts,medSel,'Buscar médico...')}
   </div>
@@ -1317,6 +1349,93 @@ function restaurarReq(t){
   const medIds=t.meds?.map(n=>{const m=APP.medicos.find(x=>(nomeMed(x)+' — CRM '+x.CRM+'-'+x.UF_CRM)===n);return m?m.ID:'';}).filter(Boolean)||[];
   const r={ID:t.id,NOME:t.nome,CPF:t.cpf,RG:t.rg,EMAIL:t.email,TELEFONE:t.tel,STATUS:t.status,MEDICOS_AUTORIZADOS:medIds.join(';')};
   abrirFormReq(r);
+}
+
+// ══════════════════════════════════════════════════════
+// FORMULÁRIOS SECUNDÁRIOS (modal2 — sem perder dados do form principal)
+// ══════════════════════════════════════════════════════
+
+// Abrir form de Nova Unidade por cima do form de Médico
+function abrirNovaUnidadeSecundaria(){
+  if(!podeEscrever()) return;
+  const ufs=APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA==='PR'?' selected':''}>${e.SIGLA}</option>`).join('');
+  const muns=APP.municipios.map(c=>`<option value="${c.NOME}">`).join('');
+  abrirModal2('Nova Unidade de Saúde',`
+<div class="fg">
+  <div class="fi s2"><label>Nome da Unidade <span class="req">*</span></label><input id="u2-nome" placeholder="Nome completo da unidade"></div>
+  <div class="fi s1"><label>CNES</label><input id="u2-cnes" placeholder="0000000" maxlength="7"></div>
+  <div class="fi s1"><label>Telefone</label><input id="u2-tel" placeholder="(44) 3600-0000"></div>
+  <div class="fi s1"><label>CEP</label><input id="u2-cep" onblur="buscarCEP('u2-cep',{logradouro:'u2-log',bairro:'u2-bairro',municipio:'u2-mun',uf:'u2-uf'})"></div>
+  <div class="fi s1"><label>UF</label><select id="u2-uf">${ufs}</select></div>
+  <div class="fi s2"><label>Logradouro</label><input id="u2-log"></div>
+  <div class="fi s1"><label>Número</label><input id="u2-num"></div>
+  <div class="fi s1"><label>Bairro</label><input id="u2-bairro"></div>
+  <div class="fi s1"><label>Município</label><input id="u2-mun" value="Umuarama" list="ul2-mun"><datalist id="ul2-mun">${muns}</datalist></div>
+  <div class="fi s1"><label>Status</label><select id="u2-status"><option selected>Ativo</option><option>Inativo</option></select></div>
+</div>`,
+  `<button class="btn btn-s" onclick="fecharModal2()">Cancelar</button><button class="btn btn-p" onclick="salvarNovaUnidadeSecundaria()">Salvar Unidade</button>`,true);
+}
+async function salvarNovaUnidadeSecundaria(){
+  const nome=(document.getElementById('u2-nome')?.value||'').trim();
+  if(!nome){toast('Nome da unidade é obrigatório.','erro');return;}
+  const cnes=(document.getElementById('u2-cnes')?.value||'').trim();
+  const duplo=duploUnidade(nome,cnes,'');
+  if(duplo){toast(duplo,'erro');return;}
+  const dados={nome,cnes,telefone:document.getElementById('u2-tel').value,cep:document.getElementById('u2-cep').value,logradouro:document.getElementById('u2-log').value,numero:document.getElementById('u2-num').value,bairro:document.getElementById('u2-bairro').value,municipio:document.getElementById('u2-mun').value,uf:document.getElementById('u2-uf').value,status:document.getElementById('u2-status').value};
+  loading(true,'Salvando unidade...');
+  const r=await dbSalvarUnidade(dados);
+  loading(false);
+  if(r?.ok){
+    APP.unidades=await dbUnidades();
+    fecharModal2();
+    toast('Unidade criada! Selecione-a no campo do formulário.','ok');
+    // Atualizar o TagSelect de unidades no form do médico sem fechar o modal principal
+    const uniOpts=APP.unidades.map(u=>u.NOME);
+    const tsWrap=document.querySelector('#modal-corpo .ts-wrap[data-tsid="ts-unis"]');
+    if(tsWrap){ const cur=tsGet('ts-unis'); tsWrap.outerHTML=tsHTML('ts-unis',uniOpts,[...cur,nome],'Buscar unidade...'); tsWire('ts-unis'); }
+  } else toast('Erro: '+(r?.msg||'Falha'),'erro');
+}
+
+// Abrir form de Novo Médico por cima do form de Requisitante
+function abrirNovoMedicoSecundario(){
+  if(!podeEscrever()) return;
+  const ufs=APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA==='PR'?' selected':''}>${e.SIGLA}</option>`).join('');
+  abrirModal2('Novo Médico',`
+<div class="fg">
+  <div class="fi s1"><label>Sexo</label><select id="m2-sexo"><option>Masculino</option><option>Feminino</option></select></div>
+  <div class="fi s2"><label>Nome Completo <span class="req">*</span></label><input id="m2-nome"><div class="err" id="e-m2-nome"></div></div>
+  <div class="fi s1"><label>CRM <span class="req">*</span></label><input id="m2-crm"><div class="err" id="e-m2-crm"></div></div>
+  <div class="fi s1"><label>UF do CRM</label><select id="m2-ufcrm">${ufs}</select></div>
+  <div class="fi s1"><label>CPF</label><input id="m2-cpf" placeholder="000.000.000-00"></div>
+  <div class="fi s1"><label>RG</label><input id="m2-rg"></div>
+  <div class="fi s1"><label>Telefone</label><input id="m2-tel" placeholder="(44) 99900-0000"></div>
+  <div class="fi s1"><label>Status</label><select id="m2-status"><option>Ativo</option><option>Inativo</option><option>Suspenso</option></select></div>
+</div>`,
+  `<button class="btn btn-s" onclick="fecharModal2()">Cancelar</button><button class="btn btn-p" onclick="salvarNovoMedicoSecundario()">Salvar Médico</button>`,true);
+}
+async function salvarNovoMedicoSecundario(){
+  const nome=(document.getElementById('m2-nome')?.value||'').trim();
+  const crm=(document.getElementById('m2-crm')?.value||'').trim();
+  if(!nome){document.getElementById('e-m2-nome').textContent='Obrigatório';return;}
+  if(!crm){document.getElementById('e-m2-crm').textContent='Obrigatório';return;}
+  const ufCrm=document.getElementById('m2-ufcrm').value;
+  const cpf=document.getElementById('m2-cpf').value;
+  const duplo=duploMedico(crm,ufCrm,cpf,'');
+  if(duplo){toast(duplo,'erro');return;}
+  const dados={sexo:document.getElementById('m2-sexo').value,nome,crm,uf_crm:ufCrm,cpf,rg:document.getElementById('m2-rg').value,telefone:document.getElementById('m2-tel').value,status:document.getElementById('m2-status').value,especialidades:[],unidades:[]};
+  loading(true,'Salvando médico...');
+  const r=await dbSalvarMedico(dados);
+  loading(false);
+  if(r?.ok){
+    APP.medicos=await dbMedicos();
+    fecharModal2();
+    toast('Médico criado! Selecione-o no campo do formulário.','ok');
+    // Atualizar o TagSelect de médicos no form do requisitante sem fechar o modal principal
+    const medOpts=APP.medicos.map(m=>nomeMed(m)+' — CRM '+m.CRM+'-'+m.UF_CRM);
+    const novoLabel=nomeMed({SEXO:dados.sexo,NOME:nome})+' — CRM '+crm+'-'+ufCrm;
+    const tsWrap=document.querySelector('#modal-corpo .ts-wrap[data-tsid="ts-rmeds"]');
+    if(tsWrap){ const cur=tsGet('ts-rmeds'); tsWrap.outerHTML=tsHTML('ts-rmeds',medOpts,[...cur,novoLabel],'Buscar médico...'); tsWire('ts-rmeds'); }
+  } else toast('Erro: '+(r?.msg||'Falha'),'erro');
 }
 
 // ══════════════════════════════════════════════════════
