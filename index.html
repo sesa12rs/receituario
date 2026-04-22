@@ -1639,7 +1639,10 @@ function atualizarSelBlocos(){
   const qtdEl=document.getElementById('e-qtd'),wrap=document.getElementById('e-blocos-wrap'),info=document.getElementById('e-blocos-info');
   if(!qtdEl||!wrap) return;
   const disp=APP.blocos.filter(b=>b.STATUS==='Disponivel').sort((a,b)=>parseInt(a.NUMERO)-parseInt(b.NUMERO));
-  const qtd=Math.min(Math.max(1,parseInt(qtdEl.value)||1),disp.length); qtdEl.value=qtd;
+  // Respeita o max definido por atualizarLimiteQtd (procuração ou estoque)
+  const maximo=Math.min(parseInt(qtdEl.max)||disp.length, disp.length);
+  const qtd=Math.min(Math.max(1,parseInt(qtdEl.value)||1), maximo);
+  if(qtdEl.value!=qtd) qtdEl.value=qtd; // corrige silenciosamente se digitou a mais
   wrap.innerHTML=disp.slice(0,qtd).map((b,i)=>`<div class="bloco-item"><span style="font-size:11px;color:var(--muted2);min-width:18px">${i+1}.</span><select id="eb-${i}" style="flex:1;font-size:12px">${disp.map(x=>`<option value="${x.ID}"${x.ID===b.ID?' selected':''}>Bloco ${pad(x.NUMERO)} · Págs. ${x.PAGINA_INICIAL}–${x.PAGINA_FINAL}</option>`).join('')}</select><span class="bp-label" id="ebp-${i}">${b.PAGINA_INICIAL}–${b.PAGINA_FINAL}</span></div>`).join('');
   for(let i=0;i<qtd;i++){const s=document.getElementById('eb-'+i);if(s)s.addEventListener('change',function(){const b2=APP.blocos.find(x=>x.ID===this.value);const el=document.getElementById('ebp-'+i);if(el&&b2)el.textContent=b2.PAGINA_INICIAL+'–'+b2.PAGINA_FINAL;});}
   if(info) info.textContent=`${qtd} bloco(s) · ${disp.length-qtd} restante(s) em estoque`;
