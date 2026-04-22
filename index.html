@@ -423,7 +423,7 @@ const fmtData= dt => { if(!dt) return '-'; try { return new Date(dt).toLocaleDat
 const badge  = (s,c) => { const m={Ativo:'b-g',Disponivel:'b-g',Inativo:'b-r',Extraviado:'b-r',Cancelado:'b-gr',Entregue:'b-a',Suspenso:'b-r'}; return `<span class="badge ${c||m[s]||'b-gr'}">${s||'-'}</span>`; };
 const podeEscrever = () => USUARIO?.papel==='Administrador'||USUARIO?.papel==='Operador';
 const isAdmin = () => USUARIO?.papel==='Administrador';
-const uid = p => p+Date.now().toString(36).toUpperCase().slice(-8);
+// IDs gerados pelo banco (UUID via gen_random_uuid()) — não gerar no frontend
 
 function toast(msg,tipo){ const t=document.getElementById('toast'); t.textContent=msg; t.className='show '+(tipo||''); clearTimeout(t._t); t._t=setTimeout(()=>{t.className=''},3500); }
 function loading(s,msg){ const el=document.getElementById('loading'); el.classList.toggle('show',!!s); if(msg) document.getElementById('loading-msg').textContent=msg; }
@@ -726,7 +726,7 @@ async function dbDadosIniciais(){
   const cfg={}; (c.data||[]).forEach(x=>{cfg[x.parametro]=x.valor;});
   return {
     estados:(a.data||[]).map(x=>({SIGLA:x.sigla,NOME:x.nome})),
-    municipios:(b.data||[]).map(x=>({ID:x.id,NOME:x.nome,UF:x.uf})),
+    municipios:(b.data||[]).map(x=>({ID:x.id,NOME:x.nome,UF:x.uf,COD_IBGE:x.cod_ibge,LAT:x.latitude,LON:x.longitude,POP:x.populacao})),
     config:cfg,
     medicos:(d.data||[]).map(toMedico),
     requisitantes:(e.data||[]).map(toReq),
@@ -755,61 +755,119 @@ async function dbEntregasCompleto(){
 }
 
 async function dbSalvarMedico(d){
-  const mid=d.id||uid('MED');
-  const {error}=await sb.from('medicos').upsert({id:mid,sexo:d.sexo||'Masculino',nome:d.nome||'',crm:d.crm||'',uf_crm:d.uf_crm||'PR',cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',telefone:d.telefone||'',status:d.status||'Ativo'},{onConflict:'id'});
-  if(error) return {ok:false,msg:error.message};
+  // Novo cadastro: não envia id — banco gera UUID automaticamente
+  // Edição: envia o id existente para o upsert encontrar o registro
+  const payload={sexo:d.sexo||'Masculino',nome:d.nome||'',crm:d.crm||'',uf_crm:d.uf_crm||'PR',cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',telefone:d.telefone||'',status:d.status||'Ativo'};
+  let mid;
+  if(d.id){
+    // Edição — update direto
+    const {error}=await sb.from('medicos').update(payload).eq('id',d.id);
+    if(error) return {ok:false,msg:error.message};
+    mid=d.id;
+  } else {
+    // Novo — insert e captura o UUID gerado
+    const {data,error}=await sb.from('medicos').insert(payload).select('id').single();
+    if(error) return {ok:false,msg:error.message};
+    mid=data.id;
+  }
   await sb.from('medico_especialidades').delete().eq('medico_id',mid);
   if(d.especialidades?.length) await sb.from('medico_especialidades').insert(d.especialidades.map(e=>({medico_id:mid,especialidade:e})));
   await sb.from('medico_unidades').delete().eq('medico_id',mid);
   if(d.unidades?.length) await sb.from('medico_unidades').insert(d.unidades.map(u=>({medico_id:mid,unidade_id:u})));
-  await registrarLog(USUARIO?.nome,'EDICAO','Médico '+mid,d.nome);
-  return {ok:true};
+  await registrarLog(USUARIO?.nome, d.id?'EDICAO':'CADASTRO', 'Médico', d.nome);
+  return {ok:true, id:mid};
 }
+
 async function dbSalvarReq(d){
-  const rid=d.id||uid('REQ');
-  const {error}=await sb.from('requisitantes').upsert({id:rid,nome:d.nome||'',cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',telefone:d.telefone||'',status:d.status||'Ativo'},{onConflict:'id'});
-  if(error) return {ok:false,msg:error.message};
+  const payload={nome:d.nome||'',cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',telefone:d.telefone||'',status:d.status||'Ativo'};
+  let rid;
+  if(d.id){
+    const {error}=await sb.from('requisitantes').update(payload).eq('id',d.id);
+    if(error) return {ok:false,msg:error.message};
+    rid=d.id;
+  } else {
+    const {data,error}=await sb.from('requisitantes').insert(payload).select('id').single();
+    if(error) return {ok:false,msg:error.message};
+    rid=data.id;
+  }
   await sb.from('requisitante_medicos').delete().eq('requisitante_id',rid);
   if(d.medicos?.length) await sb.from('requisitante_medicos').insert(d.medicos.map(m=>({requisitante_id:rid,medico_id:m})));
-  await registrarLog(USUARIO?.nome,'EDICAO','Requisitante '+rid,d.nome);
-  return {ok:true};
+  await registrarLog(USUARIO?.nome, d.id?'EDICAO':'CADASTRO', 'Requisitante', d.nome);
+  return {ok:true, id:rid};
 }
+
 async function dbSalvarUnidade(d){
-  const uid2=d.id||uid('UNI');
-  const {error}=await sb.from('unidades_saude').upsert({id:uid2,nome:d.nome||'',cnes:d.cnes||'',cep:d.cep||'',logradouro:d.logradouro||'',numero:d.numero||'',complemento:d.complemento||'',bairro:d.bairro||'',municipio:d.municipio||'',uf:d.uf||'PR',telefone:d.telefone||'',status:d.status||'Ativo'},{onConflict:'id'});
-  if(error) return {ok:false,msg:error.message};
-  await registrarLog(USUARIO?.nome,'EDICAO','Unidade '+uid2,d.nome);
-  return {ok:true};
+  const payload={nome:d.nome||'',cnes:d.cnes||'',cep:d.cep||'',logradouro:d.logradouro||'',numero:d.numero||'',complemento:d.complemento||'',bairro:d.bairro||'',municipio:d.municipio||'',uf:d.uf||'PR',telefone:d.telefone||'',status:d.status||'Ativo'};
+  let uid2;
+  if(d.id){
+    const {error}=await sb.from('unidades_saude').update(payload).eq('id',d.id);
+    if(error) return {ok:false,msg:error.message};
+    uid2=d.id;
+  } else {
+    const {data,error}=await sb.from('unidades_saude').insert(payload).select('id').single();
+    if(error) return {ok:false,msg:error.message};
+    uid2=data.id;
+  }
+  await registrarLog(USUARIO?.nome, d.id?'EDICAO':'CADASTRO', 'Unidade', d.nome);
+  return {ok:true, id:uid2};
 }
+
 async function dbAdicionarBlocos(qtd){
   const {data:ex}=await sb.from('blocos').select('numero,pagina_final').order('numero',{ascending:false}).limit(1);
-  let ultN=0,ultP=0; if(ex?.length){ultN=parseInt(ex[0].numero)||0;ultP=parseInt(ex[0].pagina_final)||0;}
-  const base=Date.now();
-  const rows=Array.from({length:qtd},(_,i)=>({id:`BLO${(base+i).toString(36).toUpperCase()}`,numero:String(ultN+i+1).padStart(4,'0'),pagina_inicial:ultP+(i*20)+1,pagina_final:ultP+(i*20)+20,status:'Disponivel'}));
-  const {error}=await sb.from('blocos').insert(rows); if(error) return {ok:false,msg:error.message};
-  await registrarLog(USUARIO?.nome,'ENTRADA','Estoque',`${qtd} bloco(s) adicionado(s) — Blocos ${String(ultN+1).padStart(4,'0')} a ${String(ultN+qtd).padStart(4,'0')}`);
+  let ultN=0,ultP=0;
+  if(ex?.length){ultN=parseInt(ex[0].numero)||0; ultP=parseInt(ex[0].pagina_final)||0;}
+  // UUID gerado pelo banco — não enviamos id no payload
+  const rows=Array.from({length:qtd},(_,i)=>({
+    numero: String(ultN+i+1).padStart(4,'0'),
+    pagina_inicial: ultP+(i*20)+1,
+    pagina_final:   ultP+(i*20)+20,
+    status: 'Disponivel'
+  }));
+  const {error}=await sb.from('blocos').insert(rows);
+  if(error) return {ok:false,msg:error.message};
+  await registrarLog(USUARIO?.nome,'ENTRADA','Estoque',`${qtd} bloco(s) — Nº ${String(ultN+1).padStart(4,'0')} a ${String(ultN+qtd).padStart(4,'0')}`);
   return {ok:true};
 }
+
 async function dbRegistrarEntrega(d){
   const medico=APP.medicos.find(m=>m.ID===d.idMedico);
   if(!medico) return {ok:false,msg:'Médico não encontrado.'};
   if(medico.STATUS!=='Ativo') return {ok:false,msg:'Médico inativo — entrega não permitida.'};
-  if(d.idRequisitante){
+  const tipoRet=d.idRequisitante?'requisitante':'proprio_medico';
+  if(tipoRet==='requisitante'){
     const req=APP.requisitantes.find(r=>r.ID===d.idRequisitante);
     if(!req) return {ok:false,msg:'Requisitante não encontrado.'};
-    if(!String(req.MEDICOS_AUTORIZADOS||'').split(';').map(x=>x.trim()).includes(d.idMedico)) return {ok:false,msg:'Requisitante não autorizado para este médico.'};
+    if(!String(req.MEDICOS_AUTORIZADOS||'').split(';').map(x=>x.trim()).includes(d.idMedico))
+      return {ok:false,msg:'Requisitante não autorizado para este médico.'};
+    if(!d.procuracaoData) return {ok:false,msg:'Data da procuração é obrigatória.'};
   }
   const ids=Array.isArray(d.idsBlocos)?d.idsBlocos:[d.idsBlocos];
-  for(const id of ids){ const b=APP.blocos.find(b=>b.ID===id); if(!b) return {ok:false,msg:'Bloco não encontrado.'}; if(b.STATUS!=='Disponivel') return {ok:false,msg:`Bloco ${b.NUMERO} não está disponível.`}; }
+  for(const bid of ids){
+    const b=APP.blocos.find(b=>b.ID===bid);
+    if(!b) return {ok:false,msg:'Bloco não encontrado.'};
+    if(b.STATUS!=='Disponivel') return {ok:false,msg:`Bloco ${b.NUMERO} não está disponível.`};
+  }
   const hoje=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
   const {count}=await sb.from('entregas').select('*',{count:'exact',head:true}).like('protocolo',hoje+'%');
   const protocolo=hoje+'-'+String((count||0)+1).padStart(4,'0');
-  const entId=uid('ENT');
-  const {error:e1}=await sb.from('entregas').insert({id:entId,protocolo,medico_id:d.idMedico,requisitante_id:d.idRequisitante||null,unidade_id:d.idUnidade,emissor:USUARIO?.nome||'Sistema',observacoes:d.observacoes||'',quantidade_blocos:ids.length});
+  const {data:entData,error:e1}=await sb.from('entregas').insert({
+    protocolo,
+    medico_id:       d.idMedico,
+    requisitante_id: d.idRequisitante||null,
+    unidade_id:      d.idUnidade,
+    tipo_retirada:   tipoRet,
+    procuracao_data: d.procuracaoData||null,
+    procuracao_qtd_auth: d.procuracaoQtd||null,
+    procuracao_obs:  d.procuracaoObs||'',
+    emissor:         USUARIO?.nome||'Sistema',
+    observacoes:     d.observacoes||'',
+    quantidade_blocos: ids.length
+  }).select('id').single();
   if(e1) return {ok:false,msg:e1.message};
+  const entId=entData.id;
   const {error:e2}=await sb.from('entrega_blocos').insert(ids.map(bid=>({entrega_id:entId,bloco_id:bid})));
   if(e2) return {ok:false,msg:e2.message};
-  const nums=ids.map(id=>{const b=APP.blocos.find(x=>x.ID===id);return b?'#'+b.NUMERO:'';}).filter(Boolean).join(', ');
+  const nums=ids.map(bid=>{const b=APP.blocos.find(x=>x.ID===bid);return b?'#'+b.NUMERO:'';}).filter(Boolean).join(', ');
   await registrarLog(USUARIO?.nome,'ENTREGA','Entrega '+protocolo,`${ids.length} bloco(s) [${nums}] → ${trat(medico)} ${medico.NOME}`);
   return {ok:true,protocolo,entregaId:entId};
 }
@@ -1055,8 +1113,8 @@ function abrirFormMedico(m){
 </div>`,
   `<button class="btn btn-s" onclick="fecharModal()">Cancelar</button><button class="btn btn-p" onclick="salvarMedico('${m.ID||''}')">Salvar</button>`,true);
 }
-let _medicoTemp=null;
-function salvarMedicoTemp(){ _medicoTemp={id:document.querySelector('#modal-corpo input#m-nome')?.closest('.fg')?.querySelector?.('#m-nome')?.value,sexo:document.getElementById('m-sexo')?.value,status:document.getElementById('m-status')?.value,nome:document.getElementById('m-nome')?.value,crm:document.getElementById('m-crm')?.value,uf_crm:document.getElementById('m-ufcrm')?.value,cpf:document.getElementById('m-cpf')?.value,rg:document.getElementById('m-rg')?.value,email:document.getElementById('m-email')?.value,tel:document.getElementById('m-tel')?.value,esps:tsGet('ts-esps'),unis:tsGet('ts-unis')}; }
+
+
 async function salvarMedico(id){
   const nome=(document.getElementById('m-nome')?.value||'').trim();
   const crm=(document.getElementById('m-crm')?.value||'').trim();
@@ -1071,7 +1129,14 @@ async function salvarMedico(id){
   const unisIds=unisNomes.map(n=>{const u=APP.unidades.find(x=>x.NOME===n);return u?u.ID:'';}).filter(Boolean);
   const dados={id,sexo:document.getElementById('m-sexo').value,nome,crm,uf_crm:document.getElementById('m-ufcrm').value,cpf:document.getElementById('m-cpf').value,rg:document.getElementById('m-rg').value,email:document.getElementById('m-email').value,telefone:document.getElementById('m-tel').value,status:document.getElementById('m-status').value,especialidades:espsNomes,unidades:unisIds};
   loading(true,'Salvando médico...');const r=await dbSalvarMedico(dados);loading(false);
-  if(r?.ok){APP.medicos=await dbMedicos();fecharModal();document.getElementById('medicos-body').innerHTML=buildMedBody(APP.q.medicos);toast('Médico salvo!','ok');}
+  if(r?.ok){
+    APP.medicos=await dbMedicos();
+    fecharModal();
+    document.getElementById('medicos-body').innerHTML=buildMedBody(APP.q.medicos);
+    toast('Médico salvo!','ok');
+    // Restaurar form do requisitante se estava aguardando novo médico
+    if(_reqTemp){ const t=_reqTemp; _reqTemp=null; setTimeout(()=>restaurarReq(t),150); }
+  }
   else toast('Erro: '+(r?.msg||'Falha'),'erro');
 }
 async function toggleMedico(id,status){
@@ -1115,6 +1180,13 @@ function buildReqBody(q){
   </table>${renderPag(pages,page,'requisitantes',total,items.length)}</div>
   <div class="mcards">${items.map(r=>{const meds=String(r.MEDICOS_AUTORIZADOS||'').split(';').map(id=>{const m=APP.medicos.find(x=>x.ID===id.trim());return m?nomeMed(m).split(' ').slice(0,2).join(' '):'';}).filter(Boolean).join(', ');const rj=esc(JSON.stringify(r));return `<div class="mc"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="mc-title">${r.NOME}</div><div class="mc-sub">${r.CPF||'-'}</div></div>${badge(r.STATUS)}</div>${meds?`<div style="font-size:11px;color:var(--muted)">Auth: ${meds}</div>`:''}${wr?`<div class="mc-foot"><button class="btn-sm btn-e" onclick='abrirFormReq(JSON.parse(this.dataset.r))' data-r='${rj}'>Editar</button><button class="btn-sm ${r.STATUS==='Ativo'?'btn-d':'btn-ok'}" onclick="toggleReq('${r.ID}','${r.STATUS==='Ativo'?'Inativo':'Ativo'}')">${r.STATUS==='Ativo'?'Inativar':'Ativar'}</button></div>`:''}</div>`;}).join('')||`<div class="empty"><div class="empty-ico">👤</div><div class="empty-txt">Nenhum resultado.</div></div>`}${renderPag(pages,page,'requisitantes',total,items.length)}</div>`;
 }
+// Estado temporário para fluxos cruzados
+let _medicoTemp=null;
+let _reqTemp=null;
+
+function salvarMedicoTemp(){ _medicoTemp={id:document.getElementById('m-nome')?.closest('.fg')&&document.getElementById('m-nome')?.value,sexo:document.getElementById('m-sexo')?.value,status:document.getElementById('m-status')?.value,nome:document.getElementById('m-nome')?.value,crm:document.getElementById('m-crm')?.value,uf_crm:document.getElementById('m-ufcrm')?.value,cpf:document.getElementById('m-cpf')?.value,rg:document.getElementById('m-rg')?.value,email:document.getElementById('m-email')?.value,tel:document.getElementById('m-tel')?.value,esps:tsGet('ts-esps'),unis:tsGet('ts-unis')}; }
+function salvarReqTemp(){ _reqTemp={id:document.getElementById('r-nome')&&document.getElementById('r-nome')?.value,nome:document.getElementById('r-nome')?.value,cpf:document.getElementById('r-cpf')?.value,rg:document.getElementById('r-rg')?.value,email:document.getElementById('r-email')?.value,tel:document.getElementById('r-tel')?.value,status:document.getElementById('r-status')?.value,meds:tsGet('ts-rmeds')}; }
+
 function abrirFormReq(r){
   if(!podeEscrever()) return; r=r||{};
   const medOpts=APP.medicos.map(m=>nomeMed(m)+' — CRM '+m.CRM+'-'+m.UF_CRM);
@@ -1127,7 +1199,11 @@ function abrirFormReq(r){
   <div class="fi s1"><label>E-mail</label><input type="email" id="r-email" value="${esc(r.EMAIL||'')}"></div>
   <div class="fi s1"><label>Telefone</label><input id="r-tel" value="${esc(r.TELEFONE||'')}"></div>
   <div class="fi s1"><label>Status</label><select id="r-status"><option${(r.STATUS||'Ativo')==='Ativo'?' selected':''}>Ativo</option><option${r.STATUS==='Inativo'?' selected':''}>Inativo</option></select></div>
-  <div class="fi s2"><label>Médicos que autorizam este requisitante</label>
+  <div class="fi s2">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <label style="margin:0">Médicos que autorizam este requisitante</label>
+      <button type="button" class="btn-sm btn-e" onclick="salvarReqTemp();fecharModal();setTimeout(()=>{go('medicos');setTimeout(abrirFormMedico,350)},150)">+ Novo Médico</button>
+    </div>
     ${tsHTML('ts-rmeds',medOpts,medSel,'Buscar médico...')}
   </div>
 </div>`,
@@ -1232,10 +1308,15 @@ async function toggleUnidade(id,status){
   APP.unidades=await dbUnidades();document.getElementById('unidades-body').innerHTML=buildUnidadesBody(APP.q.unidades);toast('Status atualizado!','ok');
 }
 function restaurarMedico(t){
-  APP.unidades.length;// garante lista atualizada
-  // Recria objeto m para abrirFormMedico
+  // Recria objeto m para abrirFormMedico com os dados salvos
   const m={ID:t.id,SEXO:t.sexo,STATUS:t.status,NOME:t.nome,CRM:t.crm,UF_CRM:t.uf_crm,CPF:t.cpf,RG:t.rg,EMAIL:t.email,TELEFONE:t.tel,ESPECIALIDADES:t.esps?.join(';')||'',UNIDADES:t.unis?.map(n=>{const u=APP.unidades.find(x=>x.NOME===n);return u?u.ID:'';}).filter(Boolean).join(';')||''};
   abrirFormMedico(m);
+}
+function restaurarReq(t){
+  // Recria objeto r para abrirFormReq com os dados salvos
+  const medIds=t.meds?.map(n=>{const m=APP.medicos.find(x=>(nomeMed(x)+' — CRM '+x.CRM+'-'+x.UF_CRM)===n);return m?m.ID:'';}).filter(Boolean)||[];
+  const r={ID:t.id,NOME:t.nome,CPF:t.cpf,RG:t.rg,EMAIL:t.email,TELEFONE:t.tel,STATUS:t.status,MEDICOS_AUTORIZADOS:medIds.join(';')};
+  abrirFormReq(r);
 }
 
 // ══════════════════════════════════════════════════════
@@ -1310,56 +1391,84 @@ function buildEntregasBody(q){
 function abrirNovaEntrega(){
   if(!podeEscrever()) return;
   const disp=APP.blocos.filter(b=>b.STATUS==='Disponivel').sort((a,b)=>parseInt(a.NUMERO)-parseInt(b.NUMERO));
-  if(!disp.length){toast('Sem blocos disponíveis. Acesse Estoque → Entrada de Blocos.','erro');return;}
+  if(!disp.length){toast('Sem blocos dispon\u00edveis. Acesse Estoque \u2192 Entrada de Blocos.','erro');return;}
   const ativos=APP.medicos.filter(m=>m.STATUS==='Ativo');
+  const hoje=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
   abrirModal('Nova Entrega de Bloco',`
 <div style="display:flex;flex-direction:column;gap:13px">
   <div class="fi">
-    <label>Médico Destinatário <span class="req">*</span></label>
+    <label>M\u00e9dico Destinat\u00e1rio <span class="req">*</span></label>
     <select id="e-med" onchange="atualizarReqEUni()">
-      <option value="">Selecionar médico...</option>
-      ${ativos.map(m=>`<option value="${m.ID}">${nomeMed(m)} — CRM ${m.CRM}-${m.UF_CRM}</option>`).join('')}
+      <option value="">Selecionar m\u00e9dico...</option>
+      ${ativos.map(m=>`<option value="${m.ID}">${nomeMed(m)} \u2014 CRM ${m.CRM}-${m.UF_CRM}</option>`).join('')}
     </select>
     <div class="err" id="e-e-med"></div>
   </div>
   <div class="fi">
-    <label>Requisitante (quem está retirando)</label>
-    <select id="e-req"><option value="">Próprio médico / sem requisitante</option></select>
-    <div id="e-req-warn" class="wbox" style="display:none">⚠ Nenhum requisitante vinculado. <a href="#" onclick="go('requisitantes');fecharModal();return false">Cadastrar</a></div>
+    <label>Quem est\u00e1 retirando <span class="req">*</span></label>
+    <select id="e-req" onchange="atualizarProcuracao()">
+      <option value="">Pr\u00f3prio m\u00e9dico</option>
+    </select>
+    <div id="e-req-warn" class="wbox" style="display:none">\u26a0 Nenhum requisitante vinculado. <a href="#" onclick="go('requisitantes');fecharModal();return false">Cadastrar requisitante</a></div>
+  </div>
+  <div id="proc-box" style="display:none;background:var(--amber-bg);border:1.5px solid #fed7aa;border-radius:var(--r);padding:14px;flex-direction:column;gap:10px">
+    <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:2px">\ud83d\udcc4 Dados da Procura\u00e7\u00e3o</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fi" style="margin:0">
+        <label>Data da Procura\u00e7\u00e3o <span class="req">*</span></label>
+        <input type="date" id="e-proc-data" max="${hoje}">
+        <div class="err" id="e-e-proc"></div>
+      </div>
+      <div class="fi" style="margin:0">
+        <label>Qtd autorizada na procura\u00e7\u00e3o</label>
+        <input type="number" id="e-proc-qtd" min="1" placeholder="Ex: 2">
+      </div>
+    </div>
+    <div class="fi" style="margin:0">
+      <label>Observa\u00e7\u00f5es da procura\u00e7\u00e3o</label>
+      <input id="e-proc-obs" placeholder="Ex: conforme procura\u00e7\u00e3o em anexo...">
+    </div>
   </div>
   <div class="fi">
-    <label>Unidade de Saúde <span class="req">*</span></label>
-    <select id="e-uni"><option value="">Selecione o médico primeiro...</option></select>
-    <div id="e-uni-warn" class="wbox" style="display:none">⚠ Nenhuma unidade vinculada. <a href="#" onclick="go('medicos');fecharModal();return false">Ir ao cadastro</a></div>
+    <label>Unidade de Sa\u00fade <span class="req">*</span></label>
+    <select id="e-uni"><option value="">Selecione o m\u00e9dico primeiro...</option></select>
+    <div id="e-uni-warn" class="wbox" style="display:none">\u26a0 Nenhuma unidade vinculada. <a href="#" onclick="go('medicos');fecharModal();return false">Ir ao cadastro do m\u00e9dico</a></div>
     <div class="err" id="e-e-uni"></div>
   </div>
   <div class="fi">
     <label>Quantidade de Blocos <span class="req">*</span></label>
     <input type="number" id="e-qtd" min="1" max="${disp.length}" value="1" oninput="atualizarSelBlocos()">
-    <div style="font-size:11px;color:var(--muted);margin-top:3px">${disp.length} disponível(is) em estoque</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:3px">${disp.length} dispon\u00edvel(is) em estoque</div>
   </div>
   <div class="fi">
     <label>Blocos Selecionados</label>
     <div class="bloco-sel" id="e-blocos-wrap"></div>
     <div id="e-blocos-info" class="ibox" style="margin-top:6px"></div>
   </div>
-  <div class="fi"><label>Observações</label><textarea id="e-obs" placeholder="Observações opcionais..."></textarea></div>
-  <div class="ibox">ℹ O Termo de Recebimento abrirá automaticamente após salvar.</div>
+  <div class="fi"><label>Observa\u00e7\u00f5es gerais</label><textarea id="e-obs" placeholder="Observa\u00e7\u00f5es opcionais..."></textarea></div>
+  <div class="ibox">\u2139 O Termo de Recebimento abrir\u00e1 automaticamente ap\u00f3s salvar.</div>
 </div>`,
   `<button class="btn btn-s" onclick="fecharModal()">Cancelar</button><button class="btn btn-p" onclick="salvarEntrega()">Registrar Entrega</button>`,true);
   atualizarSelBlocos();
+}
+function atualizarProcuracao(){
+  const req=document.getElementById('e-req')?.value||'';
+  const box=document.getElementById('proc-box');
+  if(!box) return;
+  box.style.display=req?'flex':'none';
 }
 function atualizarReqEUni(){
   const mid=document.getElementById('e-med')?.value||''; if(!mid) return;
   const selR=document.getElementById('e-req'),wR=document.getElementById('e-req-warn');
   const selU=document.getElementById('e-uni'),wU=document.getElementById('e-uni-warn');
   const reqs=APP.requisitantes.filter(r=>r.STATUS==='Ativo'&&String(r.MEDICOS_AUTORIZADOS||'').split(';').map(x=>x.trim()).includes(mid));
-  selR.innerHTML='<option value="">Próprio médico / sem requisitante</option>'+reqs.map(r=>`<option value="${r.ID}">${r.NOME} — CPF ${r.CPF}</option>`).join('');
+  selR.innerHTML='<option value="">Pr\u00f3prio m\u00e9dico</option>'+reqs.map(r=>`<option value="${r.ID}">${r.NOME} \u2014 CPF ${r.CPF}</option>`).join('');
   if(wR) wR.style.display=reqs.length===0?'block':'none';
+  atualizarProcuracao();
   const med=APP.medicos.find(m=>m.ID===mid);
   const uIds=med?String(med.UNIDADES||'').split(';').map(x=>x.trim()).filter(Boolean):[];
   const unis=APP.unidades.filter(u=>uIds.includes(u.ID)&&u.STATUS==='Ativo');
-  selU.innerHTML=unis.length?'<option value="">Selecionar unidade...</option>'+unis.map(u=>`<option value="${u.ID}">${u.NOME} — ${u.MUNICIPIO}/${u.UF}</option>`).join(''):'<option value="">Nenhuma unidade vinculada</option>';
+  selU.innerHTML=unis.length?'<option value="">Selecionar unidade...</option>'+unis.map(u=>`<option value="${u.ID}">${u.NOME} \u2014 ${u.MUNICIPIO}/${u.UF}</option>`).join(''):'<option value="">Nenhuma unidade vinculada</option>';
   if(wU) wU.style.display=unis.length===0?'block':'none';
   if(unis.length===1) selU.value=unis[0].ID;
 }
@@ -1375,16 +1484,31 @@ function atualizarSelBlocos(){
 async function salvarEntrega(){
   const mid=document.getElementById('e-med')?.value||'';
   const uid3=document.getElementById('e-uni')?.value||'';
+  const reqId=document.getElementById('e-req')?.value||'';
   const qtd=parseInt(document.getElementById('e-qtd')?.value||'1')||1;
   let ok=true;
   if(!mid){document.getElementById('e-e-med').textContent='Selecione um médico';ok=false;}
   if(!uid3){document.getElementById('e-e-uni').textContent='Selecione a unidade';ok=false;}
+  // Validação da procuração quando há requisitante
+  if(reqId){
+    const procData=document.getElementById('e-proc-data')?.value||'';
+    if(!procData){document.getElementById('e-e-proc').textContent='Data da procuração é obrigatória';ok=false;}
+  }
   if(!ok) return;
   const ids=[];
   for(let i=0;i<qtd;i++){const s=document.getElementById('eb-'+i);if(s)ids.push(s.value);}
   if(new Set(ids).size!==ids.length){toast('Há blocos duplicados. Corrija antes de salvar.','erro');return;}
   loading(true,'Registrando entrega...');
-  const r=await dbRegistrarEntrega({idMedico:mid,idRequisitante:document.getElementById('e-req')?.value||'',idsBlocos:ids,idUnidade:uid3,observacoes:document.getElementById('e-obs')?.value||''});
+  const r=await dbRegistrarEntrega({
+    idMedico:     mid,
+    idRequisitante: reqId,
+    idsBlocos:    ids,
+    idUnidade:    uid3,
+    procuracaoData: document.getElementById('e-proc-data')?.value||'',
+    procuracaoQtd:  parseInt(document.getElementById('e-proc-qtd')?.value||'0')||null,
+    procuracaoObs:  document.getElementById('e-proc-obs')?.value||'',
+    observacoes:  document.getElementById('e-obs')?.value||''
+  });
   loading(false);
   if(r?.ok){
     const d=await dbEntregasCompleto(); Object.assign(APP,d);
@@ -1469,7 +1593,7 @@ async function salvarUsuario(id){ if(!isAdmin()) return;
   if(!id){
     const {error:e1}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:window.location.origin+window.location.pathname}});
     if(e1){loading(false);toast('Erro ao enviar convite: '+e1.message,'erro');return;}
-    const {error:e2}=await sb.from('usuarios').insert({id:'USR'+Date.now().toString(36).toUpperCase(),nome,email,cpf,tipo_acesso:papel,status});
+    const {error:e2}=await sb.from('usuarios').insert({nome,email,cpf,tipo_acesso:papel,status});
     if(e2){loading(false);toast('Convite enviado, mas erro ao salvar perfil: '+e2.message,'erro');return;}
     await registrarLog(USUARIO?.nome,'CADASTRO','Usuário',nome+' ('+papel+') — convite → '+email);
   } else {
