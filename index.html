@@ -1751,7 +1751,7 @@ function abrirNovaEntrega(){
     </div>
     ${ssHTML('e-med',medItems,'Digitar nome ou CRM do médico...')}
     <div class="err" id="e-e-med"></div>
-    ${!ativos.length?'<div class="wbox">⚠ Nenhum médico ativo cadastrado. <a href="#" onclick="abrirNovoMedicoNaEntrega();return false">Cadastrar médico</a></div>':''}
+    ${!medItems.length?'<div class="wbox">⚠ Nenhum médico ativo cadastrado. <a href="#" onclick="abrirNovoMedicoNaEntrega();return false">Cadastrar médico</a></div>':''}
   </div>
   <div class="fi">
     <label>Quem está retirando</label>
