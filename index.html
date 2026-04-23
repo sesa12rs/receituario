@@ -730,7 +730,28 @@ async function fazerLogout(){ await sb.auth.signOut(); USUARIO=null; document.ge
 function mostrarLogin(err){ document.getElementById('tela-login').classList.add('show'); document.getElementById('lin-email').value=''; document.getElementById('lin-senha').value=''; document.getElementById('lin-erro').textContent=err||''; }
 function mostrarDefinirSenha(titulo,sub){ document.getElementById('stit').textContent=titulo||'Defina sua senha'; document.getElementById('ssub').textContent=sub||''; document.getElementById('tela-senha').classList.add('show'); setTimeout(()=>document.getElementById('ns')?.focus(),100); }
 function checkPwd(){ const v=document.getElementById('ns')?.value||''; const len=v.length>=8,num=/\d/.test(v),up=/[A-Z]/.test(v); ['r-len','r-num','r-up'].forEach((id,i)=>document.getElementById(id)?.classList.toggle('ok',[len,num,up][i])); const sc=[len,num,up].filter(Boolean).length; const bar=document.getElementById('pwd-bar'); if(bar){bar.style.width=(sc*33.3)+'%';bar.style.background=['','#ef4444','#f59e0b','#22c55e'][sc]||'';} }
-async function salvarSenha(){ const ns=document.getElementById('ns')?.value||'',cs=document.getElementById('cs')?.value||'',e=document.getElementById('serro'); e.textContent=''; if(ns.length<8){e.textContent='Mínimo 8 caracteres.';return;} if(!/\d/.test(ns)){e.textContent='Precisa de pelo menos 1 número.';return;} if(!/[A-Z]/.test(ns)){e.textContent='Precisa de pelo menos 1 maiúscula.';return;} if(ns!==cs){e.textContent='As senhas não coincidem.';return;} const btn=document.getElementById('sbtn'); btn.disabled=true; btn.textContent='Salvando...'; const {error}=await sb.auth.updateUser({password:ns}); btn.disabled=false; btn.textContent='Salvar senha e entrar'; if(error){e.textContent='Erro: '+error.message;return;} document.getElementById('tela-senha').classList.remove('show'); const {data:{session}}=await sb.auth.getSession(); if(session?.user?.email) await carregarUsuario(session.user.email); else mostrarLogin('Senha definida! Faça login para continuar.'); }
+async function salvarSenha(){
+  const ns=document.getElementById('ns')?.value||'',cs=document.getElementById('cs')?.value||'',e=document.getElementById('serro');
+  e.textContent='';
+  if(ns.length<8){e.textContent='Mínimo 8 caracteres.';return;}
+  if(!/\d/.test(ns)){e.textContent='Precisa de pelo menos 1 número.';return;}
+  if(!/[A-Z]/.test(ns)){e.textContent='Precisa de pelo menos 1 maiúscula.';return;}
+  if(ns!==cs){e.textContent='As senhas não coincidem.';return;}
+  const btn=document.getElementById('sbtn');
+  btn.disabled=true; btn.textContent='Salvando...';
+  // Verifica se há sessão ativa antes de tentar salvar
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){
+    btn.disabled=false; btn.textContent='Salvar senha e entrar';
+    e.textContent='Sessão expirada. Feche esta aba, clique novamente no link do e-mail e tente de novo.';
+    return;
+  }
+  const {error}=await sb.auth.updateUser({password:ns});
+  btn.disabled=false; btn.textContent='Salvar senha e entrar';
+  if(error){e.textContent='Erro: '+error.message; return;}
+  document.getElementById('tela-senha').classList.remove('show');
+  await carregarUsuario(session.user.email);
+}
 
 // ══════════════════════════════════════════════════════
 // NAVEGAÇÃO
@@ -1914,56 +1935,29 @@ function checkPwd(){ const v=document.getElementById('ns')?.value||''; const len
 window.onload = async () => {
   loading(true,'Iniciando sistema...');
 
-  // Detecta token de e-mail — Supabase v2 usa hash (#) ou query string (?) dependendo da config
-  const hash=window.location.hash;
-  const search=window.location.search;
-  let authParams=null;
-
-  if(hash&&hash.includes('access_token')){
-    // Formato antigo: #access_token=...&type=...
-    authParams=new URLSearchParams(hash.startsWith('#')?hash.slice(1):'');
-  } else if(search&&(search.includes('access_token')||search.includes('code')||search.includes('type=recovery')||search.includes('type=invite')||search.includes('type=magiclink')||search.includes('type=signup')||search.includes('token_hash'))){
-    // Formato novo (PKCE): ?code=...&type=...  ou  ?token_hash=...&type=...
-    authParams=new URLSearchParams(search.startsWith('?')?search.slice(1):'');
-  }
-
-  if(authParams){
-    const tipo=authParams.get('type');
-    history.replaceState(null,'',window.location.pathname);
-    // Deixa o Supabase processar o token da URL automaticamente
-    await new Promise(r=>setTimeout(r,500));
-    loading(false);
-    if(tipo==='recovery'){
-      mostrarDefinirSenha('Redefinir senha','Crie uma nova senha para acessar o sistema.');
-      return;
-    }
-    if(tipo==='magiclink'||tipo==='signup'||tipo==='invite'){
-      mostrarDefinirSenha('Bem-vindo! Defina sua senha','Para entrar no sistema no futuro, crie uma senha pessoal agora.');
-      return;
-    }
-    // Tipo desconhecido mas tem token — tenta carregar sessão
-    try { const {data:{session}}=await sb.auth.getSession(); if(session?.user?.email){await carregarUsuario(session.user.email);return;} } catch(_){}
-    mostrarLogin(); return;
-  }
-
-  // Listener para recovery/invite processado automaticamente pelo SDK sem hash visível
-  sb.auth.onAuthStateChange(async (event, session)=>{
-    if(event==='PASSWORD_RECOVERY'){
+  // IMPORTANTE: registrar o listener ANTES de qualquer getSession()
+  // O SDK do Supabase detecta o token da URL automaticamente ao carregar.
+  // Quando ele termina de trocar o token por sessão, dispara o evento abaixo.
+  // SÓ então mostramos a tela de senha — isso garante que a sessão existe.
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if(event === 'PASSWORD_RECOVERY'){
       loading(false);
-      mostrarDefinirSenha('Redefinir senha','Crie uma nova senha para acessar o sistema.');
+      mostrarDefinirSenha('Redefinir senha', 'Crie uma nova senha para acessar o sistema.');
     }
-    if(event==='SIGNED_IN' && session){
-      // Novo usuário que clicou no magic link — verificar se ainda não tem senha definida
-      // Redirecionar para tela de definição de senha
-      const isNewUser = session.user?.app_metadata?.provider === 'email' &&
-                        !session.user?.last_sign_in_at?.includes('T') === false &&
-                        (Date.now() - new Date(session.user.created_at).getTime()) < 5*60*1000;
-      if(isNewUser){
+    if(event === 'SIGNED_IN' && session){
+      // Verifica se veio de magic link / convite (token na URL já foi processado)
+      const url=new URLSearchParams(window.location.search);
+      const tipo=url.get('type') || new URLSearchParams(window.location.hash.slice(1)).get('type');
+      if(tipo==='magiclink'||tipo==='signup'||tipo==='invite'){
+        history.replaceState(null,'',window.location.pathname);
         loading(false);
         mostrarDefinirSenha('Bem-vindo! Defina sua senha','Para entrar no sistema no futuro, crie uma senha pessoal agora.');
       }
     }
   });
+
+  // Pequena pausa para o SDK processar token da URL (se houver)
+  await new Promise(r=>setTimeout(r,800));
 
   try {
     const {data:{session}}=await sb.auth.getSession();
