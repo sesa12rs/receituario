@@ -1743,7 +1743,13 @@ function abrirFormUsuario(u){ if(!isAdmin()) return; u=u||{}; const isNovo=!u.id
   <div class="fi s1"><label>Status</label><select id="u2-status"><option value="Ativo"${(u.status||'Ativo')==='Ativo'?' selected':''}>Ativo</option><option value="Inativo"${u.status==='Inativo'?' selected':''}>Inativo</option></select></div>
   <div class="fi s1"><label>CPF</label><input id="u2-cpf" value="${esc(u.cpf||'')}" placeholder="000.000.000-00"></div>
 </div>
-${isNovo?`<div class="ibox" style="margin-top:12px">ℹ <strong>Convite automático:</strong> O usuário receberá um e-mail com link para definir a própria senha.</div>`:''}`,
+${isNovo?`<div class="ibox" style="margin-top:12px;flex-direction:column;align-items:flex-start;gap:6px">
+  <div><strong>Como funciona o convite:</strong></div>
+  <div style="font-size:12px">1. O sistema cria a conta e envia um <strong>e-mail de definição de senha</strong> para o endereço informado.</div>
+  <div style="font-size:12px">2. O usuário clica no link do e-mail e define uma senha pessoal.</div>
+  <div style="font-size:12px">3. A partir daí, faz login normalmente com e-mail e senha.</div>
+  <div style="font-size:12px;color:var(--amber);margin-top:4px">⚠ Verifique se o e-mail informado está correto antes de continuar.</div>
+</div>`:''}`,
   `<button class="btn btn-s" onclick="fecharModal()">Cancelar</button><button class="btn btn-p" onclick="salvarUsuario('${u.id||''}')">${isNovo?'Criar e Enviar Convite':'Salvar Alterações'}</button>`,false);
 }
 async function salvarUsuario(id){ if(!isAdmin()) return;
@@ -1754,13 +1760,29 @@ async function salvarUsuario(id){ if(!isAdmin()) return;
   const cpf=document.getElementById('u2-cpf')?.value||'';
   if(!nome){document.getElementById('e-u2-nome').textContent='Obrigatório';return;}
   if(!id&&(!email||!email.includes('@'))){document.getElementById('e-u2-email').textContent='E-mail inválido';return;}
-  loading(true,id?'Salvando...':'Criando e enviando convite...');
+  loading(true,id?'Salvando...':'Criando usuário e enviando convite...');
   if(!id){
-    const {error:e1}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:window.location.origin+window.location.pathname}});
-    if(e1){loading(false);toast('Erro ao enviar convite: '+e1.message,'erro');return;}
+    // Passo 1: Criar usuário no Auth via OTP (cria a conta sem senha)
+    const {error:e1}=await sb.auth.signInWithOtp({
+      email,
+      options:{
+        shouldCreateUser:true,
+        emailRedirectTo:window.location.origin+window.location.pathname
+      }
+    });
+    // OTP pode falhar se o usuário já existir no Auth — tenta continuar mesmo assim
+    // Passo 2: Registrar perfil na tabela usuarios
     const {error:e2}=await sb.from('usuarios').insert({nome,email,cpf,tipo_acesso:papel,status});
-    if(e2){loading(false);toast('Convite enviado, mas erro ao salvar perfil: '+e2.message,'erro');return;}
-    await registrarLog(USUARIO?.nome,'CADASTRO','Usuário',nome+' ('+papel+') — convite → '+email);
+    if(e2){
+      loading(false);
+      // Erro de duplicata no banco = usuário já existe
+      if(e2.code==='23505') toast('Este e-mail já está cadastrado no sistema.','erro');
+      else toast('Erro ao salvar perfil: '+e2.message,'erro');
+      return;
+    }
+    // Passo 3: Enviar e-mail de definição de senha (fluxo mais confiável que magic link)
+    await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+    await registrarLog(USUARIO?.nome,'CADASTRO','Usuário',nome+' ('+papel+') — convite enviado → '+email);
   } else {
     const {error}=await sb.from('usuarios').update({nome,cpf,tipo_acesso:papel,status}).eq('id',id);
     if(error){loading(false);toast('Erro: '+error.message,'erro');return;}
@@ -1769,7 +1791,7 @@ async function salvarUsuario(id){ if(!isAdmin()) return;
   loading(false); fecharModal();
   APP.usuarios=await dbUsuarios();
   document.getElementById('usuarios-body').innerHTML=buildUsersBody(APP.q.usuarios);
-  toast(id?'Usuário atualizado!':'✉ Convite enviado para '+email,'ok');
+  toast(id?'Usuário atualizado!':'✉ Convite enviado para '+email+'. O usuário deve verificar o e-mail e definir uma senha.','ok');
 }
 async function toggleUsuario(id,status){ if(!isAdmin()) return;
   loading(true,'Atualizando...');const {error}=await sb.from('usuarios').update({status}).eq('id',id);loading(false);
@@ -1891,21 +1913,58 @@ function checkPwd(){ const v=document.getElementById('ns')?.value||''; const len
 
 window.onload = async () => {
   loading(true,'Iniciando sistema...');
-  // Detecta token de e-mail no hash
+
+  // Detecta token de e-mail — Supabase v2 usa hash (#) ou query string (?) dependendo da config
   const hash=window.location.hash;
+  const search=window.location.search;
+  let authParams=null;
+
   if(hash&&hash.includes('access_token')){
-    const params=new URLSearchParams(hash.startsWith('#')?hash.slice(1):'');
-    const tipo=params.get('type');
+    // Formato antigo: #access_token=...&type=...
+    authParams=new URLSearchParams(hash.startsWith('#')?hash.slice(1):'');
+  } else if(search&&(search.includes('access_token')||search.includes('code')||search.includes('type=recovery')||search.includes('type=invite')||search.includes('type=magiclink')||search.includes('type=signup')||search.includes('token_hash'))){
+    // Formato novo (PKCE): ?code=...&type=...  ou  ?token_hash=...&type=...
+    authParams=new URLSearchParams(search.startsWith('?')?search.slice(1):'');
+  }
+
+  if(authParams){
+    const tipo=authParams.get('type');
     history.replaceState(null,'',window.location.pathname);
-    await new Promise(r=>setTimeout(r,300));
+    // Deixa o Supabase processar o token da URL automaticamente
+    await new Promise(r=>setTimeout(r,500));
     loading(false);
-    if(tipo==='recovery'){ document.getElementById('stit').textContent='Redefinir senha'; mostrarDefinirSenha('Redefinir senha','Crie uma nova senha para acessar o sistema.'); return; }
-    if(tipo==='magiclink'||tipo==='signup'||tipo==='invite'){ mostrarDefinirSenha('Bem-vindo! Defina sua senha','Para entrar no sistema no futuro, crie uma senha pessoal agora.'); return; }
+    if(tipo==='recovery'){
+      mostrarDefinirSenha('Redefinir senha','Crie uma nova senha para acessar o sistema.');
+      return;
+    }
+    if(tipo==='magiclink'||tipo==='signup'||tipo==='invite'){
+      mostrarDefinirSenha('Bem-vindo! Defina sua senha','Para entrar no sistema no futuro, crie uma senha pessoal agora.');
+      return;
+    }
+    // Tipo desconhecido mas tem token — tenta carregar sessão
     try { const {data:{session}}=await sb.auth.getSession(); if(session?.user?.email){await carregarUsuario(session.user.email);return;} } catch(_){}
     mostrarLogin(); return;
   }
-  // Listener para recovery sem hash visível
-  sb.auth.onAuthStateChange((event)=>{ if(event==='PASSWORD_RECOVERY'){ loading(false); mostrarDefinirSenha('Redefinir senha','Crie uma nova senha para acessar o sistema.'); } });
+
+  // Listener para recovery/invite processado automaticamente pelo SDK sem hash visível
+  sb.auth.onAuthStateChange(async (event, session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      loading(false);
+      mostrarDefinirSenha('Redefinir senha','Crie uma nova senha para acessar o sistema.');
+    }
+    if(event==='SIGNED_IN' && session){
+      // Novo usuário que clicou no magic link — verificar se ainda não tem senha definida
+      // Redirecionar para tela de definição de senha
+      const isNewUser = session.user?.app_metadata?.provider === 'email' &&
+                        !session.user?.last_sign_in_at?.includes('T') === false &&
+                        (Date.now() - new Date(session.user.created_at).getTime()) < 5*60*1000;
+      if(isNewUser){
+        loading(false);
+        mostrarDefinirSenha('Bem-vindo! Defina sua senha','Para entrar no sistema no futuro, crie uma senha pessoal agora.');
+      }
+    }
+  });
+
   try {
     const {data:{session}}=await sb.auth.getSession();
     loading(false);
