@@ -1754,7 +1754,10 @@ function abrirNovaEntrega(){
     ${!medItems.length?'<div class="wbox">⚠ Nenhum médico ativo cadastrado. <a href="#" onclick="abrirNovoMedicoNaEntrega();return false">Cadastrar médico</a></div>':''}
   </div>
   <div class="fi">
-    <label>Quem está retirando</label>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <label style="margin:0">Quem está retirando</label>
+      ${podeEscrever()?'<button type="button" class="btn-sm btn-e" onclick="abrirNovoReqNaEntrega()">+ Novo Requisitante</button>':''}
+    </div>
     ${ssHTML('e-req',[],'Próprio médico (selecione após escolher o médico)')}
     <div id="e-req-warn" class="wbox" style="display:none">⚠ Nenhum requisitante vinculado a este médico. <a href="#" onclick="abrirNovoReqNaEntrega();return false">Cadastrar requisitante</a></div>
   </div>
@@ -1777,7 +1780,10 @@ function abrirNovaEntrega(){
     </div>
   </div>
   <div class="fi">
-    <label>Unidade de Saúde <span class="req">*</span></label>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <label style="margin:0">Unidade de Saúde <span class="req">*</span></label>
+      ${podeEscrever()?'<button type="button" class="btn-sm btn-e" onclick="abrirGerenciarUnidadeNaEntrega()">+ Vincular/Criar Unidade</button>':''}
+    </div>
     ${ssHTML('e-uni',[],'Selecione o médico primeiro...')}
     <div id="e-uni-warn" class="wbox" style="display:none">⚠ Nenhuma unidade vinculada a este médico. <a href="#" onclick="abrirGerenciarUnidadeNaEntrega();return false">Vincular ou criar unidade</a></div>
     <div class="err" id="e-e-uni"></div>
