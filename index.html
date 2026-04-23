@@ -1400,6 +1400,191 @@ function restaurarReq(t){
 // ══════════════════════════════════════════════════════
 
 // Abrir form de Nova Unidade por cima do form de Médico
+// ══════════════════════════════════════════════════════
+// FUNÇÕES SECUNDÁRIAS ESPECÍFICAS DA ENTREGA
+// Abertas por cima do modal de Nova Entrega (modal2)
+// ══════════════════════════════════════════════════════
+
+// 1. Novo Requisitante a partir da entrega — pré-seleciona o médico atual
+function abrirNovoReqNaEntrega(){
+  if(!podeEscrever()) return;
+  const mid=ssGet('e-med');
+  const med=APP.medicos.find(m=>m.ID===mid);
+  const medOpts=APP.medicos.map(m=>nomeMed(m)+' — CRM '+m.CRM+'-'+m.UF_CRM);
+  // Pré-seleciona o médico atual
+  const medSel=med?[nomeMed(med)+' — CRM '+med.CRM+'-'+med.UF_CRM]:[];
+  abrirModal2('Novo Requisitante',`
+<div style="font-size:12px;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;color:#1e40af">
+  Após salvar, o requisitante já aparecerá disponível na entrega.
+</div>
+<div class="fg">
+  <div class="fi s2"><label>Nome Completo <span class="req">*</span></label><input id="er2-nome"><div class="err" id="e-er2-nome"></div></div>
+  <div class="fi s1"><label>CPF <span class="req">*</span></label><input id="er2-cpf" placeholder="000.000.000-00"><div class="err" id="e-er2-cpf"></div></div>
+  <div class="fi s1"><label>RG</label><input id="er2-rg"></div>
+  <div class="fi s1"><label>Telefone</label><input id="er2-tel" placeholder="(44) 99900-0000"></div>
+  <div class="fi s1"><label>Status</label><select id="er2-status"><option>Ativo</option><option>Inativo</option></select></div>
+  <div class="fi s2">
+    <label>Médicos que autorizam este requisitante</label>
+    ${tsHTML('ts-er2-meds',medOpts,medSel,'Buscar médico...')}
+  </div>
+</div>`,
+  `<button class="btn btn-s" onclick="fecharModal2()">Cancelar</button><button class="btn btn-p" onclick="salvarNovoReqNaEntrega()">Salvar Requisitante</button>`,true);
+}
+async function salvarNovoReqNaEntrega(){
+  const nome=(document.getElementById('er2-nome')?.value||'').trim();
+  const cpf=(document.getElementById('er2-cpf')?.value||'').trim();
+  if(!nome){document.getElementById('e-er2-nome').textContent='Obrigatório';return;}
+  if(!cpf){document.getElementById('e-er2-cpf').textContent='Obrigatório';return;}
+  const duplo=duploReq(cpf,'');
+  if(duplo){toast(duplo,'erro');return;}
+  const medNomes=tsGet('ts-er2-meds');
+  const medIds=medNomes.map(n=>{const m=APP.medicos.find(x=>(nomeMed(x)+' — CRM '+x.CRM+'-'+x.UF_CRM)===n);return m?m.ID:'';}).filter(Boolean);
+  const dados={nome,cpf,rg:document.getElementById('er2-rg').value,telefone:document.getElementById('er2-tel').value,status:document.getElementById('er2-status').value,medicos:medIds};
+  loading(true,'Salvando requisitante...');
+  const r=await dbSalvarReq(dados);
+  loading(false);
+  if(!r?.ok){toast('Erro: '+(r?.msg||'Falha'),'erro');return;}
+  APP.requisitantes=await dbReqs();
+  fecharModal2();
+  toast('Requisitante cadastrado!','ok');
+  // Recarrega os campos da entrega com o novo requisitante já selecionado
+  const mid=ssGet('e-med');
+  atualizarReqEUni(mid);
+  // Seleciona o novo requisitante automaticamente
+  const novoReq=APP.requisitantes.find(r2=>r2.CPF===cpf);
+  if(novoReq) setTimeout(()=>ssSelect('e-req',novoReq.ID),100);
+}
+
+// 2. Vincular/criar unidade a partir da entrega
+function abrirGerenciarUnidadeNaEntrega(){
+  if(!podeEscrever()) return;
+  const mid=ssGet('e-med');
+  const med=APP.medicos.find(m=>m.ID===mid);
+  if(!med){toast('Selecione um médico primeiro.','erro');return;}
+  // Todas as unidades não vinculadas a este médico
+  const vinculadas=String(med.UNIDADES||'').split(';').filter(Boolean);
+  const disponiveis=APP.unidades.filter(u=>u.STATUS==='Ativo'&&!vinculadas.includes(u.ID));
+  const uniItems=disponiveis.map(u=>({id:u.ID,label:u.NOME+' — '+u.MUNICIPIO+'/'+u.UF}));
+  abrirModal2('Vincular Unidade ao Médico',`
+<div style="font-size:12px;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:var(--rs);padding:10px 12px;margin-bottom:14px;color:#1e40af">
+  Médico: <strong>${nomeMed(med)} — CRM ${med.CRM}-${med.UF_CRM}</strong>
+</div>
+<div class="fi" style="margin-bottom:16px">
+  <label>Selecionar unidade já cadastrada <span class="req">*</span></label>
+  ${ssHTML('ss-eu-pick', uniItems, 'Digitar nome da unidade...')}
+  <div class="err" id="e-eu-pick"></div>
+</div>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+  <div style="flex:1;height:1px;background:var(--border)"></div>
+  <span style="font-size:11px;color:var(--muted2);white-space:nowrap">ou criar nova unidade</span>
+  <div style="flex:1;height:1px;background:var(--border)"></div>
+</div>
+<button type="button" class="btn btn-s" style="width:100%" onclick="abrirNovaUnidadeNaEntrega()">+ Nova Unidade de Saúde</button>`,
+  `<button class="btn btn-s" onclick="fecharModal2()">Cancelar</button><button class="btn btn-p" onclick="vincularUnidadeAoMedico('${mid}')">Vincular ao Médico</button>`,true);
+}
+async function vincularUnidadeAoMedico(mid){
+  const uid=ssGet('ss-eu-pick');
+  if(!uid){document.getElementById('e-eu-pick').textContent='Selecione uma unidade';return;}
+  // Adicionar vínculo na tabela medico_unidades
+  loading(true,'Vinculando...');
+  const {error}=await sb.from('medico_unidades').insert({medico_id:mid,unidade_id:uid});
+  loading(false);
+  if(error&&error.code!=='23505'){toast('Erro: '+error.message,'erro');return;}
+  APP.medicos=await dbMedicos();
+  await registrarLog(USUARIO?.nome,'EDICAO','Médico '+mid,'Unidade vinculada: '+uid);
+  fecharModal2();
+  toast('Unidade vinculada com sucesso!','ok');
+  // Atualiza os campos da entrega e seleciona a unidade recém-vinculada
+  atualizarReqEUni(mid);
+  setTimeout(()=>ssSelect('e-uni',uid),100);
+}
+function abrirNovaUnidadeNaEntrega(){
+  // Fecha modal2 e abre modal3 — como não temos modal3, reutilizamos modal2
+  // salvando o contexto atual
+  const mid=ssGet('e-med');
+  const ufs=APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA==='PR'?' selected':''}>${e.SIGLA}</option>`).join('');
+  const muns=APP.municipios.map(c=>`<option value="${c.NOME}">`).join('');
+  abrirModal2('Nova Unidade de Saúde',`
+<div style="font-size:12px;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;color:#1e40af">
+  Após salvar, a unidade será vinculada ao médico automaticamente.
+</div>
+<div class="fg">
+  <div class="fi s2"><label>Nome da Unidade <span class="req">*</span></label><input id="eu2-nome" placeholder="Nome completo da unidade"></div>
+  <div class="fi s1"><label>CNES</label><input id="eu2-cnes" placeholder="0000000" maxlength="7"></div>
+  <div class="fi s1"><label>Telefone</label><input id="eu2-tel" placeholder="(44) 3600-0000"></div>
+  <div class="fi s1"><label>CEP</label><input id="eu2-cep" onblur="buscarCEP('eu2-cep',{logradouro:'eu2-log',bairro:'eu2-bairro',municipio:'eu2-mun',uf:'eu2-uf'})"></div>
+  <div class="fi s1"><label>UF</label><select id="eu2-uf">${ufs}</select></div>
+  <div class="fi s2"><label>Logradouro</label><input id="eu2-log"></div>
+  <div class="fi s1"><label>Número</label><input id="eu2-num"></div>
+  <div class="fi s1"><label>Bairro</label><input id="eu2-bairro"></div>
+  <div class="fi s1"><label>Município</label><input id="eu2-mun" value="Umuarama" list="ul-eu2-mun"><datalist id="ul-eu2-mun">${muns}</datalist></div>
+  <div class="fi s1"><label>Status</label><select id="eu2-status"><option selected>Ativo</option><option>Inativo</option></select></div>
+</div>`,
+  `<button class="btn btn-s" onclick="abrirGerenciarUnidadeNaEntrega()">← Voltar</button><button class="btn btn-p" onclick="salvarNovaUnidadeNaEntrega('${mid}')">Salvar e Vincular</button>`,true);
+}
+async function salvarNovaUnidadeNaEntrega(mid){
+  const nome=(document.getElementById('eu2-nome')?.value||'').trim();
+  if(!nome){toast('Nome da unidade é obrigatório.','erro');return;}
+  const cnes=(document.getElementById('eu2-cnes')?.value||'').trim();
+  const duplo=duploUnidade(nome,cnes,'');
+  if(duplo){toast(duplo,'erro');return;}
+  const dados={nome,cnes,telefone:document.getElementById('eu2-tel').value,cep:document.getElementById('eu2-cep').value,logradouro:document.getElementById('eu2-log').value,numero:document.getElementById('eu2-num').value,bairro:document.getElementById('eu2-bairro').value,municipio:document.getElementById('eu2-mun').value,uf:document.getElementById('eu2-uf').value,status:document.getElementById('eu2-status').value};
+  loading(true,'Salvando e vinculando...');
+  const r=await dbSalvarUnidade(dados);
+  if(!r?.ok){loading(false);toast('Erro: '+(r?.msg||'Falha'),'erro');return;}
+  // Vincular ao médico automaticamente
+  await sb.from('medico_unidades').insert({medico_id:mid,unidade_id:r.id});
+  APP.medicos=await dbMedicos();
+  APP.unidades=await dbUnidades();
+  loading(false);
+  fecharModal2();
+  toast('Unidade criada e vinculada ao médico!','ok');
+  atualizarReqEUni(mid);
+  setTimeout(()=>ssSelect('e-uni',r.id),100);
+}
+
+// 3. Novo Médico a partir da entrega
+function abrirNovoMedicoNaEntrega(){
+  if(!podeEscrever()) return;
+  const ufs=APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA==='PR'?' selected':''}>${e.SIGLA}</option>`).join('');
+  abrirModal2('Novo Médico',`
+<div style="font-size:12px;background:var(--amber-bg);border:1px solid #fed7aa;border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;color:#92400e">
+  ⚠ Certifique-se de ter os documentos do médico em mãos antes de continuar.
+</div>
+<div class="fg">
+  <div class="fi s1"><label>Sexo</label><select id="em2-sexo"><option>Masculino</option><option>Feminino</option></select></div>
+  <div class="fi s2"><label>Nome Completo <span class="req">*</span></label><input id="em2-nome"><div class="err" id="e-em2-nome"></div></div>
+  <div class="fi s1"><label>CRM <span class="req">*</span></label><input id="em2-crm"><div class="err" id="e-em2-crm"></div></div>
+  <div class="fi s1"><label>UF do CRM</label><select id="em2-ufcrm">${ufs}</select></div>
+  <div class="fi s1"><label>CPF</label><input id="em2-cpf" placeholder="000.000.000-00"></div>
+  <div class="fi s1"><label>Telefone</label><input id="em2-tel" placeholder="(44) 99900-0000"></div>
+</div>`,
+  `<button class="btn btn-s" onclick="fecharModal2()">Cancelar</button><button class="btn btn-p" onclick="salvarNovoMedicoNaEntrega()">Salvar Médico</button>`,true);
+}
+async function salvarNovoMedicoNaEntrega(){
+  const nome=(document.getElementById('em2-nome')?.value||'').trim();
+  const crm=(document.getElementById('em2-crm')?.value||'').trim();
+  if(!nome){document.getElementById('e-em2-nome').textContent='Obrigatório';return;}
+  if(!crm){document.getElementById('e-em2-crm').textContent='Obrigatório';return;}
+  const ufCrm=document.getElementById('em2-ufcrm').value;
+  const cpf=document.getElementById('em2-cpf').value;
+  const duplo=duploMedico(crm,ufCrm,cpf,'');
+  if(duplo){toast(duplo,'erro');return;}
+  const dados={sexo:document.getElementById('em2-sexo').value,nome,crm,uf_crm:ufCrm,cpf,telefone:document.getElementById('em2-tel').value,status:'Ativo',especialidades:[],unidades:[]};
+  loading(true,'Salvando médico...');
+  const r=await dbSalvarMedico(dados);
+  loading(false);
+  if(!r?.ok){toast('Erro: '+(r?.msg||'Falha'),'erro');return;}
+  APP.medicos=await dbMedicos();
+  fecharModal2();
+  toast('Médico cadastrado! Selecionado automaticamente.','ok');
+  // Atualiza a lista e seleciona o novo médico
+  const medItems=APP.medicos.filter(m=>m.STATUS==='Ativo').map(m=>({id:m.ID,label:nomeMed(m)+' — CRM '+m.CRM+'-'+m.UF_CRM}));
+  if(SS['e-med']){SS['e-med'].items=medItems;}
+  ssSelect('e-med',r.id);
+  atualizarReqEUni(r.id);
+}
+
 function abrirNovaUnidadeSecundaria(){
   if(!podeEscrever()) return;
   const ufs=APP.estados.map(e=>`<option value="${e.SIGLA}"${e.SIGLA==='PR'?' selected':''}>${e.SIGLA}</option>`).join('');
@@ -1560,14 +1745,18 @@ function abrirNovaEntrega(){
   abrirModal('Nova Entrega de Bloco',`
 <div style="display:flex;flex-direction:column;gap:13px">
   <div class="fi">
-    <label>Médico Destinatário <span class="req">*</span></label>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <label style="margin:0">Médico Destinatário <span class="req">*</span></label>
+      ${podeEscrever()?'<button type="button" class="btn-sm btn-e" onclick="abrirNovoMedicoNaEntrega()">+ Novo Médico</button>':''}
+    </div>
     ${ssHTML('e-med',medItems,'Digitar nome ou CRM do médico...')}
     <div class="err" id="e-e-med"></div>
+    ${!ativos.length?'<div class="wbox">⚠ Nenhum médico ativo cadastrado. <a href="#" onclick="abrirNovoMedicoNaEntrega();return false">Cadastrar médico</a></div>':''}
   </div>
   <div class="fi">
     <label>Quem está retirando</label>
     ${ssHTML('e-req',[],'Próprio médico (selecione após escolher o médico)')}
-    <div id="e-req-warn" class="wbox" style="display:none">⚠ Nenhum requisitante vinculado. <a href="#" onclick="go('requisitantes');fecharModal();return false">Cadastrar requisitante</a></div>
+    <div id="e-req-warn" class="wbox" style="display:none">⚠ Nenhum requisitante vinculado a este médico. <a href="#" onclick="abrirNovoReqNaEntrega();return false">Cadastrar requisitante</a></div>
   </div>
   <div id="proc-box" style="display:none;background:var(--amber-bg);border:1.5px solid #fed7aa;border-radius:var(--r);padding:14px;flex-direction:column;gap:10px">
     <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:2px">Dados da Procuração</div>
@@ -1590,7 +1779,7 @@ function abrirNovaEntrega(){
   <div class="fi">
     <label>Unidade de Saúde <span class="req">*</span></label>
     ${ssHTML('e-uni',[],'Selecione o médico primeiro...')}
-    <div id="e-uni-warn" class="wbox" style="display:none">⚠ Nenhuma unidade vinculada. <a href="#" onclick="go('medicos');fecharModal();return false">Ir ao cadastro do médico</a></div>
+    <div id="e-uni-warn" class="wbox" style="display:none">⚠ Nenhuma unidade vinculada a este médico. <a href="#" onclick="abrirGerenciarUnidadeNaEntrega();return false">Vincular ou criar unidade</a></div>
     <div class="err" id="e-e-uni"></div>
   </div>
   <div class="fi">
