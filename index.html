@@ -76,6 +76,8 @@ a{color:var(--amber);text-decoration:none}
 .sf-papel span{background:rgba(201,106,0,.2);color:var(--amber-lt);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700;text-transform:uppercase}
 .lout{background:rgba(220,38,38,.1);color:#f87171;border:1px solid rgba(220,38,38,.2);border-radius:var(--rs);padding:6px 10px;font-size:11px;font-weight:600;width:100%;transition:all .15s}
 .lout:hover{background:rgba(220,38,38,.2)}
+.help-btn{background:rgba(255,255,255,.06);color:var(--muted2);border:1px solid rgba(255,255,255,.1);border-radius:var(--rs);padding:6px 10px;font-size:11px;font-weight:600;width:100%;transition:all .15s;margin-bottom:6px;text-align:left}
+.help-btn:hover{background:rgba(255,255,255,.12);color:#fff}
 #sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:190}
 #hbg{display:none;position:fixed;top:12px;left:12px;z-index:300;background:var(--slate);border:none;border-radius:8px;width:38px;height:38px;align-items:center;justify-content:center;flex-direction:column;gap:4px;box-shadow:var(--sh-md)}
 #hbg span{display:block;width:18px;height:2px;background:#fff;border-radius:2px}
@@ -300,6 +302,7 @@ td.mono{font-family:var(--mono);font-weight:500;color:#92400e;font-size:12px}
     <div id="sfoot">
       <div class="sf-user" id="sf-nome">—</div>
       <div class="sf-papel"><span id="sf-papel">—</span></div>
+      <button class="help-btn" onclick="window.open('ajuda.html','_blank')">❓ Ajuda / Manual</button>
       <button class="lout" onclick="fazerLogout()">↩ Sair do sistema</button>
     </div>
   </aside>

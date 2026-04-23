@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ajuda — SCVSAT · 12ª RS Umuarama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --amber:#c96a00;--amber-lt:#f59e0b;--amber-bg:#fff7ed;
+  --slate:#0f172a;--slate2:#1e293b;--slate3:#334155;
+  --border:#e2e8f0;--bg:#f1f5f9;--surface:#fff;
+  --text:#0f172a;--muted:#64748b;--muted2:#94a3b8;
+  --green:#059669;--green-bg:#ecfdf5;
+  --red:#dc2626;--red-bg:#fef2f2;
+  --blue:#2563eb;--blue-bg:#eff6ff;
+  --r:10px;--rs:7px;
+  --sh:0 1px 3px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;background:var(--bg);color:var(--text);line-height:1.5}
+
+/* TOPBAR */
+.topbar{background:var(--slate);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.topbar-icon{width:32px;height:32px;background:var(--amber);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;flex-shrink:0}
+.topbar-title{color:#fff;font-weight:700;font-size:14px}
+.topbar-sub{color:var(--muted2);font-size:11px;margin-top:1px}
+.btn-back{background:rgba(255,255,255,.08);color:var(--muted2);border:1px solid rgba(255,255,255,.12);border-radius:var(--rs);padding:6px 12px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .15s;text-decoration:none;display:flex;align-items:center;gap:5px}
+.btn-back:hover{background:rgba(255,255,255,.15);color:#fff}
+
+/* TABS */
+.tabs-bar{background:var(--surface);border-bottom:1.5px solid var(--border);display:flex;padding:0 24px}
+.tab-btn{background:transparent;border:none;border-bottom:2.5px solid transparent;padding:12px 16px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:-1.5px}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:600}
+
+/* LAYOUT */
+.page{max-width:860px;margin:0 auto;padding:28px 20px 60px}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* SECTION TITLE */
+.sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted2);margin:28px 0 12px;padding-bottom:6px;border-bottom:1.5px solid var(--border)}
+.sec-title:first-child{margin-top:0}
+
+/* CARD */
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:14px;box-shadow:var(--sh)}
+.card-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1.5px solid var(--border)}
+.card-icon{font-size:18px;flex-shrink:0}
+.card-titulo{font-size:14px;font-weight:700;color:var(--text)}
+.card-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.card-body{padding:16px}
+
+/* INFO BOXES */
+.ibox{display:flex;gap:10px;border-radius:var(--rs);padding:12px 14px;font-size:13px;line-height:1.5;margin-bottom:12px}
+.ibox:last-child{margin-bottom:0}
+.ibox-red{background:var(--red-bg);border:1px solid #fecaca;color:#7f1d1d}
+.ibox-blue{background:var(--blue-bg);border:1px solid #bfdbfe;color:#1e3a5f}
+.ibox-green{background:var(--green-bg);border:1px solid #a7f3d0;color:#064e3b}
+.ibox-amber{background:var(--amber-bg);border:1px solid #fed7aa;color:#7c2d12}
+.ibox-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+
+/* STEPS */
+.steps{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.step{display:flex;gap:12px;align-items:flex-start}
+.step-num{width:24px;height:24px;background:var(--amber);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+.step-titulo{font-weight:600;font-size:13px;color:var(--text)}
+.step-desc{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* DOCS */
+.docs-grid{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.doc-item{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 10px;font-size:12px;font-weight:500}
+
+/* TABLE */
+.tabela{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+.tabela th{background:var(--bg);padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1.5px solid var(--border)}
+.tabela td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.tabela tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-ok{background:var(--green-bg);color:var(--green)}
+.badge-no{background:var(--red-bg);color:var(--red)}
+
+/* FLOW */
+.fluxo{display:flex;flex-direction:column;gap:0;margin:12px 0}
+.fluxo-node{display:flex;gap:12px}
+.fluxo-linha{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:32px}
+.fluxo-circulo{width:32px;height:32px;background:var(--blue-bg);border:2px solid var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.fluxo-circulo.amber{background:var(--amber-bg);border-color:var(--amber)}
+.fluxo-circulo.green{background:var(--green-bg);border-color:var(--green)}
+.fluxo-vert{width:2px;background:var(--border);flex:1;min-height:16px;margin:2px 0}
+.fluxo-content{padding:4px 0 18px}
+.fluxo-content strong{display:block;font-size:13px;font-weight:600}
+.fluxo-content span{font-size:12px;color:var(--muted);display:block;margin-top:2px}
+
+/* FICHA */
+.ficha-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:24px;max-width:720px;margin:0 auto}
+.ficha-header{padding-bottom:16px;border-bottom:3px solid var(--amber);margin-bottom:20px}
+.ficha-org{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.ficha-titulo{font-size:16px;font-weight:700;color:var(--text);margin:4px 0 2px}
+.ficha-subtitulo{font-size:12px;color:var(--muted)}
+.ficha-sec{margin-bottom:20px}
+.ficha-sec-titulo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--amber);background:var(--amber-bg);border-radius:var(--rs);padding:4px 10px;display:inline-block;margin-bottom:12px}
+.ficha-row{display:grid;gap:12px;margin-bottom:12px}
+.ficha-row.col-1{grid-template-columns:1fr}
+.ficha-row.col-2{grid-template-columns:1fr 1fr}
+.ficha-campo label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.ficha-campo input{width:100%;border:0;border-bottom:1.5px solid var(--border);border-radius:0;padding:5px 2px;font-size:13px;outline:none;font-family:inherit;background:transparent}
+.ficha-campo input:focus{border-bottom-color:var(--amber)}
+.assinatura-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.assinatura-box{display:flex;flex-direction:column;gap:6px;min-height:80px}
+.linha-a{border-bottom:1.5px solid var(--text);margin-top:auto}
+.assinatura-box > span{font-size:10px;text-align:center;color:var(--muted)}
+.docs-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:12px 14px;font-size:13px}
+.docs-box p{font-weight:600;margin-bottom:6px}
+.docs-box ul{padding-left:18px;color:var(--muted)}
+.docs-box li{margin-bottom:3px}
+.ficha-acoes{display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px}
+.btn-print{background:var(--amber);color:#fff;border:none;border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-clear{background:var(--surface);color:var(--muted);border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+
+@media print{
+  .topbar,.tabs-bar,.ficha-acoes,.ibox-blue{display:none!important}
+  .tab-panel{display:block!important}
+  body{background:#fff}
+  .ficha-wrap{border:none;padding:0;box-shadow:none}
+  @page{size:A4 portrait;margin:18mm 16mm}
+}
+@media(max-width:600px){
+  .ficha-row.col-2{grid-template-columns:1fr}
+  .assinatura-grid{grid-template-columns:1fr}
+  .page{padding:20px 14px 50px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-icon">R</div>
+    <div>
+      <div class="topbar-title">SCVSAT — Ajuda</div>
+      <div class="topbar-sub">12ª Regional de Saúde · Umuarama</div>
+    </div>
+  </div>
+  <a href="index.html" class="btn-back">← Voltar ao sistema</a>
+</div>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="mudarAba('manual',this)">📖 Manual do Sistema</button>
+  <button class="tab-btn" onclick="mudarAba('ficha',this)">📝 Ficha Cadastral</button>
+</div>
+
+<!-- ══ ABA MANUAL ══ -->
+<div id="tab-manual" class="tab-panel active">
+<div class="page">
+
+  <p class="sec-title">Cadastro do Médico</p>
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">⚕️</div>
+      <div>
+        <div class="card-titulo">Cadastro do Médico</div>
+        <div class="card-sub">Presença obrigatória na 1ª vez · Documentos originais e cópias</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="ibox ibox-red">
+        <span class="ibox-icon">⚠️</span>
+        <span><strong>Regra fundamental:</strong> O médico deve comparecer <strong>pessoalmente</strong> à 12ª Regional de Saúde para o primeiro cadastro. Não é possível enviar representante nesta etapa.</span>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Documentos exigidos (cópias + originais para conferência):</p>
+      <div class="docs-grid">
+        <div class="doc-item">📄 CRM</div>
+        <div class="doc-item">📄 CPF</div>
+        <div class="doc-item">📄 RG</div>
+        <div class="doc-item">📄 Diploma</div>
+        <div class="doc-item">📄 Comprovante de endereço da Unidade</div>
+        <div class="doc-item">🔖 Carimbo da Unidade</div>
+        <div class="doc-item">📝 Ficha Cadastral preenchida</div>
+      </div>
+      <div class="ibox ibox-blue" style="margin-top:10px">
+        <span class="ibox-icon">🏥</span>
+        <span>O comprovante de endereço cadastra ou atualiza a Unidade de Atendimento. Um médico pode ser vinculado a <strong>várias unidades</strong>.</span>
+      </div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><div class="step-titulo">Médico comparece pessoalmente com documentos</div><div class="step-desc">Entrega originais e cópias ao responsável do SCVSAT.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div><div class="step-titulo">Cadastro realizado no sistema</div><div class="step-desc">Dados do médico e da Unidade de Atendimento são registrados.</div></div></div>
+        <div class="step"><div class="step-num">3</div><div><div class="step-titulo">Cópias arquivadas em pasta física</div><div class="step-desc">Ordenadas pelo nome do médico para controle documental.</div></div></div>
+        <div class="step"><div class="step-num">4</div><div><div class="step-titulo">Médico já pode retirar blocos imediatamente</div><div class="step-desc">A partir deste momento pode também autorizar requisitantes para retiradas futuras.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="sec-title">Requisitante</p>
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">🧾</div>
+      <div>
+        <div class="card-titulo">Requisitante</div>
+        <div class="card-sub">Pessoa autorizada pelo médico a retirar blocos em seu nome</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="ibox ibox-red">
+        <span class="ibox-icon">🔒</span>
+        <span><strong>Pré-requisito:</strong> O médico precisa estar cadastrado no sistema. Sem cadastro do médico, nenhuma retirada por requisitante é permitida.</span>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">O requisitante deve apresentar os itens abaixo <strong>a cada retirada</strong>:</p>
+      <div class="docs-grid">
+        <div class="doc-item">📜 Procuração simples do médico</div>
+        <div class="doc-item">🔖 Carimbo da unidade do médico</div>
+        <div class="doc-item">📄 CPF ou RG do requisitante</div>
+      </div>
+      <div class="ibox ibox-amber" style="margin-top:10px">
+        <span class="ibox-icon">📝</span>
+        <span>A procuração deve especificar o médico autorizante e a quantidade de blocos. É exigida em <strong>toda retirada</strong>, sem exceção, mesmo que o requisitante já esteja cadastrado.</span>
+      </div>
+      <table class="tabela">
+        <thead><tr><th>Situação</th><th>Regra</th></tr></thead>
+        <tbody>
+          <tr><td>Primeiro contato</td><td>Cadastrado no sistema e vinculado ao médico</td></tr>
+          <tr><td>Retiradas seguintes</td><td>Sempre apresentar nova procuração</td></tr>
+          <tr><td>Representar vários médicos</td><td><span class="badge badge-ok">✓ Permitido</span> — uma procuração por médico</td></tr>
+          <tr><td>Médico com vários requisitantes</td><td><span class="badge badge-ok">✓ Permitido</span></td></tr>
+          <tr><td>Médico sem cadastro</td><td><span class="badge badge-no">✗ Bloqueado</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="sec-title">Fluxo Geral</p>
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">🔄</div>
+      <div>
+        <div class="card-titulo">Fluxo completo de cadastro e retirada</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="fluxo">
+        <div class="fluxo-node">
+          <div class="fluxo-linha"><div class="fluxo-circulo amber">⚕️</div><div class="fluxo-vert"></div></div>
+          <div class="fluxo-content"><strong>Médico — 1ª vez (presencial obrigatório)</strong><span>Comparece à 12ª Regional com documentos. Realiza cadastro e já pode retirar blocos.</span></div>
+        </div>
+        <div class="fluxo-node">
+          <div class="fluxo-linha"><div class="fluxo-circulo">🏥</div><div class="fluxo-vert"></div></div>
+          <div class="fluxo-content"><strong>Unidade de Atendimento cadastrada/atualizada</strong><span>Com base no comprovante de endereço. O médico pode ser vinculado a mais de uma unidade.</span></div>
+        </div>
+        <div class="fluxo-node">
+          <div class="fluxo-linha"><div class="fluxo-circulo">📁</div><div class="fluxo-vert"></div></div>
+          <div class="fluxo-content"><strong>Documentos arquivados fisicamente</strong><span>Cópias organizadas em pasta por nome do médico.</span></div>
+        </div>
+        <div class="fluxo-node">
+          <div class="fluxo-linha"><div class="fluxo-circulo green">🧾</div><div class="fluxo-vert"></div></div>
+          <div class="fluxo-content"><strong>Requisitante — retiradas futuras</strong><span>Procuração + carimbo + documento pessoal. Cadastrado e vinculado ao médico na 1ª vez.</span></div>
+        </div>
+        <div class="fluxo-node">
+          <div class="fluxo-linha"><div class="fluxo-circulo green">✅</div></div>
+          <div class="fluxo-content"><strong>Blocos entregues e registrados no sistema</strong><span>Quantidade, data, médico e requisitante registrados para rastreabilidade completa.</span></div>
+        </div>
+      </div>
+      <div class="ibox ibox-amber" style="margin-top:4px">
+        <span class="ibox-icon">⭐</span>
+        <span><strong>Regra de Ouro:</strong> Sem cadastro do médico = sem retirada por requisitante.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══ ABA FICHA ══ -->
+<div id="tab-ficha" class="tab-panel">
+<div class="page" style="max-width:780px">
+
+  <div class="ficha-acoes">
+    <button class="btn-clear" onclick="limparFicha()">🗑 Limpar campos</button>
+    <button class="btn-print" onclick="window.print()">🖨 Imprimir</button>
+  </div>
+
+  <div class="ficha-wrap" id="ficha">
+
+    <div class="ficha-header">
+      <div class="ficha-org">Secretaria de Estado da Saúde do Paraná — SESA/PR</div>
+      <div class="ficha-titulo">Ficha de Cadastro — Receituário Controlado</div>
+      <div class="ficha-subtitulo">12ª Regional de Saúde de Umuarama — SCVSAT</div>
+    </div>
+
+    <div class="ficha-sec">
+      <div class="ficha-sec-titulo">Unidade de Prestação de Serviço</div>
+      <div class="ficha-row col-1">
+        <div class="ficha-campo"><label>Nome da Unidade de Saúde</label><input type="text" placeholder="Ex.: UBS Central de Umuarama"></div>
+      </div>
+      <div class="ficha-row col-2">
+        <div class="ficha-campo"><label>Município</label><input type="text"></div>
+        <div class="ficha-campo"><label>Telefone</label><input type="text" placeholder="(44) 00000-0000"></div>
+      </div>
+      <div class="ficha-row col-1">
+        <div class="ficha-campo"><label>Endereço da Unidade</label><input type="text" placeholder="Rua, número, bairro, CEP"></div>
+      </div>
+    </div>
+
+    <div class="ficha-sec">
+      <div class="ficha-sec-titulo">Dados do Médico</div>
+      <div class="ficha-row col-1">
+        <div class="ficha-campo"><label>Nome Completo</label><input type="text"></div>
+      </div>
+      <div class="ficha-row col-2">
+        <div class="ficha-campo"><label>CRM</label><input type="text" placeholder="CRM/PR 000000"></div>
+        <div class="ficha-campo"><label>Celular</label><input type="text" placeholder="(44) 00000-0000"></div>
+      </div>
+      <div class="ficha-row col-2">
+        <div class="ficha-campo"><label>CPF</label><input type="text" placeholder="000.000.000-00"></div>
+        <div class="ficha-campo"><label>RG</label><input type="text" placeholder="0.000.000-0"></div>
+      </div>
+      <div class="ficha-row col-1">
+        <div class="ficha-campo"><label>Especialidade / Certificado de Qualificação</label><input type="text" placeholder="Ex.: Clínica Médica, Cardiologia..."></div>
+      </div>
+    </div>
+
+    <div class="ficha-sec">
+      <div class="ficha-sec-titulo">Assinatura e Identificação</div>
+      <div class="assinatura-grid">
+        <div class="assinatura-box">
+          <div style="flex:1"></div>
+          <div class="linha-a"></div>
+          <span>Assinatura do Médico com Carimbo</span>
+        </div>
+        <div class="assinatura-box" style="justify-content:flex-start;gap:12px">
+          <div class="ficha-campo" style="width:100%"><label>Rubrica</label><input type="text"></div>
+          <div class="ficha-campo" style="width:100%"><label>Nome por extenso</label><input type="text"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ficha-sec" style="margin-bottom:0">
+      <div class="docs-box">
+        <p>📎 Fotocópias obrigatórias para arquivamento:</p>
+        <ul>
+          <li>RG</li><li>CPF</li><li>CRM</li><li>Diploma</li>
+          <li>Comprovante de endereço da Unidade de Saúde</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ibox ibox-blue" style="margin-top:14px;max-width:720px;margin-left:auto;margin-right:auto">
+    <span class="ibox-icon">💡</span>
+    <span>Preencha os campos acima e clique em <strong>Imprimir</strong> para gerar a ficha com os dados.</span>
+  </div>
+
+</div>
+</div>
+
+<script>
+function mudarAba(nome, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + nome).classList.add('active');
+  btn.classList.add('active');
+}
+function limparFicha() {
+  document.querySelectorAll('#ficha input').forEach(i => i.value = '');
+}
+</script>
+</body>
+</html>
