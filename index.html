@@ -354,7 +354,7 @@ const APP = {
   usuarios:[],
   blocoFiltro:'Todos',
   // Paginação por view
-  pg:{ medicos:1, requisitantes:1, blocos:1, entregas:1, usuarios:1, auditoria:1, unidades:1 },
+  pg:{ medicos:1, requisitantes:1, blocos:1, entregas:1, usuarios:1, auditoria:1, unidades:1, rmnra:1 },
   pgSz:20,
   // Ordenação por view
   sort:{
@@ -364,7 +364,7 @@ const APP = {
     unidades:{k:'NOME',d:1}
   },
   // Busca por view
-  q:{ medicos:'', requisitantes:'', blocos:'', entregas:'', usuarios:'', auditoria:'', unidades:'' }
+  q:{ medicos:'', requisitantes:'', blocos:'', entregas:'', usuarios:'', auditoria:'', unidades:'', rmnra:'' }
 };
 let USUARIO = null;
 let _termoAtual = null;
@@ -388,6 +388,7 @@ const NAV_ITEMS = [
   {id:'unidades',      label:'Unidades de Saúde',   icon:'🏥',admin:false},
   {id:'blocos',        label:'Estoque de Blocos',   icon:'📋',admin:false},
   {id:'entregas',      label:'Entregas',            icon:'📦',admin:false},
+  {id:'rmnra',         label:'RMNRA das Farmácias', icon:'📨',admin:false},
   {id:'auditoria',     label:'Auditoria / Logs',    icon:'🔍',admin:false},
   {id:'usuarios',      label:'Usuários do Sistema', icon:'⚙', admin:true},
 ];
@@ -431,7 +432,7 @@ const toLog = l => ({
 // ══════════════════════════════════════════════════════
 // UTILITÁRIOS
 // ══════════════════════════════════════════════════════
-const pad    = n => String(n).padStart(4,'0');
+const pad    = n => String(n).padStart(6,'0'); // 6 dígitos sequenciais (Art. 78, P06/99)
 const esc    = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const trat   = m => String(m.SEXO||'').toLowerCase()==='feminino'?'Dra.':'Dr.';
 const nomeMed= m => trat(m)+' '+(m.NOME||'');
@@ -445,7 +446,22 @@ const isAdmin = () => USUARIO?.papel==='Administrador';
 function toast(msg,tipo){ const t=document.getElementById('toast'); t.textContent=msg; t.className='show '+(tipo||''); clearTimeout(t._t); t._t=setTimeout(()=>{t.className=''},3500); }
 function loading(s,msg){ const el=document.getElementById('loading'); el.classList.toggle('show',!!s); if(msg) document.getElementById('loading-msg').textContent=msg; }
 function fecharModal(){ document.getElementById('overlay').classList.remove('open'); }
-function fecharTermo(){ document.getElementById('termo-overlay').classList.remove('open'); }
+async function fecharTermo(){
+  if(_termoAtual && podeEscrever()){
+    const {data:ja}=await sb.from('registros_fisicos').select('id').eq('entrega_id',_termoAtual.entrega.id).maybeSingle();
+    if(!ja){
+      const eid=_termoAtual.entrega.id, eprot=_termoAtual.entrega.protocolo;
+      abrirModal2('⚠️ Registro Físico não informado',
+        `<div class="ibox ibox-amber" style="margin-bottom:0"><span>O Termo do protocolo <strong>${eprot}</strong> ainda não foi vinculado ao Livro físico de controle.<br><br>Por determinação da Portaria SVS/MS nº 344/98, o registro é obrigatório.</span></div>`,
+        `<button class="btn btn-s" onclick="fecharModal2();document.getElementById('termo-overlay').classList.remove('open');_termoAtual=null;">Fechar sem registrar</button>
+         <button class="btn btn-p" onclick="fecharModal2();abrirModalLivro('${eid}','${eprot}');">📖 Registrar agora</button>`
+      );
+      return;
+    }
+  }
+  document.getElementById('termo-overlay').classList.remove('open');
+  _termoAtual=null;
+}
 
 // Modal secundário — abre por cima do modal principal sem fechar nem navegar
 function abrirModal2(titulo, corpo, rodape, larga){
@@ -778,6 +794,7 @@ async function carregarView(v){
     else if(v==='unidades'){ APP.unidades=await dbUnidades(); c.innerHTML=renderUnidades(); initBusca('unidades',()=>{}); }
     else if(v==='blocos'){ const d=await dbEntregasCompleto(); Object.assign(APP,d); c.innerHTML=renderBlocos(); initBusca('blocos',()=>{}); }
     else if(v==='entregas'){ const d=await dbEntregasCompleto(); Object.assign(APP,d); c.innerHTML=renderEntregas(); initBusca('entregas',()=>{}); }
+    else if(v==='rmnra'){ c.innerHTML=await buildRmnraBody(''); initBusca('rmnra',(q)=>{buildRmnraBody(q).then(h=>{c.innerHTML=h;})}); }
     else if(v==='auditoria'){ APP.logs=await dbLogs(); c.innerHTML=renderAuditoria(); initBusca('auditoria',()=>{}); }
     else if(v==='usuarios'){ APP.usuarios=await dbUsuarios(); c.innerHTML=renderUsuarios(); initBusca('usuarios',()=>{}); }
   } catch(e){ c.innerHTML=erroView(e.message); }
@@ -897,14 +914,14 @@ async function dbAdicionarBlocos(qtd){
   if(ex?.length){ultN=parseInt(ex[0].numero)||0; ultP=parseInt(ex[0].pagina_final)||0;}
   // UUID gerado pelo banco — não enviamos id no payload
   const rows=Array.from({length:qtd},(_,i)=>({
-    numero: String(ultN+i+1).padStart(4,'0'),
+    numero: String(ultN+i+1).padStart(6,'0'),
     pagina_inicial: ultP+(i*20)+1,
     pagina_final:   ultP+(i*20)+20,
     status: 'Disponivel'
   }));
   const {error}=await sb.from('blocos').insert(rows);
   if(error) return {ok:false,msg:error.message};
-  await registrarLog(USUARIO?.nome,'ENTRADA','Estoque',`${qtd} bloco(s) — Nº ${String(ultN+1).padStart(4,'0')} a ${String(ultN+qtd).padStart(4,'0')}`);
+  await registrarLog(USUARIO?.nome,'ENTRADA','Estoque',`${qtd} bloco(s) — Nº ${String(ultN+1).padStart(6,'0')} a ${String(ultN+qtd).padStart(6,'0')}`);
   return {ok:true};
 }
 
@@ -940,7 +957,10 @@ async function dbRegistrarEntrega(d){
     procuracao_obs:  d.procuracaoObs||'',
     emissor:         USUARIO?.nome||'Sistema',
     observacoes:     d.observacoes||'',
-    quantidade_blocos: ids.length
+    quantidade_blocos: ids.length,
+    carimbo_aposto:  d.carimboAposto||false,
+    recibo_assinado: d.reciboAssinado||false,
+    portador_verificado: d.portadorVerificado||false
   }).select('id').single();
   if(e1) return {ok:false,msg:e1.message};
   const entId=entData.id;
@@ -967,7 +987,7 @@ async function dbGetTermo(entregaId){
     medico:med?{tratamento:t2,nome:med.nome,nomeCompleto:t2+' '+med.nome,crm:med.crm,uf_crm:med.uf_crm,cpf:med.cpf}:null,
     requisitante:req?{nome:req.nome,cpf:req.cpf,rg:req.rg||''}:null,
     unidade:uni?{nome:uni.nome,municipio:uni.municipio||'',uf:uni.uf||'',cnes:uni.cnes||'',telefone:uni.telefone||''}:null,
-    blocos:(bls||[]).map(b=>({numero:b.numero,paginaInicial:b.pagina_inicial,paginaFinal:b.pagina_final})),
+    blocos:(bls||[]).sort((a,b)=>parseInt(a.numero)-parseInt(b.numero)).map(b=>({numero:b.numero,paginaInicial:b.pagina_inicial,paginaFinal:b.pagina_final})),
     config:APP.config
   };
 }
@@ -986,11 +1006,11 @@ function printTermoHTML(pagesHtml, titulo){
   win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo||'Termo de Recebimento')}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-@page{size:A4 portrait;margin:12mm 14mm}
-body{font-family:Georgia,serif;font-size:11px;color:#0f172a;background:#fff}
-.page{page-break-after:always;padding:0}
-.page:last-child{page-break-after:avoid}
-.hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+@page{size:A4 portrait;margin:0}
+body{font-family:Georgia,serif;font-size:11px;color:#0f172a;background:#fff;display:flex;flex-direction:column;align-items:center}
+.page{width:150mm;height:250mm;margin:23mm auto 0;border:0.5mm solid #333;padding:6mm;page-break-after:always;box-sizing:border-box;overflow:hidden;flex-shrink:0}
+.page:last-child{page-break-after:avoid;margin-bottom:23mm}
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
 .hdr-title{font-size:11px;font-weight:700}
 .hdr-sub{font-size:9px;color:#64748b}
 .hdr img{max-width:90px;max-height:44px;object-fit:contain}
@@ -1011,7 +1031,7 @@ body{font-family:Georgia,serif;font-size:11px;color:#0f172a;background:#fff}
 .assin .linha{border-top:2px solid #0f172a;padding-top:6px}
 .assin .nome{font-size:10px;font-weight:600}
 .assin .cargo{font-size:9px;color:#64748b;margin-top:2px}
-.carimbo{border:2px dashed #94a3b8;border-radius:5px;min-height:55px;display:flex;align-items:center;justify-content:center}
+.carimbo{border:2px dashed #94a3b8;border-radius:5px;min-height:165px;display:flex;align-items:center;justify-content:center}
 .carimbo p{font-size:9px;color:#94a3b8;line-height:1.4;text-align:center}
 .footer-doc{text-align:center;font-size:9px;color:#94a3b8;margin-top:10px;border-top:1px solid #f1f5f9;padding-top:6px}
 </style></head><body>${pagesHtml}
@@ -1062,7 +1082,7 @@ ${obsHTML}
 <div class="assinaturas">
   <div class="assin"><div class="linha"><div class="nome">${recNome}</div><div class="cargo">Recebedor · CPF: ${recCPF}</div></div></div>
   <div class="assin"><div class="linha"><div class="nome">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div><div class="cargo">Responsável pela Entrega · SCVSAT</div></div></div>
-  <div class="assin"><div class="carimbo"><p>Carimbo da Unidade<br>de Atendimento</p></div><div class="cargo" style="margin-top:3px;font-size:9px;color:#94a3b8">${uni?.nome||''}</div></div>
+  <div class="assin"><div style="font-size:9px;color:#94a3b8;text-align:center;margin-bottom:3px">Carimbo da Unidade de Atendimento</div><div class="carimbo"></div><div class="cargo" style="margin-top:4px;font-size:9px;color:#94a3b8;text-align:center">${uni?.nome||''}</div></div>
 </div>
 <div class="footer-doc">Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div>
 </div>`;
@@ -1138,6 +1158,7 @@ function buildMedBody(q){
       <td>${badge(m.STATUS)}</td>
       ${wr?`<td><div style="display:flex;gap:4px">
         <button class="btn-sm btn-e" onclick='abrirFormMedico(JSON.parse(this.dataset.m))' data-m='${mj}'>Editar</button>
+        <button class="btn-sm btn-s" onclick="abrirOcorrenciasMedico('${m.ID}','${m.NOME}')">📋</button>
         <button class="btn-sm ${m.STATUS==='Ativo'?'btn-d':'btn-ok'}" onclick="toggleMedico('${m.ID}','${m.STATUS==='Ativo'?'Inativo':'Ativo'}')">${m.STATUS==='Ativo'?'Inativar':'Ativar'}</button>
       </div></td>`:''}
     </tr>`;
@@ -1689,9 +1710,9 @@ function buildBlocosBody(q){
   let fil=APP.blocos.filter(b=>(APP.blocoFiltro==='Todos'||b.STATUS===APP.blocoFiltro)&&(!q||b.NUMERO.includes(q)));
   fil=sortItems(fil,APP.sort.blocos.k,APP.sort.blocos.d);
   const {items,total,pages,page}=paginate(fil,APP.pg.blocos,APP.pgSz);
-  const rows=items.map(b=>{ const ent=APP.entregas.find(e=>String(e.IDS_BLOCOS||'').split(';').includes(b.ID)); const med=APP.medicos.find(m=>m.ID===(ent?.ID_MEDICO)); return `<tr style="border-left:3px solid ${sc[b.STATUS]||'var(--border)'}"><td class="bold">Bloco ${pad(b.NUMERO)}</td><td>${b.PAGINA_INICIAL}</td><td>${b.PAGINA_FINAL}</td><td><span class="badge b-gr">20</span></td><td>${badge(b.STATUS)}</td><td style="font-size:12px">${med?nomeMed(med):'-'}</td></tr>`; }).join('');
+  const rows=items.map(b=>{ const ent=APP.entregas.find(e=>String(e.IDS_BLOCOS||'').split(';').includes(b.ID)); const med=APP.medicos.find(m=>m.ID===(ent?.ID_MEDICO)); const extBtn=podeEscrever()&&b.STATUS==='Disponivel'?`<button class="btn-sm btn-d" style="font-size:10px;padding:2px 6px" onclick="abrirExtravioBloco('${b.ID}','${b.NUMERO}')">Extravio</button>`:''; return `<tr style="border-left:3px solid ${sc[b.STATUS]||'var(--border)'}"><td class="bold">Bloco ${pad(b.NUMERO)}</td><td>${b.PAGINA_INICIAL}</td><td>${b.PAGINA_FINAL}</td><td><span class="badge b-gr">20</span></td><td>${badge(b.STATUS)}</td><td style="font-size:12px">${med?nomeMed(med):'-'}</td><td>${extBtn}</td></tr>`; }).join('');
   return `<div class="card dtbl"><table>
-    <thead><tr>${thSort('blocos','NUMERO','Bloco')}${thSort('blocos','PAGINA_INICIAL','Pág. Inicial')}${thSort('blocos','PAGINA_FINAL','Pág. Final')}<th>Folhas</th>${thSort('blocos','STATUS','Status')}<th>Entregue a</th></tr></thead>
+    <thead><tr>${thSort('blocos','NUMERO','Bloco')}${thSort('blocos','PAGINA_INICIAL','Pág. Inicial')}${thSort('blocos','PAGINA_FINAL','Pág. Final')}<th>Folhas</th>${thSort('blocos','STATUS','Status')}<th>Entregue a</th><th>Ações</th></tr></thead>
     <tbody>${rows||`<tr><td colspan="6"><div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">Nenhum bloco nesta categoria.</div></div></td></tr>`}</tbody>
   </table>${renderPag(pages,page,'blocos',total,items.length)}</div>
   <div class="mcards">${items.map(b=>{ const sc2=sc[b.STATUS]||'var(--border)'; const ent=APP.entregas.find(e=>String(e.IDS_BLOCOS||'').split(';').includes(b.ID)); const med=APP.medicos.find(m=>m.ID===(ent?.ID_MEDICO)); return `<div class="mc" style="border-left:3px solid ${sc2}"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="mc-title">Bloco ${pad(b.NUMERO)}</div>${badge(b.STATUS)}</div><div class="mc-sub">Págs. ${b.PAGINA_INICIAL}–${b.PAGINA_FINAL} · 20 folhas</div>${med?`<div style="font-size:11px;color:var(--muted)">→ ${nomeMed(med)}</div>`:''}</div>`; }).join('')||`<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">Nenhum bloco.</div></div>`}${renderPag(pages,page,'blocos',total,items.length)}</div>`;
@@ -1722,7 +1743,10 @@ function renderEntregas(){
   return `
 <div class="ph">
   <div class="ph-left"><div class="pt">Entregas</div><div class="ps">Protocolos com rastreabilidade completa</div></div>
-  ${wr?`<div class="ph-act"><button class="btn btn-p" onclick="abrirNovaEntrega()">+ Nova Entrega</button></div>`:''}
+  <div class="ph-act" style="display:flex;gap:8px">
+    <button class="btn btn-s" onclick="exportarEntregasCSV()" style="font-size:12px">⬇ Exportar CSV</button>
+    ${wr?`<button class="btn btn-p" onclick="abrirNovaEntrega()">+ Nova Entrega</button>`:''}
+  </div>
 </div>
 <div class="toolbar">${searchBar('entregas','Buscar por médico, protocolo ou unidade...')}</div>
 <div id="entregas-body">${buildEntregasBody('')}</div>`;
@@ -1802,6 +1826,15 @@ function abrirNovaEntrega(){
     <div id="e-blocos-info" class="ibox" style="margin-top:6px"></div>
   </div>
   <div class="fi"><label>Observações gerais</label><textarea id="e-obs" placeholder="Observações opcionais..."></textarea></div>
+  <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:var(--r);padding:14px">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--green);margin-bottom:10px">✅ Confirmações obrigatórias (Art. 68-80, Portaria 06/99)</div>
+    <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer"><input type="checkbox" id="e-carimbo" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"><span>Carimbo da unidade foi aposto em <strong>todas as folhas</strong> do talonário na presença do responsável</span></label>
+    <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="e-recibo" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"><span>O recebedor <strong>assinou o Termo de Recebimento</strong> físico (via será arquivada)</span></label>
+    <div id="e-portador-check" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #a7f3d0">
+      <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:6px">Verificação do Portador (Art. 80, P06/99):</div>
+      <label style="display:flex;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="e-port-check" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"><span>Autorização por escrito, RG e carimbo do profissional verificados</span></label>
+    </div>
+  </div>
   <div class="ibox">ℹ O Termo de Recebimento abrirá automaticamente após salvar.</div>
 </div>`,
   `<button class="btn btn-s" onclick="fecharModal()">Cancelar</button><button class="btn btn-p" onclick="salvarEntrega()">Registrar Entrega</button>`,true);
@@ -1811,8 +1844,10 @@ function abrirNovaEntrega(){
 function atualizarProcuracao(){
   const reqId=ssGet('e-req');
   const box=document.getElementById('proc-box');
+  const portBox=document.getElementById('e-portador-check');
   if(!box) return;
   box.style.display=reqId?'flex':'none';
+  if(portBox) portBox.style.display=reqId?'block':'none';
   atualizarLimiteQtd();
 }
 function atualizarLimiteQtd(){
@@ -1891,7 +1926,10 @@ async function salvarEntrega(){
     procuracaoData: document.getElementById('e-proc-data')?.value||'',
     procuracaoQtd:  parseInt(document.getElementById('e-proc-qtd')?.value||'0')||null,
     procuracaoObs:  document.getElementById('e-proc-obs')?.value||'',
-    observacoes:  document.getElementById('e-obs')?.value||''
+    observacoes:  document.getElementById('e-obs')?.value||'',
+    carimboAposto: document.getElementById('e-carimbo')?.checked||false,
+    reciboAssinado: document.getElementById('e-recibo')?.checked||false,
+    portadorVerificado: document.getElementById('e-port-check')?.checked||false
   });
   loading(false);
   if(r?.ok){
@@ -2030,30 +2068,60 @@ async function enviarResetSenha(email){ if(!isAdmin()) return;
 // REGISTRO FÍSICO (Livro/Página)
 // ══════════════════════════════════════════════════════
 async function abrirModalLivro(entregaId, protocolo){
-  const {data:ult}=await sb.from('registros_fisicos').select('numero_livro,numero_pagina').order('criado_em',{ascending:false}).limit(1).maybeSingle();
-  const {data:ja}=await sb.from('registros_fisicos').select('numero_livro,numero_pagina').eq('entrega_id',entregaId).maybeSingle();
+  const {data:ult}=await sb.from('registros_fisicos').select('numero_livro,numero_pagina,lado').order('criado_em',{ascending:false}).limit(1).maybeSingle();
+  const {data:ja}=await sb.from('registros_fisicos').select('numero_livro,numero_pagina,lado,qtd_paginas_termo').eq('entrega_id',entregaId).maybeSingle();
   const livroVal=ja?.numero_livro??(ult?.numero_livro??1);
   const pagVal=ja?.numero_pagina??(ult?parseInt(ult.numero_pagina)+1:1);
-  abrirModal('Registro Físico do Termo',`
-<p style="font-size:13px;color:var(--muted);margin-bottom:14px">Confira onde o Termo do protocolo <strong style="font-family:var(--mono);color:#92400e">${protocolo}</strong> foi colado e ajuste se necessário.</p>
-<div class="fg">
-  <div class="fi s1"><label>Nº do Livro <span class="req">*</span></label><input type="number" id="rf-livro" value="${livroVal}" min="1" style="font-size:22px;font-weight:700;text-align:center;padding:12px"></div>
-  <div class="fi s1"><label>Página <span class="req">*</span></label><input type="number" id="rf-pag" value="${pagVal}" min="1" style="font-size:22px;font-weight:700;text-align:center;padding:12px"></div>
+  const ladoVal=ja?.lado??'Frente';
+  const ent=APP.entregas.find(e=>e.ID===entregaId);
+  const qtdBlocos=ent?.QUANTIDADE_BLOCOS||1;
+  const qtdPagsTermo=Math.ceil(qtdBlocos/10)||1;
+  const jaAviso=ja?`<div class="wbox" style="margin-top:10px">⚠ Já possui registro: Livro ${ja.numero_livro}, pág. ${ja.numero_pagina} (${ja.lado||'Frente'}). Salvar irá atualizar.</div>`:'';
+  abrirModal2('📖 Registro Físico do Livro',`
+<p style="font-size:13px;color:var(--muted);margin-bottom:12px">Informe onde o Termo do protocolo <strong style="font-family:var(--mono);color:#92400e">${protocolo}</strong> foi colado no livro físico.</p>
+<div class="ibox ibox-blue" style="margin-bottom:14px">ℹ Esta entrega gerou <strong>${qtdPagsTermo}</strong> página(s) impressa(s) (${qtdBlocos} bloco(s), 10 por pág.). Informe onde começa a 1ª página do Termo.</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+  <div class="fi" style="margin:0"><label>Nº do Livro <span class="req">*</span></label><input type="number" id="rf-livro" value="${livroVal}" min="1" style="font-size:20px;font-weight:700;text-align:center;padding:10px"></div>
+  <div class="fi" style="margin:0"><label>Página Inicial <span class="req">*</span></label><input type="number" id="rf-pag" value="${pagVal}" min="1" style="font-size:20px;font-weight:700;text-align:center;padding:10px" oninput="calcLivroRange(${qtdPagsTermo})"></div>
+  <div class="fi" style="margin:0"><label>Lado Inicial <span class="req">*</span></label>
+    <select id="rf-lado" style="font-size:14px;font-weight:600;padding:10px;width:100%" onchange="calcLivroRange(${qtdPagsTermo})">
+      <option value="Frente"${ladoVal==='Frente'?' selected':''}>Frente</option>
+      <option value="Verso"${ladoVal==='Verso'?' selected':''}>Verso</option>
+    </select>
+  </div>
 </div>
-${ja?`<div class="wbox" style="margin-top:8px">⚠ Esta entrega já possui registro: Livro ${ja.numero_livro}, pág. ${ja.numero_pagina}. Salvar irá atualizar.</div>`:''}
-<div class="ibox" style="margin-top:8px">ℹ Os números foram preenchidos com base no último registro. Ajuste se necessário.</div>`,
-  `<button class="btn btn-s" onclick="fecharModal()">Pular</button><button class="btn btn-p" onclick="salvarRegistroFisico('${entregaId}','${protocolo}',${ja?'true':'false'})">Confirmar Registro</button>`);
+<div id="rf-range" style="background:var(--bg);border-radius:var(--rs);padding:10px 12px;font-size:12px;color:var(--muted);min-height:36px"></div>
+${jaAviso}`,
+  `<button class="btn btn-s" onclick="fecharModal2()">Cancelar</button><button class="btn btn-p" onclick="salvarRegistroFisico('${entregaId}','${protocolo}',${ja?'true':'false'},${qtdPagsTermo})">Confirmar Registro</button>`);
+  setTimeout(()=>calcLivroRange(qtdPagsTermo),80);
 }
-async function salvarRegistroFisico(entregaId,protocolo,atualizar){
+function calcLivroRange(n){
+  const pag=parseInt(document.getElementById('rf-pag')?.value||'1');
+  const lado=document.getElementById('rf-lado')?.value||'Frente';
+  const lados=['Frente','Verso'];
+  let li=lados.indexOf(lado), p=pag, items=[];
+  for(let i=0;i<n;i++){
+    items.push('Pág. <strong>'+p+'</strong> — '+lados[li]);
+    li++; if(li>=2){li=0;p++;}
+  }
+  const el=document.getElementById('rf-range');
+  if(el) el.innerHTML='<strong>Posições ocupadas no livro:</strong>&nbsp; '+items.join(' &nbsp;›&nbsp; ');
+}
+async function salvarRegistroFisico(entregaId,protocolo,atualizar,qtdPags){
   const livro=parseInt(document.getElementById('rf-livro')?.value||'0');
   const pag=parseInt(document.getElementById('rf-pag')?.value||'0');
+  const lado=document.getElementById('rf-lado')?.value||'Frente';
   if(!livro||livro<1){toast('Número de livro inválido.','erro');return;}
   if(!pag||pag<1){toast('Número de página inválido.','erro');return;}
   loading(true,'Salvando...');
-  if(atualizar){await sb.from('registros_fisicos').update({numero_livro:livro,numero_pagina:pag,usuario:USUARIO?.nome||'Sistema'}).eq('entrega_id',entregaId);}
-  else{await sb.from('registros_fisicos').insert({entrega_id:entregaId,numero_livro:livro,numero_pagina:pag,usuario:USUARIO?.nome||'Sistema'});}
-  await registrarLog(USUARIO?.nome,'REGISTRO_FISICO','Entrega '+protocolo,'Livro '+livro+', pág. '+pag);
-  loading(false);fecharModal();toast('Registro salvo — Livro '+livro+', pág. '+pag,'ok');
+  const payload={numero_livro:livro,numero_pagina:pag,lado,qtd_paginas_termo:qtdPags||1,usuario:USUARIO?.nome||'Sistema'};
+  if(atualizar){await sb.from('registros_fisicos').update(payload).eq('entrega_id',entregaId);}
+  else{await sb.from('registros_fisicos').insert({...payload,entrega_id:entregaId});}
+  await registrarLog(USUARIO?.nome,'REGISTRO_FISICO','Entrega '+protocolo,'Livro '+livro+', pág. '+pag+' '+lado);
+  loading(false);fecharModal2();
+  document.getElementById('termo-overlay').classList.remove('open');
+  _termoAtual=null;
+  toast('Registro salvo — Livro '+livro+', pág. '+pag+' ('+lado+')','ok');
 }
 
 // ══════════════════════════════════════════════════════
@@ -2105,7 +2173,7 @@ async function verTermo(entregaId){
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:10px">
     <div style="text-align:center"><div style="border-top:2px solid #0f172a;padding-top:6px"><div style="font-size:11px;font-weight:600">${recNome}</div><div style="font-size:10px;color:#64748b">Recebedor</div></div></div>
     <div style="text-align:center"><div style="border-top:2px solid #0f172a;padding-top:6px"><div style="font-size:11px;font-weight:600">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div><div style="font-size:10px;color:#64748b">Responsável · SCVSAT</div></div></div>
-    <div style="text-align:center"><div style="border:2px dashed #94a3b8;border-radius:5px;min-height:55px;display:flex;align-items:center;justify-content:center"><div style="font-size:9px;color:#94a3b8">Carimbo da Unidade</div></div></div>
+    <div style="text-align:center"><div style="font-size:10px;color:#94a3b8;margin-bottom:3px">Carimbo da Unidade de Atendimento</div><div style="border:2px dashed #94a3b8;border-radius:5px;min-height:165px;display:flex;align-items:center;justify-content:center"></div><div style="font-size:10px;color:#94a3b8;margin-top:3px">${uni?.nome||''}</div></div>
   </div>
 </div>`;
   document.getElementById('termo-overlay').classList.add('open');
@@ -2119,10 +2187,189 @@ function imprimirTermo(){
   if(!paginas.length) paginas.push([]);
   const pagesHtml=paginas.map((pg,i)=>buildTermPage(ent,med,req,uni,pg,cfg,i,paginas.length)).join('');
   printTermoHTML(pagesHtml,'Termo '+ent.protocolo);
-  // Após fechar a janela de impressão, pergunta sobre livro/página
   if(podeEscrever()){
-    setTimeout(()=>{ abrirModalLivro(ent.id,ent.protocolo); },1500);
+    setTimeout(()=>{ abrirModalLivro(ent.id,ent.protocolo); },1200);
   }
+}
+
+// ══════════════════════════════════════════════════════
+// EXTRAVIO DE BLOCO (Art. 39, P344/98 e Art. 79, P06/99)
+// ══════════════════════════════════════════════════════
+function abrirExtravioBloco(blocoId, blocoNum){
+  if(!podeEscrever()) return;
+  const hoje=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
+  abrirModal('Registrar Extravio — Bloco '+pad(blocoNum),`
+<div class="ibox ibox-red" style="margin-bottom:14px">⚠ Registrar extravio muda o status do bloco para <strong>Extraviado</strong>. Informe os dados do Boletim de Ocorrência Policial conforme Art. 39 da Portaria 344/98.</div>
+<div class="fg">
+  <div class="fi"><label>Data do Extravio/Ocorrência <span class="req">*</span></label><input type="date" id="ext-data" value="${hoje}" max="${hoje}"></div>
+  <div class="fi"><label>Tipo <span class="req">*</span></label>
+    <select id="ext-tipo"><option value="Extravio">Extravio</option><option value="Roubo">Roubo</option><option value="Furto">Furto</option></select></div>
+</div>
+<div class="fg">
+  <div class="fi"><label>Número do B.O. <span class="req">*</span></label><input type="text" id="ext-bo" placeholder="Ex.: 2024/000123"></div>
+  <div class="fi"><label>Data do B.O.</label><input type="date" id="ext-dbo" value="${hoje}" max="${hoje}"></div>
+</div>
+<div class="fi"><label>Autoridade Policial / Delegacia</label><input type="text" id="ext-dp" placeholder="Ex.: 1ª Delegacia de Polícia Civil — Umuarama"></div>
+<div class="fi"><label>Observações</label><textarea id="ext-obs" placeholder="Descreva as circunstâncias do extravio..."></textarea></div>`,
+  `<button class="btn btn-s" onclick="fecharModal()">Cancelar</button><button class="btn btn-d" onclick="confirmarExtravioBloco('${blocoId}','${blocoNum}')">⚠ Confirmar Extravio</button>`);
+}
+async function confirmarExtravioBloco(blocoId, blocoNum){
+  const dataExt=document.getElementById('ext-data')?.value;
+  const tipo=document.getElementById('ext-tipo')?.value||'Extravio';
+  const bo=document.getElementById('ext-bo')?.value||'';
+  const dbo=document.getElementById('ext-dbo')?.value||null;
+  const dp=document.getElementById('ext-dp')?.value||'';
+  const obs=document.getElementById('ext-obs')?.value||'';
+  if(!dataExt){toast('Informe a data do extravio.','erro');return;}
+  if(!bo){toast('Número do B.O. é obrigatório.','erro');return;}
+  loading(true,'Registrando extravio...');
+  const {error}=await sb.from('blocos').update({
+    status:'Extraviado',
+    data_extravio:dataExt,
+    numero_bo:bo,
+    data_bo:dbo||null,
+    autoridade_policial:dp
+  }).eq('id',blocoId);
+  if(error){loading(false);toast('Erro: '+error.message,'erro');return;}
+  await registrarLog(USUARIO?.nome,tipo,'Bloco '+pad(blocoNum),`B.O.: ${bo} | ${dp} | ${obs}`);
+  const d=await dbEntregasCompleto();Object.assign(APP,d);
+  loading(false);fecharModal();
+  document.getElementById('blocos-body').innerHTML=buildBlocosBody(APP.q.blocos);
+  toast(`Bloco ${pad(blocoNum)} registrado como ${tipo} — B.O.: ${bo}`,'ok');
+}
+
+// ══════════════════════════════════════════════════════
+// OCORRÊNCIAS DO MÉDICO (Art. 79, P06/99)
+// ══════════════════════════════════════════════════════
+async function abrirOcorrenciasMedico(medicoId, medicoNome){
+  loading(true,'Carregando ocorrências...');
+  const {data:ocs}=await sb.from('medico_ocorrencias').select('*').eq('medico_id',medicoId).order('data_ocorrencia',{ascending:false});
+  loading(false);
+  const hoje=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
+  const lista=(ocs||[]).map(o=>`
+    <div style="background:var(--bg);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;border-left:3px solid ${o.tipo==='Roubo'||o.tipo==='Furto'?'var(--red)':o.tipo==='Suspensão'?'var(--amber)':'var(--blue)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <span style="font-weight:600;font-size:13px">${o.tipo}</span>
+        <span style="font-size:11px;color:var(--muted)">${o.data_ocorrencia||'-'}</span>
+      </div>
+      ${o.descricao?`<div style="font-size:12px;color:var(--muted);margin-top:3px">${o.descricao}</div>`:''}
+      ${o.numero_bo?`<div style="font-size:11px;color:var(--muted);margin-top:2px">B.O.: ${o.numero_bo}${o.autoridade_policial?' | '+o.autoridade_policial:''}</div>`:''}
+      <div style="font-size:10px;color:var(--muted2);margin-top:3px">Registrado por: ${o.usuario||'-'}</div>
+    </div>`).join('')||'<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">Nenhuma ocorrência registrada.</div></div>';
+  abrirModal('📋 Ocorrências — '+medicoNome,`
+<div style="max-height:260px;overflow-y:auto;margin-bottom:14px">${lista}</div>
+<div style="border-top:1.5px solid var(--border);padding-top:14px">
+  <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Nova Ocorrência</div>
+  <div class="fg">
+    <div class="fi"><label>Tipo <span class="req">*</span></label>
+      <select id="oc-tipo">
+        <option>Mudança de Endereço</option><option>Suspensão</option><option>Retomada</option>
+        <option>Roubo</option><option>Furto</option><option>Extravio</option><option>Outro</option>
+      </select></div>
+    <div class="fi"><label>Data <span class="req">*</span></label><input type="date" id="oc-data" value="${hoje}" max="${hoje}"></div>
+  </div>
+  <div class="fi"><label>Descrição</label><textarea id="oc-desc" placeholder="Descreva a ocorrência..."></textarea></div>
+  <div id="oc-bo-area">
+    <div class="fg">
+      <div class="fi"><label>Número do B.O.</label><input type="text" id="oc-bo" placeholder="Ex.: 2024/000456"></div>
+      <div class="fi"><label>Data do B.O.</label><input type="date" id="oc-dbo" value="${hoje}" max="${hoje}"></div>
+    </div>
+    <div class="fi"><label>Autoridade Policial</label><input type="text" id="oc-dp" placeholder="Delegacia..."></div>
+  </div>
+</div>`,
+  `<button class="btn btn-s" onclick="fecharModal()">Fechar</button><button class="btn btn-p" onclick="salvarOcorrencia('${medicoId}','${medicoNome}')">Salvar Ocorrência</button>`);
+}
+async function salvarOcorrencia(medicoId, medicoNome){
+  const tipo=document.getElementById('oc-tipo')?.value;
+  const data=document.getElementById('oc-data')?.value;
+  const desc=document.getElementById('oc-desc')?.value||'';
+  const bo=document.getElementById('oc-bo')?.value||'';
+  const dbo=document.getElementById('oc-dbo')?.value||null;
+  const dp=document.getElementById('oc-dp')?.value||'';
+  if(!data){toast('Informe a data da ocorrência.','erro');return;}
+  loading(true,'Salvando...');
+  await sb.from('medico_ocorrencias').insert({medico_id:medicoId,tipo,descricao:desc,numero_bo:bo||null,data_bo:dbo||null,autoridade_policial:dp||null,data_ocorrencia:data,usuario:USUARIO?.nome||'Sistema'});
+  await registrarLog(USUARIO?.nome,'OCORRENCIA','Médico '+medicoNome,tipo+(bo?' B.O.:'+bo:''));
+  loading(false);fecharModal();
+  toast('Ocorrência registrada: '+tipo,'ok');
+}
+
+// ══════════════════════════════════════════════════════
+// RMNRA — RELAÇÃO MENSAL DE NOTIFICAÇÕES DE RECEITA "A"
+// ══════════════════════════════════════════════════════
+async function buildRmnraBody(q){
+  const {data:recs}=await sb.from('rmnra_recebimentos').select('*').order('criado_em',{ascending:false});
+  const items=recs||[];
+  const fil=q?items.filter(r=>r.farmacia?.toLowerCase().includes(q.toLowerCase())||r.municipio?.toLowerCase().includes(q.toLowerCase())||r.mes_referencia?.includes(q)):items;
+  const tbody=fil.map(r=>`<tr>
+    <td class="bold">${r.farmacia}</td>
+    <td>${r.municipio||'-'}</td>
+    <td style="font-family:var(--mono)">${r.mes_referencia||'-'}</td>
+    <td>${r.data_recebimento||'-'}</td>
+    <td>${r.qtd_notificacoes??'-'}</td>
+    <td style="font-size:11px;color:var(--muted)">${r.observacoes||'-'}</td>
+    <td style="font-size:11px;color:var(--muted2)">${r.usuario||'-'}</td>
+  </tr>`).join('')||`<tr><td colspan="7"><div class="empty"><div class="empty-ico">📨</div><div class="empty-txt">Nenhum recebimento registrado.</div></div></td></tr>`;
+  return `<div class="ph"><div class="ph-left"><div class="pt">RMNRA — Farmácias</div><div class="ps">Relações Mensais de Notificações de Receita "A" recebidas · Art. 42/107, P344/98</div></div>${podeEscrever()?`<div class="ph-act"><button class="btn btn-p" onclick="abrirNovoRmnra()">+ Registrar Recebimento</button></div>`:''}</div>
+<div class="toolbar">${searchBar('rmnra','Buscar por farmácia ou município...')}</div>
+<div class="card dtbl"><table>
+  <thead><tr><th>Farmácia</th><th>Município</th><th>Mês Ref.</th><th>Data Receb.</th><th>Qtd Not.</th><th>Obs.</th><th>Operador</th></tr></thead>
+  <tbody>${tbody}</tbody>
+</table></div>`;
+}
+function abrirNovoRmnra(){
+  const hoje=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
+  const mesAtual=hoje.substring(0,7);
+  abrirModal('Registrar Recebimento de RMNRA',`
+<div class="ibox ibox-blue" style="margin-bottom:14px">ℹ Farmácias devem enviar a RMNRA até o dia 15 do mês seguinte (Art. 42, P344/98). Registre aqui cada recebimento.</div>
+<div class="fg">
+  <div class="fi"><label>Farmácia / Drogaria <span class="req">*</span></label><input type="text" id="rmnra-farm" placeholder="Nome da farmácia"></div>
+  <div class="fi"><label>Município</label><input type="text" id="rmnra-mun" placeholder="Município"></div>
+</div>
+<div class="fg">
+  <div class="fi"><label>Mês de Referência <span class="req">*</span></label><input type="month" id="rmnra-mes" value="${mesAtual}"></div>
+  <div class="fi"><label>Data de Recebimento</label><input type="date" id="rmnra-data" value="${hoje}" max="${hoje}"></div>
+</div>
+<div class="fi"><label>Qtd. de Notificações</label><input type="number" id="rmnra-qtd" min="0" placeholder="Ex.: 42"></div>
+<div class="fi"><label>Observações</label><textarea id="rmnra-obs" placeholder="Obs. sobre o recebimento..."></textarea></div>`,
+  `<button class="btn btn-s" onclick="fecharModal()">Cancelar</button><button class="btn btn-p" onclick="salvarRmnra()">Registrar</button>`);
+}
+async function salvarRmnra(){
+  const farm=document.getElementById('rmnra-farm')?.value||'';
+  const mun=document.getElementById('rmnra-mun')?.value||'';
+  const mes=document.getElementById('rmnra-mes')?.value||'';
+  const data=document.getElementById('rmnra-data')?.value||null;
+  const qtd=parseInt(document.getElementById('rmnra-qtd')?.value||'0')||null;
+  const obs=document.getElementById('rmnra-obs')?.value||'';
+  if(!farm){toast('Informe a farmácia.','erro');return;}
+  if(!mes){toast('Informe o mês de referência.','erro');return;}
+  loading(true,'Salvando...');
+  await sb.from('rmnra_recebimentos').insert({farmacia:farm,municipio:mun,mes_referencia:mes,data_recebimento:data,qtd_notificacoes:qtd,observacoes:obs,usuario:USUARIO?.nome||'Sistema'});
+  await registrarLog(USUARIO?.nome,'RMNRA','Farmácia '+farm,'Mês: '+mes);
+  loading(false);fecharModal();
+  const c=document.getElementById('content');
+  if(c) c.innerHTML=await buildRmnraBody(APP.q.rmnra||'');
+  toast('RMNRA registrada — '+farm,'ok');
+}
+
+// ══════════════════════════════════════════════════════
+// EXPORTAÇÃO CSV DE ENTREGAS (Item 20)
+// ══════════════════════════════════════════════════════
+function exportarEntregasCSV(){
+  const rows=[['Protocolo','Data/Hora','Médico','CRM','Requisitante','Unidade','Município','Blocos','Qtd','Tipo Retirada','Carimbo Aposto','Recibo Assinado']];
+  APP.entregas.forEach(e=>{
+    const m=APP.medicos.find(x=>x.ID===e.ID_MEDICO);
+    const r=APP.requisitantes.find(x=>x.ID===e.ID_REQUISITANTE);
+    const u=APP.unidades.find(x=>x.ID===e.ID_UNIDADE);
+    const nums=String(e.IDS_BLOCOS||'').split(';').map(id=>{const b=APP.blocos.find(x=>x.ID===id.trim());return b?'Bloco '+pad(b.NUMERO):'';}).filter(Boolean).join(' | ');
+    rows.push([e.PROTOCOLO,fmtDt(e.DATA_HORA),m?nomeMed(m):'-',m?m.CRM+'-'+m.UF_CRM:'-',r?r.NOME:'-',u?u.NOME:'-',u?u.MUNICIPIO:'-',nums,e.QUANTIDADE_BLOCOS||1,e.TIPO_RETIRADA||'-',e.CARIMBO_APOSTO?'Sim':'Não',e.RECIBO_ASSINADO?'Sim':'Não']);
+  });
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='entregas_scvsat_'+new Date().toLocaleDateString('sv-SE')+'.csv';a.click();
+  URL.revokeObjectURL(url);
+  toast('Arquivo CSV gerado!','ok');
 }
 
 // ══════════════════════════════════════════════════════
