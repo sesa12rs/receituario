@@ -1001,72 +1001,77 @@ async function buscarCEP(cepId,campos){
 // IMPRESSÃO — nova janela (sem conflito de CSS)
 // ══════════════════════════════════════════════════════
 function printTermoHTML(pagesHtml, titulo){
-  const win=window.open('','_blank','width=900,height=750');
+  const win=window.open('','_blank','width=960,height=800');
   if(!win){toast('Permita pop-ups para imprimir o Termo.','erro');return;}
   win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo||'Termo de Recebimento')}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 @page{size:A4 portrait;margin:0}
-body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#0f172a;background:#fff;display:flex;flex-direction:column;align-items:center}
-/* 17x25cm centralizado no A4 (210x297mm) — margens de corte em 20mm vertical e 20mm horizontal */
+body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#0f172a;background:#fff;display:flex;flex-direction:column;align-items:center}
+
+/* ── PÁGINA: 17×25cm centralizada no A4 (210×297mm) ─────────────────── */
+/* Margens de corte: (210-170)/2=20mm H, (297-250)/2=23.5mm V            */
 .page{
   width:170mm;height:250mm;
   margin:23.5mm auto 0;
-  border:0.5mm solid #555;
-  padding:5mm;
+  border:0.6mm solid #444;
+  padding:6mm;
   page-break-after:always;
   box-sizing:border-box;
-  display:flex;flex-direction:column;
+  display:flex;flex-direction:column;gap:4px;
   overflow:hidden;flex-shrink:0;
 }
 .page:last-child{page-break-after:avoid;margin-bottom:23.5mm}
 
-/* ── HEADER ── */
-.hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;flex-shrink:0}
-.hdr-title{font-size:11px;font-weight:700;font-family:Arial,sans-serif}
-.hdr-sub{font-size:8px;color:#64748b}
-.hdr img{max-width:80px;max-height:38px;object-fit:contain}
+/* ── HEADER ────────────────────────────────────────────────────────────── */
+.hdr{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr-title{font-size:13px;font-weight:700}
+.hdr-sub{font-size:9px;color:#64748b;margin-bottom:1px}
+.hdr img{max-width:90px;max-height:42px;object-fit:contain}
 
-/* ── TITLE BAR ── */
-.titulo-doc{text-align:center;border-top:2px solid #0f172a;border-bottom:2px solid #0f172a;padding:3px 0;margin-bottom:4px;flex-shrink:0}
-.titulo-doc h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.titulo-doc p{font-size:8px;color:#64748b;margin-top:1px}
+/* ── BARRA TÍTULO ──────────────────────────────────────────────────────── */
+.titulo-doc{text-align:center;border-top:2px solid #0f172a;border-bottom:2px solid #0f172a;padding:4px 0;flex-shrink:0}
+.titulo-doc h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.titulo-doc p{font-size:9px;color:#64748b;margin-top:2px}
 
-/* ── META ── */
-.meta{display:flex;justify-content:space-between;font-size:9px;margin-bottom:4px;color:#475569;border-bottom:1px solid #e2e8f0;padding-bottom:3px;flex-wrap:wrap;gap:2px;flex-shrink:0}
+/* ── META ──────────────────────────────────────────────────────────────── */
+.meta{display:flex;justify-content:space-between;font-size:10px;color:#475569;border-bottom:1px solid #e2e8f0;padding-bottom:4px;flex-wrap:wrap;gap:3px;flex-shrink:0}
 
-/* ── BLOCOS TABLE (sempre 10 linhas fixas) ── */
-.blocos-box{background:#fffbeb;border:1px solid #fcd34d;border-radius:4px;padding:4px 6px;margin-bottom:4px;flex-shrink:0}
-.blocos-box .box-title{font-size:8px;font-weight:700;text-transform:uppercase;color:#92400e;margin-bottom:3px}
-.blocos-table{width:100%;border-collapse:collapse;table-layout:fixed}
-.blocos-table th{font-size:8px;font-weight:700;color:#92400e;text-transform:uppercase;padding:2px 4px;border-bottom:1px solid #fcd34d;text-align:left}
-.blocos-table td{font-size:9px;padding:2px 4px;border-bottom:1px dashed #e2e8f0;height:13px}
+/* ── CAIXA DE BLOCOS (flex:1 → ocupa todo o espaço disponível) ─────────── */
+.blocos-box{background:#fffbeb;border:1.5px solid #fcd34d;border-radius:5px;padding:5px 8px;display:flex;flex-direction:column;flex:1;min-height:0}
+.blocos-box .box-title{font-size:10px;font-weight:700;text-transform:uppercase;color:#92400e;margin-bottom:4px;flex-shrink:0}
+.blocos-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1}
+.blocos-table thead{display:table-header-group}
+.blocos-table th{font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;padding:3px 6px;border-bottom:1.5px solid #fcd34d;text-align:left;background:#fffbeb}
+.blocos-table tbody{display:table-row-group}
+.blocos-table td{font-size:11px;padding:0 6px;border-bottom:1px dashed #e2e8f0;vertical-align:middle}
 .blocos-table tr:last-child td{border-bottom:none}
 .blocos-table tr.vazio td{color:#d1d5db}
 
-/* ── SEÇÕES ── */
-.secoes{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-bottom:4px;flex-shrink:0}
-.section h3{font-size:8px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;padding-bottom:2px;margin-bottom:3px}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1px 8px;font-size:9px}
+/* ── SEÇÕES (Médico + Recebedor lado a lado) ────────────────────────────── */
+.secoes{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;flex-shrink:0}
+.section h3{font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;padding-bottom:2px;margin-bottom:4px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:10px;line-height:1.5}
 .two-col div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ── DECLARAÇÃO ── */
-.decl{background:#f8fafc;border:1px solid #e2e8f0;border-radius:3px;padding:5px 7px;font-size:8px;color:#475569;line-height:1.5;margin-bottom:4px;flex-shrink:0}
+/* ── DECLARAÇÃO ─────────────────────────────────────────────────────────── */
+.decl{background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:6px 8px;font-size:9px;color:#475569;line-height:1.6;flex-shrink:0}
 
-/* ── ASSINATURAS ── */
-.assin-area{display:flex;gap:12px;align-items:flex-end;flex-shrink:0}
-.assin-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:18mm}
+/* ── ASSINATURAS ─────────────────────────────────────────────────────────── */
+/* carimbo: 60×60mm; assinaturas: uma na metade, outra na base do carimbo  */
+.assin-area{display:flex;gap:14px;align-items:flex-end;flex-shrink:0}
+.assin-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:30mm}
 .assin{text-align:center}
-.assin .linha{border-top:1.5px solid #0f172a;padding-top:4px}
-.assin .nome{font-size:9px;font-weight:600}
-.assin .cargo{font-size:8px;color:#64748b;margin-top:1px}
-.carimbo-wrap{flex:0 0 46mm;text-align:center}
-.carimbo-label{font-size:8px;color:#94a3b8;margin-bottom:2px}
-.carimbo{border:1.5px dashed #94a3b8;border-radius:4px;height:42mm;display:flex;align-items:center;justify-content:center}
-.carimbo-uni{font-size:8px;color:#64748b;margin-top:2px;font-style:italic}
+.assin .linha{border-top:1.5px solid #0f172a;padding-top:5px}
+.assin .nome{font-size:10px;font-weight:700}
+.assin .cargo{font-size:9px;color:#64748b;margin-top:2px}
+.carimbo-wrap{flex:0 0 64mm;text-align:center}
+.carimbo-label{font-size:9px;color:#94a3b8;margin-bottom:3px}
+.carimbo{border:1.5px dashed #94a3b8;border-radius:5px;height:60mm;width:60mm;margin:0 auto;display:flex;align-items:center;justify-content:center}
+.carimbo-uni{font-size:9px;color:#64748b;margin-top:3px;font-style:italic}
 
-/* ── FOOTER ── */
-.footer-doc{text-align:center;font-size:8px;color:#94a3b8;margin-top:auto;padding-top:4px;border-top:1px solid #f1f5f9;flex-shrink:0}
+/* ── FOOTER ─────────────────────────────────────────────────────────────── */
+.footer-doc{text-align:center;font-size:9px;color:#94a3b8;padding-top:4px;border-top:1px solid #f1f5f9;flex-shrink:0}
 </style></head><body>${pagesHtml}
 <script>window.onload=function(){window.print();setTimeout(function(){window.close();},2000);};<\/script>
 </body></html>`);
@@ -1078,35 +1083,53 @@ function buildTermPage(ent, med, req, uni, bls, cfg, pageIdx, totalPages){
   const recRG  =req?req.rg:'-';
   const totalFolhas=(parseInt(ent.quantidade)||bls.length)*20;
   const pgInfo=totalPages>1?` — Folha ${pageIdx+1}/${totalPages}`:'';
-  // Sempre 10 linhas fixas — linhas vazias para manter posição dos elementos
+  // Sempre 10 linhas fixas — vazio mantém posição dos demais elementos
   const bls10=[...bls];
   while(bls10.length<10) bls10.push(null);
-  const blsRows=bls10.map((b,i)=>b
-    ?`<tr><td><strong>${pad(b.numero)}</strong></td><td>Num. Inicial: <strong>${b.paginaInicial}</strong></td><td>Num. Final: <strong>${b.paginaFinal}</strong></td></tr>`
-    :`<tr class="vazio"><td>—</td><td></td><td></td></tr>`
+  // Calcular altura de cada linha: tabela distribui o espaço disponível uniformemente
+  const blsRows=bls10.map(b=>b
+    ?`<tr style="height:calc((100% - 28px)/10)"><td><strong>Bloco ${pad(b.numero)}</strong></td><td>${b.paginaInicial}</td><td>${b.paginaFinal}</td></tr>`
+    :`<tr class="vazio" style="height:calc((100% - 28px)/10)"><td>—</td><td></td><td></td></tr>`
   ).join('');
-  const obsHTML=ent.observacoes?`<div style="font-size:8px;color:#475569;margin-bottom:4px;flex-shrink:0"><strong>Obs.:</strong> ${ent.observacoes}</div>`:'';
+  const obsHTML=ent.observacoes?`<div style="font-size:9px;color:#475569;flex-shrink:0"><strong>Obs.:</strong> ${ent.observacoes}</div>`:'';
   return `<div class="page">
+
 <div class="hdr">
-  <div><div class="hdr-sub">Estado do Paraná — SESA/PR</div><div class="hdr-title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div><div class="hdr-sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div>
+  <div>
+    <div class="hdr-sub">Estado do Paraná — SESA/PR</div>
+    <div class="hdr-title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div>
+    <div class="hdr-sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div>
+  </div>
   <img src="https://www.saude.pr.gov.br/sites/default/files/2020-09/logo_governo_do_estado.png" onerror="this.style.display='none'" alt="PR">
 </div>
-<div class="titulo-doc"><h2>Termo de Recebimento de Receituário A</h2><p>Notificação de Receita A — Portaria SVS/MS nº 344/98${pgInfo}</p></div>
+
+<div class="titulo-doc">
+  <h2>Termo de Recebimento de Receituário A</h2>
+  <p>Notificação de Receita "A" — Portaria SVS/MS nº 344/98${pgInfo}</p>
+</div>
+
 <div class="meta">
-  <span>Protocolo: <strong style="font-family:monospace;color:#92400e">${ent.protocolo}</strong></span>
+  <span>Protocolo: <strong style="font-family:monospace;font-size:11px;color:#92400e">${ent.protocolo}</strong></span>
   <span>Data/Hora: <strong>${fmtDt(ent.dataHora)}</strong></span>
   <span>Município: <strong>${uni?uni.municipio+'/'+uni.uf:'-'}</strong></span>
-  <span>Total: <strong>${ent.quantidade}</strong> bloco(s) / <strong>${totalFolhas}</strong> folhas</span>
+  <span>Total: <strong>${ent.quantidade}</strong> bloco(s) · <strong>${totalFolhas}</strong> folhas</span>
 </div>
+
 <div class="blocos-box">
   <div class="box-title">Blocos recebidos${pgInfo}</div>
-  <table class="blocos-table">
-    <thead><tr><th style="width:34%">Bloco Nº</th><th style="width:33%">Num. Inicial</th><th style="width:33%">Num. Final</th></tr></thead>
-    <tbody>${blsRows}</tbody>
+  <table class="blocos-table" style="height:calc(100% - 22px)">
+    <thead><tr>
+      <th style="width:34%">Bloco Nº</th>
+      <th style="width:33%">Num. Inicial</th>
+      <th style="width:33%">Num. Final</th>
+    </tr></thead>
+    <tbody style="height:100%">${blsRows}</tbody>
   </table>
 </div>
+
 <div class="secoes">
-  <div class="section"><h3>Médico Destinatário</h3>
+  <div class="section">
+    <h3>Médico Destinatário</h3>
     <div class="two-col">
       <div style="grid-column:span 2">Nome: <strong>${med?.tratamento||''} ${med?.nome||'-'}</strong></div>
       <div>CRM: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong></div>
@@ -1114,16 +1137,22 @@ function buildTermPage(ent, med, req, uni, bls, cfg, pageIdx, totalPages){
       <div style="grid-column:span 2">Unidade: <strong>${uni?.nome||'-'}</strong></div>
     </div>
   </div>
-  <div class="section"><h3>Recebedor</h3>
+  <div class="section">
+    <h3>Recebedor</h3>
     <div class="two-col">
       <div style="grid-column:span 2">Nome: <strong>${recNome}</strong></div>
       <div>CPF: <strong>${recCPF}</strong></div>
-      <div>RG: <strong>${recRG}</strong></div>
+      <div>RG: <strong>${recRG||'—'}</strong></div>
     </div>
   </div>
 </div>
+
 ${obsHTML}
-<div class="decl"><strong>Declaração:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita A numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.</div>
+
+<div class="decl">
+  <strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita "A" numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.
+</div>
+
 <div class="assin-area">
   <div class="assin-col">
     <div class="assin">
@@ -1145,7 +1174,9 @@ ${obsHTML}
     <div class="carimbo-uni">${uni?.nome||''}</div>
   </div>
 </div>
+
 <div class="footer-doc">Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div>
+
 </div>`;
 }
 
