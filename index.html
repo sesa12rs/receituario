@@ -1001,85 +1001,182 @@ async function buscarCEP(cepId,campos){
 // IMPRESSÃO — nova janela (sem conflito de CSS)
 // ══════════════════════════════════════════════════════
 function printTermoHTML(pagesHtml, titulo){
-  const win=window.open('','_blank','width=960,height=800');
-  if(!win){toast('Permita pop-ups para imprimir o Termo.','erro');return;}
-  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${esc(titulo||'Termo de Recebimento')}</title>
+  // Estratégia compatível com Safari:
+  // - window.open('','_blank') + document.write() em vez de blob URL
+  //   (Safari bloqueia/não renderiza blob URLs em janelas abertas via JS)
+  // - Guarda "printed" evita dupla chamada ao window.print()
+  // - Fallback de 1800ms cobre Safari que não dispara "load" após document.write
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<title>${esc(titulo||'Termo de Recebimento')}</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-@page{size:A4 portrait;margin:0}
-html,body{width:210mm;background:#fff}
-body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#0f172a;display:flex;flex-direction:column;align-items:center}
+*{ box-sizing:border-box; margin:0; padding:0;
+   -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 
-/* ── PÁGINA FIXA: 17×25cm, centralizada no A4 ─────────────────────────
-   Margens de corte: (210-170)/2 = 20mm H · (297-250)/2 = 23.5mm V       */
-.page{
-  width:170mm;
-  height:250mm;
-  margin:23.5mm auto 0;
-  border:0.6mm solid #444;
-  padding:6mm;
-  page-break-after:always;
-  page-break-inside:avoid;
-  box-sizing:border-box;
-  overflow:hidden;
+/* ══ TELA ════════════════════════════════════════════════════════════════ */
+@media screen{
+  body{
+    font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#0f172a;
+    background:#525659;
+    display:flex; flex-direction:column; align-items:center;
+    padding:24px 0 40px; gap:20px;
+  }
+  .page-wrap{ display:contents; }
+  .page{
+    width:170mm; background:#fff;
+    border:0.6mm solid #444; padding:6mm;
+    box-shadow:0 4px 28px rgba(0,0,0,.45);
+  }
 }
-.page:last-child{page-break-after:avoid;margin-bottom:23.5mm}
 
-/* ── HEADER · h=14mm ──────────────────────────────────────────────────── */
-.hdr{height:14mm;display:flex;align-items:center;justify-content:space-between;overflow:hidden;margin-bottom:1.5mm}
-.hdr-brand .title{font-size:12px;font-weight:700;line-height:1.2}
-.hdr-brand .sub{font-size:8.5px;color:#64748b}
-.hdr img{max-height:12mm;max-width:36mm;object-fit:contain}
+/* ══ IMPRESSÃO ═══════════════════════════════════════════════════════════
+   Estratégia: @page margin:0 → body ocupa A4 inteiro (210×297mm).
+   .page-wrap = 210×297mm com padding que centraliza o recorte 17×25cm.
+   page-break-after:always garante salto de página no Safari/WebKit.
+   O último wrapper usa auto para não criar página em branco extra.       */
+@media print{
+  @page{ size:210mm 297mm; margin:0; }
 
-/* ── BARRA TÍTULO · h=11mm ────────────────────────────────────────────── */
-.titulo-doc{height:11mm;display:flex;flex-direction:column;align-items:center;justify-content:center;border-top:2px solid #0f172a;border-bottom:2px solid #0f172a;margin-bottom:1.5mm;overflow:hidden}
-.titulo-doc h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
-.titulo-doc p{font-size:8.5px;color:#64748b;margin-top:1.5px}
+  html{ margin:0; padding:0; }
+  /* font-size:0 / line-height:0 elimina gaps de whitespace entre wrappers */
+  body{ margin:0; padding:0; font-size:0; line-height:0; background:#fff; }
 
-/* ── META · h=8mm ─────────────────────────────────────────────────────── */
-.meta{height:8mm;display:flex;align-items:center;justify-content:space-between;font-size:9.5px;color:#475569;border-bottom:1px solid #cbd5e1;padding-bottom:1mm;margin-bottom:1.5mm;overflow:hidden;flex-wrap:nowrap;gap:4px}
-.meta span{white-space:nowrap}
+  .page-wrap{
+    display:block;
+    width:210mm;
+    height:297mm;
+    padding:23.5mm 20mm;
+    overflow:hidden;
+    /* break-after explícito: necessário para Safari/WebKit respeitar o salto */
+    -webkit-column-break-after:always;
+    page-break-after:always;
+    break-after:page;
+  }
+  /* Último wrapper: evita página em branco após o conteúdo */
+  .page-wrap:last-child{
+    -webkit-column-break-after:auto;
+    page-break-after:auto;
+    break-after:auto;
+  }
 
-/* ── CAIXA DE BLOCOS · h=75mm FIXO ───────────────────────────────────── */
-.blocos-box{width:100%;height:75mm;background:#fffbeb;border:1.5px solid #fcd34d;border-radius:4px;padding:2mm 3mm;overflow:hidden;margin-bottom:1.5mm}
-.blocos-box .box-title{font-size:9.5px;font-weight:700;text-transform:uppercase;color:#92400e;height:5mm;display:flex;align-items:center}
-.blocos-table{width:100%;border-collapse:collapse;table-layout:fixed;height:70mm}
-.blocos-table thead tr{height:7mm}
-.blocos-table th{font-size:9.5px;font-weight:700;color:#92400e;text-transform:uppercase;padding:0 4px;border-bottom:1.5px solid #fcd34d;text-align:left;vertical-align:middle}
-/* 10 linhas fixas: (70mm - 7mm thead) / 10 = 6.3mm cada */
-.blocos-table tbody tr{height:6.3mm}
-.blocos-table td{font-size:10.5px;padding:0 4px;border-bottom:1px dashed #e2e8f0;vertical-align:middle;overflow:hidden;white-space:nowrap}
-.blocos-table tbody tr:last-child td{border-bottom:none}
-.vazio td{color:#d1d5db}
+  .page{
+    display:block;
+    width:170mm;   /* = 210 - 2×20mm */
+    height:250mm;  /* = 297 - 2×23.5mm */
+    border:0.6mm solid #444;
+    padding:6mm;
+    overflow:hidden;
+    background:#fff;
+    /* restaura font para o conteúdo (body tem font-size:0) */
+    font-family:Arial,Helvetica,sans-serif;
+    font-size:11px; color:#0f172a; line-height:normal;
+  }
+}
 
-/* ── SEÇÕES · h=26mm ──────────────────────────────────────────────────── */
-.secoes{height:26mm;display:grid;grid-template-columns:1fr 1fr;gap:0 12px;margin-bottom:1.5mm;overflow:hidden}
-.section h3{font-size:8.5px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;padding-bottom:1.5px;margin-bottom:3px}
-.field{font-size:10px;line-height:1.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ══ ELEMENTOS INTERNOS (tela + impressão) ════════════════════════════════ */
 
-/* ── DECLARAÇÃO · h=20mm ──────────────────────────────────────────────── */
-.decl{height:20mm;background:#f8fafc;border:1px solid #e2e8f0;border-radius:3px;padding:2mm 3mm;font-size:8.5px;color:#475569;line-height:1.55;overflow:hidden;margin-bottom:1.5mm}
+.sp{ height:2mm; display:block; }
 
-/* ── ASSINATURAS · h=70mm ─────────────────────────────────────────────── */
-/* carimbo 60×60mm + label 5mm + uni 5mm = 70mm                           */
-/* assin-col: 2 assinaturas, gap 30mm (= metade carimbo), topo alinhado   */
-.assin-area{height:70mm;display:flex;gap:10mm;align-items:flex-end;overflow:hidden;margin-bottom:1.5mm}
-.assin-col{flex:1;height:70mm;display:flex;flex-direction:column;justify-content:flex-end;gap:30mm;overflow:hidden}
-.assin{text-align:center}
-.assin .linha{border-top:1.5px solid #0f172a;padding-top:3px}
-.assin .nome{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.assin .cargo{font-size:8.5px;color:#64748b;margin-top:1px}
-.carimbo-wrap{width:64mm;flex-shrink:0;text-align:center;height:70mm;display:flex;flex-direction:column;justify-content:flex-end}
-.carimbo-label{font-size:8.5px;color:#94a3b8;margin-bottom:2px}
-.carimbo{border:1.5px dashed #94a3b8;border-radius:5px;height:60mm;width:60mm;margin:0 auto}
-.carimbo-uni{font-size:8.5px;color:#64748b;margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr{ height:13mm; display:flex; align-items:center;
+      justify-content:space-between; overflow:hidden; }
+.hdr-brand .title{ font-size:12.5px; font-weight:700; line-height:1.2; }
+.hdr-brand .sub  { font-size:9px; color:#64748b; }
+.hdr img{ max-height:11mm; max-width:34mm; object-fit:contain; flex-shrink:0; }
 
-/* ── FOOTER · h=8mm ───────────────────────────────────────────────────── */
-.footer-doc{height:8mm;display:flex;align-items:flex-end;justify-content:center;font-size:8.5px;color:#94a3b8;border-top:1px solid #f1f5f9;padding-top:1.5mm;overflow:hidden}
-</style></head><body>${pagesHtml}
-<script>window.onload=function(){window.print();setTimeout(function(){window.close();},2000);};<\/script>
-</body></html>`);
-  win.document.close();
+.titulo-doc{
+  height:11mm; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center;
+  border-top:2px solid #0f172a; border-bottom:2px solid #0f172a; overflow:hidden;
+}
+.titulo-doc h2{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+.titulo-doc p { font-size:9px; color:#64748b; margin-top:2px; }
+
+.meta{
+  height:8mm; display:flex; align-items:center;
+  justify-content:space-between; gap:4px;
+  font-size:9.5px; color:#475569;
+  border-bottom:1px solid #cbd5e1; overflow:hidden;
+}
+.meta span{ white-space:nowrap; }
+
+.blocos-box{
+  height:73mm; overflow:hidden;
+  background:#fffbeb; border:1.5px solid #fcd34d; border-radius:4px;
+  padding:1.5mm 3mm;
+}
+.box-title{ height:5mm; display:flex; align-items:center;
+  font-size:9.5px; font-weight:700; text-transform:uppercase; color:#92400e; }
+.blocos-table{ width:100%; border-collapse:collapse; table-layout:fixed; }
+.blocos-table thead tr{ height:7mm; }
+.blocos-table th{
+  font-size:10px; font-weight:700; color:#92400e; text-transform:uppercase;
+  padding:0 4px; border-bottom:1.5px solid #fcd34d; text-align:left; vertical-align:middle;
+}
+.blocos-table tbody tr{ height:6.1mm; }
+.blocos-table td{
+  font-size:10.5px; padding:0 4px;
+  border-bottom:1px dashed #e2e8f0;
+  vertical-align:middle; overflow:hidden; white-space:nowrap;
+}
+.blocos-table tbody tr:last-child td{ border-bottom:none; }
+.vazio td{ color:#d1d5db; }
+
+.secoes{ height:24mm; overflow:hidden;
+  display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+.section h3{ font-size:8.5px; font-weight:700; text-transform:uppercase; color:#64748b;
+  border-bottom:1px solid #e2e8f0; padding-bottom:1px; margin-bottom:3px; }
+.field{ font-size:10px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+.decl{ height:18mm; overflow:hidden;
+  background:#f8fafc; border:1px solid #e2e8f0; border-radius:3px;
+  padding:2mm 3mm; font-size:8.5px; color:#475569; line-height:1.55; }
+
+.assin-area{ height:66mm; overflow:hidden; display:flex; gap:10mm; align-items:flex-end; }
+.assin-col{ flex:1; height:66mm; display:flex; flex-direction:column; justify-content:flex-end; gap:28mm; }
+.assin{ text-align:center; }
+.assin .linha{ border-top:1.5px solid #0f172a; padding-top:3px; }
+.assin .nome{ font-size:10px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.assin .cargo{ font-size:8.5px; color:#64748b; margin-top:1px; }
+.carimbo-wrap{ width:64mm; flex-shrink:0; height:66mm;
+  display:flex; flex-direction:column; justify-content:flex-end; text-align:center; }
+.carimbo-label{ height:4mm; display:flex; align-items:center; justify-content:center; font-size:8.5px; color:#94a3b8; }
+.carimbo-box{ height:57mm; width:60mm; margin:0 auto; border:1.5px dashed #94a3b8; border-radius:5px; }
+.carimbo-uni{ height:5mm; display:flex; align-items:center; justify-content:center; font-size:8.5px; color:#64748b; font-style:italic; }
+
+.footer-doc{ height:7mm; overflow:hidden;
+  display:flex; align-items:flex-end; justify-content:center;
+  font-size:8.5px; color:#94a3b8; border-top:1px solid #f1f5f9; padding-top:1mm; }
+</style>
+</head>
+<body>${pagesHtml}</body></html>`;
+
+  try{
+    // Usa window.open('','_blank') + document.write em vez de blob URL.
+    // Safari não renderiza blob URLs em janelas abertas por JS (trata como
+    // origem opaca), causando página em branco ou erro de carregamento.
+    const win = window.open('','_blank');
+    if(!win){ toast('Permita pop-ups para imprimir o Termo.','erro'); return; }
+
+    win.document.open('text/html','replace');
+    win.document.write(html);
+    win.document.close();
+
+    // Guarda evita dupla chamada ao window.print() caso tanto o evento
+    // "load" quanto o setTimeout de fallback disparem.
+    let printed = false;
+    const doPrint = () => {
+      if(printed) return;
+      printed = true;
+      win.focus();
+      setTimeout(() => { if(!win.closed) win.print(); }, 350);
+    };
+
+    // Caminho principal: aguarda imagens e recursos carregarem.
+    win.addEventListener('load', doPrint);
+    // Fallback: Safari às vezes não dispara "load" após document.write;
+    // 1800ms é suficiente para a logo do governo carregar (ou expirar).
+    setTimeout(doPrint, 1800);
+  }catch(e){ toast('Erro ao gerar impressão: '+e.message,'erro'); }
 }
 function buildTermPage(ent, med, req, uni, bls, cfg, pageIdx, totalPages){
   const recNome=req?req.nome:med?.nomeCompleto||'-';
@@ -1087,92 +1184,12 @@ function buildTermPage(ent, med, req, uni, bls, cfg, pageIdx, totalPages){
   const recRG  =req?req.rg||'—':'-';
   const totalFolhas=(parseInt(ent.quantidade)||bls.length)*20;
   const pgInfo=totalPages>1?` — Folha ${pageIdx+1}/${totalPages}`:'';
-  // Sempre 10 linhas fixas
-  const bls10=[...bls];
-  while(bls10.length<10) bls10.push(null);
+  const bls10=[...bls]; while(bls10.length<10) bls10.push(null);
   const blsRows=bls10.map(b=>b
     ?`<tr><td><strong>Bloco ${pad(b.numero)}</strong></td><td>${b.paginaInicial}</td><td>${b.paginaFinal}</td></tr>`
     :`<tr class="vazio"><td>—</td><td></td><td></td></tr>`
   ).join('');
-  return `<div class="page">
-
-<div class="hdr">
-  <div class="hdr-brand">
-    <div class="sub">Estado do Paraná — SESA/PR</div>
-    <div class="title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div>
-    <div class="sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div>
-  </div>
-  <img src="https://www.saude.pr.gov.br/sites/default/files/2020-09/logo_governo_do_estado.png" onerror="this.style.display='none'" alt="PR">
-</div>
-
-<div class="titulo-doc">
-  <h2>Termo de Recebimento de Receituário A</h2>
-  <p>Notificação de Receita "A" — Portaria SVS/MS nº 344/98${pgInfo}</p>
-</div>
-
-<div class="meta">
-  <span>Protocolo: <strong style="font-family:monospace;color:#92400e">${ent.protocolo}</strong></span>
-  <span>Data/Hora: <strong>${fmtDt(ent.dataHora)}</strong></span>
-  <span>Município: <strong>${uni?uni.municipio+'/'+uni.uf:'-'}</strong></span>
-  <span>Total: <strong>${ent.quantidade}</strong> bloco(s) · <strong>${totalFolhas}</strong> folhas</span>
-</div>
-
-<div class="blocos-box">
-  <div class="box-title">Blocos recebidos${pgInfo}</div>
-  <table class="blocos-table">
-    <thead><tr>
-      <th style="width:36%">Bloco Nº</th>
-      <th style="width:32%">Num. Inicial</th>
-      <th style="width:32%">Num. Final</th>
-    </tr></thead>
-    <tbody>${blsRows}</tbody>
-  </table>
-</div>
-
-<div class="secoes">
-  <div class="section">
-    <h3>Médico Destinatário</h3>
-    <div class="field">Nome: <strong>${med?.tratamento||''} ${med?.nome||'-'}</strong></div>
-    <div class="field">CRM: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong> &nbsp; CPF: <strong>${med?.cpf||'-'}</strong></div>
-    <div class="field">Unidade: <strong>${uni?.nome||'-'}</strong></div>
-    <div class="field" style="font-size:9px;color:#64748b">${uni?.municipio||''} ${uni?.uf?'/ '+uni.uf:''}</div>
-  </div>
-  <div class="section">
-    <h3>Recebedor</h3>
-    <div class="field">Nome: <strong>${recNome}</strong></div>
-    <div class="field">CPF: <strong>${recCPF}</strong></div>
-    <div class="field">RG: <strong>${recRG}</strong></div>
-    ${req?`<div class="field" style="font-size:9px;color:#64748b">Proc.: ${ent.procuracao_data||'—'}</div>`:'<div class="field" style="font-size:9px;color:#64748b">Retirada pelo próprio médico</div>'}
-  </div>
-</div>
-
-<div class="decl"><strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita "A" numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.</div>
-
-<div class="assin-area">
-  <div class="assin-col">
-    <div class="assin">
-      <div class="linha">
-        <div class="nome">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div>
-        <div class="cargo">Responsável pela Entrega · SCVSAT</div>
-      </div>
-    </div>
-    <div class="assin">
-      <div class="linha">
-        <div class="nome">${recNome}</div>
-        <div class="cargo">Recebedor · CPF: ${recCPF}</div>
-      </div>
-    </div>
-  </div>
-  <div class="carimbo-wrap">
-    <div class="carimbo-label">Carimbo da Unidade de Atendimento</div>
-    <div class="carimbo"></div>
-    <div class="carimbo-uni">${uni?.nome||''}</div>
-  </div>
-</div>
-
-<div class="footer-doc">Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div>
-
-</div>`;
+  return `<div class="page-wrap"><div class="page"><div class="hdr"><div class="hdr-brand"><div class="sub">Estado do Paraná — SESA/PR</div><div class="title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div><div class="sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div><img src="https://www.saude.pr.gov.br/sites/default/files/2020-09/logo_governo_do_estado.png" onerror="this.style.display='none'" alt="PR"></div><div class="sp"></div><div class="titulo-doc"><h2>Termo de Recebimento de Receituário A</h2><p>Notificação de Receita "A" — Portaria SVS/MS nº 344/98${pgInfo}</p></div><div class="sp"></div><div class="meta"><span>Protocolo: <strong style="font-family:monospace;color:#92400e">${ent.protocolo}</strong></span><span>Data/Hora: <strong>${fmtDt(ent.dataHora)}</strong></span><span>Município: <strong>${uni?uni.municipio+'/'+uni.uf:'-'}</strong></span><span>Total: <strong>${ent.quantidade}</strong> bloco(s) · <strong>${totalFolhas}</strong> folhas</span></div><div class="sp"></div><div class="blocos-box"><div class="box-title">Blocos recebidos${pgInfo}</div><table class="blocos-table"><thead><tr><th style="width:36%">Bloco Nº</th><th style="width:32%">Num. Inicial</th><th style="width:32%">Num. Final</th></tr></thead><tbody>${blsRows}</tbody></table></div><div class="sp"></div><div class="secoes"><div class="section"><h3>Médico Destinatário</h3><div class="field">Nome: <strong>${med?.tratamento||''} ${med?.nome||'-'}</strong></div><div class="field">CRM: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong> &nbsp;&nbsp; CPF: <strong>${med?.cpf||'-'}</strong></div><div class="field">Unidade: <strong>${uni?.nome||'-'}</strong></div></div><div class="section"><h3>Recebedor</h3><div class="field">Nome: <strong>${recNome}</strong></div><div class="field">CPF: <strong>${recCPF}</strong></div><div class="field">RG: <strong>${recRG}</strong></div></div></div><div class="sp"></div><div class="decl"><strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita "A" numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.</div><div class="sp"></div><div class="assin-area"><div class="assin-col"><div class="assin"><div class="linha"><div class="nome">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div><div class="cargo">Responsável pela Entrega · SCVSAT</div></div></div><div class="assin"><div class="linha"><div class="nome">${recNome}</div><div class="cargo">Recebedor · CPF: ${recCPF}</div></div></div></div><div class="carimbo-wrap"><div class="carimbo-label">Carimbo da Unidade de Atendimento</div><div class="carimbo-box"></div><div class="carimbo-uni">${uni?.nome||''}</div></div></div><div class="sp"></div><div class="footer-doc">Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div></div>`;
 }
 
 // ══════════════════════════════════════════════════════
