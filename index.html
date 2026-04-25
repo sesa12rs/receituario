@@ -1031,9 +1031,9 @@ function printTermoHTML(pagesHtml, titulo){
 
 /* ══ IMPRESSÃO ═══════════════════════════════════════════════════════════
    Estratégia: @page margin:0 → body ocupa A4 inteiro (210×297mm).
-   .page-wrap = 210×297mm com padding que centraliza o recorte 17×25cm.
-   page-break-after:always garante salto de página no Safari/WebKit.
-   O último wrapper usa auto para não criar página em branco extra.       */
+   .page-wrap = 210×297mm com padding centraliza o recorte 17×25cm.
+   Quebra de página via height:297mm + overflow:hidden — SEM page-break-after
+   (que combinado com a altura gera páginas em branco no macOS Safari).   */
 @media print{
   @page{ size:210mm 297mm; margin:0; }
 
@@ -1047,16 +1047,9 @@ function printTermoHTML(pagesHtml, titulo){
     height:297mm;
     padding:23.5mm 20mm;
     overflow:hidden;
-    /* break-after explícito: necessário para Safari/WebKit respeitar o salto */
-    -webkit-column-break-after:always;
-    page-break-after:always;
-    break-after:page;
-  }
-  /* Último wrapper: evita página em branco após o conteúdo */
-  .page-wrap:last-child{
-    -webkit-column-break-after:auto;
-    page-break-after:auto;
-    break-after:auto;
+    /* NÃO usar page-break-after aqui: junto com height:297mm o Safari
+       gera dois saltos por wrapper → páginas em branco entre cada termo.
+       O height:297mm sozinho é o mecanismo de quebra correto. */
   }
 
   .page{
