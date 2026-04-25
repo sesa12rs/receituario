@@ -1007,71 +1007,75 @@ function printTermoHTML(pagesHtml, titulo){
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 @page{size:A4 portrait;margin:0}
-body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#0f172a;background:#fff;display:flex;flex-direction:column;align-items:center}
+html,body{width:210mm;background:#fff}
+body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#0f172a;display:flex;flex-direction:column;align-items:center}
 
-/* ── PÁGINA: 17×25cm centralizada no A4 (210×297mm) ─────────────────── */
-/* Margens de corte: (210-170)/2=20mm H, (297-250)/2=23.5mm V            */
+/* ── PÁGINA FIXA: 17×25cm, centralizada no A4 ─────────────────────────
+   Margens de corte: (210-170)/2 = 20mm H · (297-250)/2 = 23.5mm V       */
 .page{
-  width:170mm;height:250mm;
+  width:170mm;
+  height:250mm;
   margin:23.5mm auto 0;
   border:0.6mm solid #444;
   padding:6mm;
   page-break-after:always;
+  page-break-inside:avoid;
   box-sizing:border-box;
-  display:flex;flex-direction:column;gap:4px;
-  overflow:hidden;flex-shrink:0;
+  overflow:hidden;
 }
 .page:last-child{page-break-after:avoid;margin-bottom:23.5mm}
 
-/* ── HEADER ────────────────────────────────────────────────────────────── */
-.hdr{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.hdr-title{font-size:13px;font-weight:700}
-.hdr-sub{font-size:9px;color:#64748b;margin-bottom:1px}
-.hdr img{max-width:90px;max-height:42px;object-fit:contain}
+/* ── HEADER · h=14mm ──────────────────────────────────────────────────── */
+.hdr{height:14mm;display:flex;align-items:center;justify-content:space-between;overflow:hidden;margin-bottom:1.5mm}
+.hdr-brand .title{font-size:12px;font-weight:700;line-height:1.2}
+.hdr-brand .sub{font-size:8.5px;color:#64748b}
+.hdr img{max-height:12mm;max-width:36mm;object-fit:contain}
 
-/* ── BARRA TÍTULO ──────────────────────────────────────────────────────── */
-.titulo-doc{text-align:center;border-top:2px solid #0f172a;border-bottom:2px solid #0f172a;padding:4px 0;flex-shrink:0}
-.titulo-doc h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.titulo-doc p{font-size:9px;color:#64748b;margin-top:2px}
+/* ── BARRA TÍTULO · h=11mm ────────────────────────────────────────────── */
+.titulo-doc{height:11mm;display:flex;flex-direction:column;align-items:center;justify-content:center;border-top:2px solid #0f172a;border-bottom:2px solid #0f172a;margin-bottom:1.5mm;overflow:hidden}
+.titulo-doc h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.titulo-doc p{font-size:8.5px;color:#64748b;margin-top:1.5px}
 
-/* ── META ──────────────────────────────────────────────────────────────── */
-.meta{display:flex;justify-content:space-between;font-size:10px;color:#475569;border-bottom:1px solid #e2e8f0;padding-bottom:4px;flex-wrap:wrap;gap:3px;flex-shrink:0}
+/* ── META · h=8mm ─────────────────────────────────────────────────────── */
+.meta{height:8mm;display:flex;align-items:center;justify-content:space-between;font-size:9.5px;color:#475569;border-bottom:1px solid #cbd5e1;padding-bottom:1mm;margin-bottom:1.5mm;overflow:hidden;flex-wrap:nowrap;gap:4px}
+.meta span{white-space:nowrap}
 
-/* ── CAIXA DE BLOCOS (flex:1 → ocupa todo o espaço disponível) ─────────── */
-.blocos-box{background:#fffbeb;border:1.5px solid #fcd34d;border-radius:5px;padding:5px 8px;display:flex;flex-direction:column;flex:1;min-height:0}
-.blocos-box .box-title{font-size:10px;font-weight:700;text-transform:uppercase;color:#92400e;margin-bottom:4px;flex-shrink:0}
-.blocos-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1}
-.blocos-table thead{display:table-header-group}
-.blocos-table th{font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;padding:3px 6px;border-bottom:1.5px solid #fcd34d;text-align:left;background:#fffbeb}
-.blocos-table tbody{display:table-row-group}
-.blocos-table td{font-size:11px;padding:0 6px;border-bottom:1px dashed #e2e8f0;vertical-align:middle}
-.blocos-table tr:last-child td{border-bottom:none}
-.blocos-table tr.vazio td{color:#d1d5db}
+/* ── CAIXA DE BLOCOS · h=75mm FIXO ───────────────────────────────────── */
+.blocos-box{width:100%;height:75mm;background:#fffbeb;border:1.5px solid #fcd34d;border-radius:4px;padding:2mm 3mm;overflow:hidden;margin-bottom:1.5mm}
+.blocos-box .box-title{font-size:9.5px;font-weight:700;text-transform:uppercase;color:#92400e;height:5mm;display:flex;align-items:center}
+.blocos-table{width:100%;border-collapse:collapse;table-layout:fixed;height:70mm}
+.blocos-table thead tr{height:7mm}
+.blocos-table th{font-size:9.5px;font-weight:700;color:#92400e;text-transform:uppercase;padding:0 4px;border-bottom:1.5px solid #fcd34d;text-align:left;vertical-align:middle}
+/* 10 linhas fixas: (70mm - 7mm thead) / 10 = 6.3mm cada */
+.blocos-table tbody tr{height:6.3mm}
+.blocos-table td{font-size:10.5px;padding:0 4px;border-bottom:1px dashed #e2e8f0;vertical-align:middle;overflow:hidden;white-space:nowrap}
+.blocos-table tbody tr:last-child td{border-bottom:none}
+.vazio td{color:#d1d5db}
 
-/* ── SEÇÕES (Médico + Recebedor lado a lado) ────────────────────────────── */
-.secoes{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;flex-shrink:0}
-.section h3{font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;padding-bottom:2px;margin-bottom:4px}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:10px;line-height:1.5}
-.two-col div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ── SEÇÕES · h=26mm ──────────────────────────────────────────────────── */
+.secoes{height:26mm;display:grid;grid-template-columns:1fr 1fr;gap:0 12px;margin-bottom:1.5mm;overflow:hidden}
+.section h3{font-size:8.5px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;padding-bottom:1.5px;margin-bottom:3px}
+.field{font-size:10px;line-height:1.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ── DECLARAÇÃO ─────────────────────────────────────────────────────────── */
-.decl{background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:6px 8px;font-size:9px;color:#475569;line-height:1.6;flex-shrink:0}
+/* ── DECLARAÇÃO · h=20mm ──────────────────────────────────────────────── */
+.decl{height:20mm;background:#f8fafc;border:1px solid #e2e8f0;border-radius:3px;padding:2mm 3mm;font-size:8.5px;color:#475569;line-height:1.55;overflow:hidden;margin-bottom:1.5mm}
 
-/* ── ASSINATURAS ─────────────────────────────────────────────────────────── */
-/* carimbo: 60×60mm; assinaturas: uma na metade, outra na base do carimbo  */
-.assin-area{display:flex;gap:14px;align-items:flex-end;flex-shrink:0}
-.assin-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:30mm}
+/* ── ASSINATURAS · h=70mm ─────────────────────────────────────────────── */
+/* carimbo 60×60mm + label 5mm + uni 5mm = 70mm                           */
+/* assin-col: 2 assinaturas, gap 30mm (= metade carimbo), topo alinhado   */
+.assin-area{height:70mm;display:flex;gap:10mm;align-items:flex-end;overflow:hidden;margin-bottom:1.5mm}
+.assin-col{flex:1;height:70mm;display:flex;flex-direction:column;justify-content:flex-end;gap:30mm;overflow:hidden}
 .assin{text-align:center}
-.assin .linha{border-top:1.5px solid #0f172a;padding-top:5px}
-.assin .nome{font-size:10px;font-weight:700}
-.assin .cargo{font-size:9px;color:#64748b;margin-top:2px}
-.carimbo-wrap{flex:0 0 64mm;text-align:center}
-.carimbo-label{font-size:9px;color:#94a3b8;margin-bottom:3px}
-.carimbo{border:1.5px dashed #94a3b8;border-radius:5px;height:60mm;width:60mm;margin:0 auto;display:flex;align-items:center;justify-content:center}
-.carimbo-uni{font-size:9px;color:#64748b;margin-top:3px;font-style:italic}
+.assin .linha{border-top:1.5px solid #0f172a;padding-top:3px}
+.assin .nome{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.assin .cargo{font-size:8.5px;color:#64748b;margin-top:1px}
+.carimbo-wrap{width:64mm;flex-shrink:0;text-align:center;height:70mm;display:flex;flex-direction:column;justify-content:flex-end}
+.carimbo-label{font-size:8.5px;color:#94a3b8;margin-bottom:2px}
+.carimbo{border:1.5px dashed #94a3b8;border-radius:5px;height:60mm;width:60mm;margin:0 auto}
+.carimbo-uni{font-size:8.5px;color:#64748b;margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ── FOOTER ─────────────────────────────────────────────────────────────── */
-.footer-doc{text-align:center;font-size:9px;color:#94a3b8;padding-top:4px;border-top:1px solid #f1f5f9;flex-shrink:0}
+/* ── FOOTER · h=8mm ───────────────────────────────────────────────────── */
+.footer-doc{height:8mm;display:flex;align-items:flex-end;justify-content:center;font-size:8.5px;color:#94a3b8;border-top:1px solid #f1f5f9;padding-top:1.5mm;overflow:hidden}
 </style></head><body>${pagesHtml}
 <script>window.onload=function(){window.print();setTimeout(function(){window.close();},2000);};<\/script>
 </body></html>`);
@@ -1080,25 +1084,23 @@ body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#0f172a;backgro
 function buildTermPage(ent, med, req, uni, bls, cfg, pageIdx, totalPages){
   const recNome=req?req.nome:med?.nomeCompleto||'-';
   const recCPF =req?req.cpf:med?.cpf||'-';
-  const recRG  =req?req.rg:'-';
+  const recRG  =req?req.rg||'—':'-';
   const totalFolhas=(parseInt(ent.quantidade)||bls.length)*20;
   const pgInfo=totalPages>1?` — Folha ${pageIdx+1}/${totalPages}`:'';
-  // Sempre 10 linhas fixas — vazio mantém posição dos demais elementos
+  // Sempre 10 linhas fixas
   const bls10=[...bls];
   while(bls10.length<10) bls10.push(null);
-  // Calcular altura de cada linha: tabela distribui o espaço disponível uniformemente
   const blsRows=bls10.map(b=>b
-    ?`<tr style="height:calc((100% - 28px)/10)"><td><strong>Bloco ${pad(b.numero)}</strong></td><td>${b.paginaInicial}</td><td>${b.paginaFinal}</td></tr>`
-    :`<tr class="vazio" style="height:calc((100% - 28px)/10)"><td>—</td><td></td><td></td></tr>`
+    ?`<tr><td><strong>Bloco ${pad(b.numero)}</strong></td><td>${b.paginaInicial}</td><td>${b.paginaFinal}</td></tr>`
+    :`<tr class="vazio"><td>—</td><td></td><td></td></tr>`
   ).join('');
-  const obsHTML=ent.observacoes?`<div style="font-size:9px;color:#475569;flex-shrink:0"><strong>Obs.:</strong> ${ent.observacoes}</div>`:'';
   return `<div class="page">
 
 <div class="hdr">
-  <div>
-    <div class="hdr-sub">Estado do Paraná — SESA/PR</div>
-    <div class="hdr-title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div>
-    <div class="hdr-sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div>
+  <div class="hdr-brand">
+    <div class="sub">Estado do Paraná — SESA/PR</div>
+    <div class="title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div>
+    <div class="sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div>
   </div>
   <img src="https://www.saude.pr.gov.br/sites/default/files/2020-09/logo_governo_do_estado.png" onerror="this.style.display='none'" alt="PR">
 </div>
@@ -1109,7 +1111,7 @@ function buildTermPage(ent, med, req, uni, bls, cfg, pageIdx, totalPages){
 </div>
 
 <div class="meta">
-  <span>Protocolo: <strong style="font-family:monospace;font-size:11px;color:#92400e">${ent.protocolo}</strong></span>
+  <span>Protocolo: <strong style="font-family:monospace;color:#92400e">${ent.protocolo}</strong></span>
   <span>Data/Hora: <strong>${fmtDt(ent.dataHora)}</strong></span>
   <span>Município: <strong>${uni?uni.municipio+'/'+uni.uf:'-'}</strong></span>
   <span>Total: <strong>${ent.quantidade}</strong> bloco(s) · <strong>${totalFolhas}</strong> folhas</span>
@@ -1117,41 +1119,34 @@ function buildTermPage(ent, med, req, uni, bls, cfg, pageIdx, totalPages){
 
 <div class="blocos-box">
   <div class="box-title">Blocos recebidos${pgInfo}</div>
-  <table class="blocos-table" style="height:calc(100% - 22px)">
+  <table class="blocos-table">
     <thead><tr>
-      <th style="width:34%">Bloco Nº</th>
-      <th style="width:33%">Num. Inicial</th>
-      <th style="width:33%">Num. Final</th>
+      <th style="width:36%">Bloco Nº</th>
+      <th style="width:32%">Num. Inicial</th>
+      <th style="width:32%">Num. Final</th>
     </tr></thead>
-    <tbody style="height:100%">${blsRows}</tbody>
+    <tbody>${blsRows}</tbody>
   </table>
 </div>
 
 <div class="secoes">
   <div class="section">
     <h3>Médico Destinatário</h3>
-    <div class="two-col">
-      <div style="grid-column:span 2">Nome: <strong>${med?.tratamento||''} ${med?.nome||'-'}</strong></div>
-      <div>CRM: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong></div>
-      <div>CPF: <strong>${med?.cpf||'-'}</strong></div>
-      <div style="grid-column:span 2">Unidade: <strong>${uni?.nome||'-'}</strong></div>
-    </div>
+    <div class="field">Nome: <strong>${med?.tratamento||''} ${med?.nome||'-'}</strong></div>
+    <div class="field">CRM: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong> &nbsp; CPF: <strong>${med?.cpf||'-'}</strong></div>
+    <div class="field">Unidade: <strong>${uni?.nome||'-'}</strong></div>
+    <div class="field" style="font-size:9px;color:#64748b">${uni?.municipio||''} ${uni?.uf?'/ '+uni.uf:''}</div>
   </div>
   <div class="section">
     <h3>Recebedor</h3>
-    <div class="two-col">
-      <div style="grid-column:span 2">Nome: <strong>${recNome}</strong></div>
-      <div>CPF: <strong>${recCPF}</strong></div>
-      <div>RG: <strong>${recRG||'—'}</strong></div>
-    </div>
+    <div class="field">Nome: <strong>${recNome}</strong></div>
+    <div class="field">CPF: <strong>${recCPF}</strong></div>
+    <div class="field">RG: <strong>${recRG}</strong></div>
+    ${req?`<div class="field" style="font-size:9px;color:#64748b">Proc.: ${ent.procuracao_data||'—'}</div>`:'<div class="field" style="font-size:9px;color:#64748b">Retirada pelo próprio médico</div>'}
   </div>
 </div>
 
-${obsHTML}
-
-<div class="decl">
-  <strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita "A" numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.
-</div>
+<div class="decl"><strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita "A" numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.</div>
 
 <div class="assin-area">
   <div class="assin-col">
