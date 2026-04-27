@@ -65,7 +65,7 @@ a{color:var(--amber);text-decoration:none}
 .sbrand{color:#fff;font-weight:700;font-size:12px;line-height:1.3}
 .ssub{color:var(--muted2);font-size:10px;margin-top:1px}
 #nav{flex:1;overflow-y:auto;padding:8px 0}
-.nb{display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;color:var(--muted2);border:none;text-align:left;font-size:13px;font-weight:500;transition:all .12s}
+.nb{display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;color:var(--muted2);border:none;text-align:left;font-size:13px;font-weight:500;transition:all .12s;cursor:pointer;text-decoration:none}.nb-ext{border-top:1px solid var(--border);margin-top:6px;padding-top:12px}
 .nb:hover{color:#fff;background:rgba(255,255,255,.06)}
 .nb.active{background:rgba(201,106,0,.18);color:var(--amber-lt);font-weight:600}
 .nb .ni{font-size:15px;width:18px;text-align:center;flex-shrink:0}
@@ -354,7 +354,7 @@ const APP = {
   usuarios:[],
   blocoFiltro:'Todos',
   // Paginação por view
-  pg:{ medicos:1, requisitantes:1, blocos:1, entregas:1, usuarios:1, auditoria:1, unidades:1, rmnra:1 },
+  pg:{ medicos:1, requisitantes:1, blocos:1, entregas:1, usuarios:1, auditoria:1, unidades:1 },
   pgSz:20,
   // Ordenação por view
   sort:{
@@ -364,7 +364,7 @@ const APP = {
     unidades:{k:'NOME',d:1}
   },
   // Busca por view
-  q:{ medicos:'', requisitantes:'', blocos:'', entregas:'', usuarios:'', auditoria:'', unidades:'', rmnra:'' }
+  q:{ medicos:'', requisitantes:'', blocos:'', entregas:'', usuarios:'', auditoria:'', unidades:'' }
 };
 let USUARIO = null;
 let _termoAtual = null;
@@ -388,9 +388,9 @@ const NAV_ITEMS = [
   {id:'unidades',      label:'Unidades de Saúde',   icon:'🏥',admin:false},
   {id:'blocos',        label:'Estoque de Blocos',   icon:'📋',admin:false},
   {id:'entregas',      label:'Entregas',            icon:'📦',admin:false},
-  {id:'rmnra',         label:'RMNRA das Farmácias', icon:'📨',admin:false},
   {id:'auditoria',     label:'Auditoria / Logs',    icon:'🔍',admin:false},
   {id:'usuarios',      label:'Usuários do Sistema', icon:'⚙', admin:true},
+  {id:'cnes',          label:'Consulta CNES',        icon:'🔗',admin:false, link:'https://cnes.datasus.gov.br/pages/profissionais/consulta.jsp'},
 ];
 
 // ══════════════════════════════════════════════════════
@@ -779,7 +779,12 @@ function buildNav(){
   let html='',adm=false;
   NAV_ITEMS.filter(p=>!p.admin||isAdmin()).forEach(p=>{
     if(p.admin&&!adm){html+=`<div class="nav-sec">Administração</div>`;adm=true;}
-    html+=`<button class="nb${p.id===APP.view?' active':''}" onclick="go('${p.id}')"><span class="ni">${p.icon}</span>${p.label}</button>`;
+    if(p.link){
+      // Item externo: abre nova aba, não muda a view ativa
+      html+=`<a class="nb nb-ext" href="${p.link}" target="_blank" rel="noopener" title="Abre em nova aba"><span class="ni">${p.icon}</span>${p.label}<span style="font-size:9px;opacity:.6;margin-left:4px">↗</span></a>`;
+    } else {
+      html+=`<button class="nb${p.id===APP.view?' active':''}" onclick="go('${p.id}')"><span class="ni">${p.icon}</span>${p.label}</button>`;
+    }
   });
   document.getElementById('nav').innerHTML=html;
 }
@@ -794,7 +799,6 @@ async function carregarView(v){
     else if(v==='unidades'){ APP.unidades=await dbUnidades(); c.innerHTML=renderUnidades(); initBusca('unidades',()=>{}); }
     else if(v==='blocos'){ const d=await dbEntregasCompleto(); Object.assign(APP,d); c.innerHTML=renderBlocos(); initBusca('blocos',()=>{}); }
     else if(v==='entregas'){ const d=await dbEntregasCompleto(); Object.assign(APP,d); c.innerHTML=renderEntregas(); initBusca('entregas',()=>{}); }
-    else if(v==='rmnra'){ c.innerHTML=await buildRmnraBody(''); initBusca('rmnra',(q)=>{buildRmnraBody(q).then(h=>{c.innerHTML=h;})}); }
     else if(v==='auditoria'){ APP.logs=await dbLogs(); c.innerHTML=renderAuditoria(); initBusca('auditoria',()=>{}); }
     else if(v==='usuarios'){ APP.usuarios=await dbUsuarios(); c.innerHTML=renderUsuarios(); initBusca('usuarios',()=>{}); }
   } catch(e){ c.innerHTML=erroView(e.message); }
@@ -1021,7 +1025,6 @@ function printTermoHTML(pagesHtml, titulo){
     display:flex; flex-direction:column; align-items:center;
     padding:24px 0 40px; gap:20px;
   }
-  .page-wrap{ display:contents; }
   .page{
     width:170mm; background:#fff;
     border:0.6mm solid #444; padding:6mm;
@@ -1030,39 +1033,31 @@ function printTermoHTML(pagesHtml, titulo){
 }
 
 /* ══ IMPRESSÃO ═══════════════════════════════════════════════════════════
-   Estratégia: @page margin:0 → body ocupa A4 inteiro (210×297mm).
-   .page-wrap = 210×297mm com padding centraliza o recorte 17×25cm.
-   Quebra de página via height:297mm + overflow:hidden — SEM page-break-after
-   (que combinado com a altura gera páginas em branco no macOS Safari).   */
+   Opção 3: margens nativas via @page — o browser conhece a resolução da
+   impressora e aplica com precisão, sem conversão mm→px manual.
+   Margem: 23,5mm V × 20mm H → .page ocupa 170×250mm dentro do A4.
+   Quebra: break-before no 2º .page em diante (sem wrapper, sem height). */
 @media print{
-  @page{ size:210mm 297mm; margin:0; }
+  @page{ size:210mm 297mm; margin:23.5mm 20mm; }
 
-  html{ margin:0; padding:0; }
-  /* font-size:0 / line-height:0 elimina gaps de whitespace entre wrappers */
-  body{ margin:0; padding:0; font-size:0; line-height:0; background:#fff; }
+  html,body{ margin:0; padding:0; background:#fff;
+    font-family:Arial,Helvetica,sans-serif;
+    font-size:11px; color:#0f172a; line-height:normal; }
 
-  .page-wrap{
-    display:block;
-    width:210mm;
-    height:297mm;
-    padding:23.5mm 20mm;
-    overflow:hidden;
-    /* NÃO usar page-break-after aqui: junto com height:297mm o Safari
-       gera dois saltos por wrapper → páginas em branco entre cada termo.
-       O height:297mm sozinho é o mecanismo de quebra correto. */
-  }
-
+  /* Cada .page é uma folha. O seletor irmão força quebra antes da 2ª folha
+     em diante — sem depender de height-snap nem de wrapper. */
   .page{
     display:block;
-    width:170mm;   /* = 210 - 2×20mm */
-    height:250mm;  /* = 297 - 2×23.5mm */
+    width:170mm;
+    height:250mm;
     border:0.6mm solid #444;
     padding:6mm;
     overflow:hidden;
     background:#fff;
-    /* restaura font para o conteúdo (body tem font-size:0) */
-    font-family:Arial,Helvetica,sans-serif;
-    font-size:11px; color:#0f172a; line-height:normal;
+  }
+  .page + .page{
+    break-before:page;
+    page-break-before:always;
   }
 }
 
@@ -1182,7 +1177,7 @@ function buildTermPage(ent, med, req, uni, bls, cfg, pageIdx, totalPages){
     ?`<tr><td><strong>Bloco ${pad(b.numero)}</strong></td><td>${b.paginaInicial}</td><td>${b.paginaFinal}</td></tr>`
     :`<tr class="vazio"><td>—</td><td></td><td></td></tr>`
   ).join('');
-  return `<div class="page-wrap"><div class="page"><div class="hdr"><div class="hdr-brand"><div class="sub">Estado do Paraná — SESA/PR</div><div class="title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div><div class="sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div><img src="https://www.saude.pr.gov.br/sites/default/files/2020-09/logo_governo_do_estado.png" onerror="this.style.display='none'" alt="PR"></div><div class="sp"></div><div class="titulo-doc"><h2>Termo de Recebimento de Receituário A</h2><p>Notificação de Receita "A" — Portaria SVS/MS nº 344/98${pgInfo}</p></div><div class="sp"></div><div class="meta"><span>Protocolo: <strong style="font-family:monospace;color:#92400e">${ent.protocolo}</strong></span><span>Data/Hora: <strong>${fmtDt(ent.dataHora)}</strong></span><span>Município: <strong>${uni?uni.municipio+'/'+uni.uf:'-'}</strong></span><span>Total: <strong>${ent.quantidade}</strong> bloco(s) · <strong>${totalFolhas}</strong> folhas</span></div><div class="sp"></div><div class="blocos-box"><div class="box-title">Blocos recebidos${pgInfo}</div><table class="blocos-table"><thead><tr><th style="width:36%">Bloco Nº</th><th style="width:32%">Num. Inicial</th><th style="width:32%">Num. Final</th></tr></thead><tbody>${blsRows}</tbody></table></div><div class="sp"></div><div class="secoes"><div class="section"><h3>Médico Destinatário</h3><div class="field">Nome: <strong>${med?.tratamento||''} ${med?.nome||'-'}</strong></div><div class="field">CRM: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong> &nbsp;&nbsp; CPF: <strong>${med?.cpf||'-'}</strong></div><div class="field">Unidade: <strong>${uni?.nome||'-'}</strong></div></div><div class="section"><h3>Recebedor</h3><div class="field">Nome: <strong>${recNome}</strong></div><div class="field">CPF: <strong>${recCPF}</strong></div><div class="field">RG: <strong>${recRG}</strong></div></div></div><div class="sp"></div><div class="decl"><strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita "A" numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.</div><div class="sp"></div><div class="assin-area"><div class="assin-col"><div class="assin"><div class="linha"><div class="nome">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div><div class="cargo">Responsável pela Entrega · SCVSAT</div></div></div><div class="assin"><div class="linha"><div class="nome">${recNome}</div><div class="cargo">Recebedor · CPF: ${recCPF}</div></div></div></div><div class="carimbo-wrap"><div class="carimbo-label">Carimbo da Unidade de Atendimento</div><div class="carimbo-box"></div><div class="carimbo-uni">${uni?.nome||''}</div></div></div><div class="sp"></div><div class="footer-doc">Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div></div>`;
+  return `<div class="page"><div class="hdr"><div class="hdr-brand"><div class="sub">Estado do Paraná — SESA/PR</div><div class="title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div><div class="sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div><img src="https://www.saude.pr.gov.br/sites/default/files/2020-09/logo_governo_do_estado.png" onerror="this.style.display='none'" alt="PR"></div><div class="sp"></div><div class="titulo-doc"><h2>Termo de Recebimento de Receituário A</h2><p>Notificação de Receita "A" — Portaria SVS/MS nº 344/98${pgInfo}</p></div><div class="sp"></div><div class="meta"><span>Protocolo: <strong style="font-family:monospace;color:#92400e">${ent.protocolo}</strong></span><span>Data/Hora: <strong>${fmtDt(ent.dataHora)}</strong></span><span>Município: <strong>${uni?uni.municipio+'/'+uni.uf:'-'}</strong></span><span>Total: <strong>${ent.quantidade}</strong> bloco(s) · <strong>${totalFolhas}</strong> folhas</span></div><div class="sp"></div><div class="blocos-box"><div class="box-title">Blocos recebidos${pgInfo}</div><table class="blocos-table"><thead><tr><th style="width:36%">Bloco Nº</th><th style="width:32%">Num. Inicial</th><th style="width:32%">Num. Final</th></tr></thead><tbody>${blsRows}</tbody></table></div><div class="sp"></div><div class="secoes"><div class="section"><h3>Médico Destinatário</h3><div class="field">Nome: <strong>${med?.tratamento||''} ${med?.nome||'-'}</strong></div><div class="field">CRM: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong> &nbsp;&nbsp; CPF: <strong>${med?.cpf||'-'}</strong></div><div class="field">Unidade: <strong>${uni?.nome||'-'}</strong></div></div><div class="section"><h3>Recebedor</h3><div class="field">Nome: <strong>${recNome}</strong></div><div class="field">CPF: <strong>${recCPF}</strong></div><div class="field">RG: <strong>${recRG}</strong></div></div></div><div class="sp"></div><div class="decl"><strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita "A" numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.</div><div class="sp"></div><div class="assin-area"><div class="assin-col"><div class="assin"><div class="linha"><div class="nome">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div><div class="cargo">Responsável pela Entrega · SCVSAT</div></div></div><div class="assin"><div class="linha"><div class="nome">${recNome}</div><div class="cargo">Recebedor · CPF: ${recCPF}</div></div></div></div><div class="carimbo-wrap"><div class="carimbo-label">Carimbo da Unidade de Atendimento</div><div class="carimbo-box"></div><div class="carimbo-uni">${uni?.nome||''}</div></div></div><div class="sp"></div><div class="footer-doc">Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div>`;
 }
 
 // ══════════════════════════════════════════════════════
@@ -2226,20 +2221,28 @@ async function salvarRegistroFisico(entregaId,protocolo,atualizar,qtdPags){
 // ══════════════════════════════════════════════════════
 async function verTermo(entregaId){
   loading(true,'Gerando Termo...');
-  const r=await dbGetTermo(entregaId); loading(false);
+  const [r, rfRes]=await Promise.all([
+    dbGetTermo(entregaId),
+    sb.from('registros_fisicos').select('numero_livro,numero_pagina,lado').eq('entrega_id',entregaId).maybeSingle()
+  ]);
+  loading(false);
   if(!r?.ok){toast('Erro ao gerar Termo: '+(r?.msg||'Falha'),'erro');return;}
   _termoAtual=r;
+  const rf=rfRes?.data||null;
   // Monta preview no overlay
   const {entrega:ent,medico:med,requisitante:req,unidade:uni,blocos:bls,config:cfg}=r;
   const recNome=req?req.nome:med?.nomeCompleto||'-';
   const recCPF=req?req.cpf:med?.cpf||'-';
   const totalFolhas=(parseInt(ent.quantidade)||bls.length)*20;
   const blocsH=bls.map(b=>`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px;padding:4px 0;border-bottom:1px dashed #e2e8f0"><div>Bloco <strong>${pad(b.numero)}</strong></div><div>Pág. ini: <strong>${b.paginaInicial}</strong></div><div>Pág. fin: <strong>${b.paginaFinal}</strong></div></div>`).join('');
+  const rfBadge=rf
+    ?`<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;font-size:12px;color:#166534"><span>📖</span><span>Livro <strong>${rf.numero_livro}</strong> · Pág. <strong>${rf.numero_pagina}</strong> · <strong>${rf.lado||'Frente'}</strong></span>${podeEscrever()?`<button class="btn-sm btn-e" style="margin-left:8px" onclick="abrirModalLivro('${ent.id}','${ent.protocolo}')">Editar</button>`:''}</div>`
+    :podeEscrever()?`<button class="btn btn-s" onclick="abrirModalLivro('${ent.id}','${ent.protocolo}')">📖 Registrar Livro/Página</button>`:`<span style="font-size:12px;color:var(--muted)">Sem registro físico</span>`;
   document.getElementById('termo-body').innerHTML=`
-<div style="padding:12px 16px;display:flex;gap:8px;border-bottom:1.5px solid var(--border);flex-wrap:wrap" class="no-print">
+<div style="padding:12px 16px;display:flex;gap:8px;border-bottom:1.5px solid var(--border);flex-wrap:wrap;align-items:center" class="no-print">
   <button class="btn btn-p" onclick="imprimirTermo()">🖨 Imprimir / Salvar PDF</button>
   <button class="btn btn-s" onclick="fecharTermo()">Fechar</button>
-  ${podeEscrever()?`<button class="btn btn-s" style="margin-left:auto" onclick="abrirModalLivro('${ent.id}','${ent.protocolo}')">📖 Registrar Livro/Página</button>`:''}
+  <div style="margin-left:auto">${rfBadge}</div>
 </div>
 <div style="padding:18px;font-family:Georgia,serif;font-size:12px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
@@ -2284,8 +2287,12 @@ function imprimirTermo(){
   if(!paginas.length) paginas.push([]);
   const pagesHtml=paginas.map((pg,i)=>buildTermPage(ent,med,req,uni,pg,cfg,i,paginas.length)).join('');
   printTermoHTML(pagesHtml,'Termo '+ent.protocolo);
+  // Só abre o modal de registro do livro se ainda não houver registro para esta entrega
   if(podeEscrever()){
-    setTimeout(()=>{ abrirModalLivro(ent.id,ent.protocolo); },1200);
+    setTimeout(async()=>{
+      const {data:ja}=await sb.from('registros_fisicos').select('id').eq('entrega_id',ent.id).maybeSingle();
+      if(!ja) abrirModalLivro(ent.id,ent.protocolo);
+    },1200);
   }
 }
 
@@ -2391,63 +2398,6 @@ async function salvarOcorrencia(medicoId, medicoNome){
   toast('Ocorrência registrada: '+tipo,'ok');
 }
 
-// ══════════════════════════════════════════════════════
-// RMNRA — RELAÇÃO MENSAL DE NOTIFICAÇÕES DE RECEITA "A"
-// ══════════════════════════════════════════════════════
-async function buildRmnraBody(q){
-  const {data:recs}=await sb.from('rmnra_recebimentos').select('*').order('criado_em',{ascending:false});
-  const items=recs||[];
-  const fil=q?items.filter(r=>r.farmacia?.toLowerCase().includes(q.toLowerCase())||r.municipio?.toLowerCase().includes(q.toLowerCase())||r.mes_referencia?.includes(q)):items;
-  const tbody=fil.map(r=>`<tr>
-    <td class="bold">${r.farmacia}</td>
-    <td>${r.municipio||'-'}</td>
-    <td style="font-family:var(--mono)">${r.mes_referencia||'-'}</td>
-    <td>${r.data_recebimento||'-'}</td>
-    <td>${r.qtd_notificacoes??'-'}</td>
-    <td style="font-size:11px;color:var(--muted)">${r.observacoes||'-'}</td>
-    <td style="font-size:11px;color:var(--muted2)">${r.usuario||'-'}</td>
-  </tr>`).join('')||`<tr><td colspan="7"><div class="empty"><div class="empty-ico">📨</div><div class="empty-txt">Nenhum recebimento registrado.</div></div></td></tr>`;
-  return `<div class="ph"><div class="ph-left"><div class="pt">RMNRA — Farmácias</div><div class="ps">Relações Mensais de Notificações de Receita "A" recebidas · Art. 42/107, P344/98</div></div>${podeEscrever()?`<div class="ph-act"><button class="btn btn-p" onclick="abrirNovoRmnra()">+ Registrar Recebimento</button></div>`:''}</div>
-<div class="toolbar">${searchBar('rmnra','Buscar por farmácia ou município...')}</div>
-<div class="card dtbl"><table>
-  <thead><tr><th>Farmácia</th><th>Município</th><th>Mês Ref.</th><th>Data Receb.</th><th>Qtd Not.</th><th>Obs.</th><th>Operador</th></tr></thead>
-  <tbody>${tbody}</tbody>
-</table></div>`;
-}
-function abrirNovoRmnra(){
-  const hoje=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
-  const mesAtual=hoje.substring(0,7);
-  abrirModal('Registrar Recebimento de RMNRA',`
-<div class="ibox ibox-blue" style="margin-bottom:14px">ℹ Farmácias devem enviar a RMNRA até o dia 15 do mês seguinte (Art. 42, P344/98). Registre aqui cada recebimento.</div>
-<div class="fg">
-  <div class="fi"><label>Farmácia / Drogaria <span class="req">*</span></label><input type="text" id="rmnra-farm" placeholder="Nome da farmácia"></div>
-  <div class="fi"><label>Município</label><input type="text" id="rmnra-mun" placeholder="Município"></div>
-</div>
-<div class="fg">
-  <div class="fi"><label>Mês de Referência <span class="req">*</span></label><input type="month" id="rmnra-mes" value="${mesAtual}"></div>
-  <div class="fi"><label>Data de Recebimento</label><input type="date" id="rmnra-data" value="${hoje}" max="${hoje}"></div>
-</div>
-<div class="fi"><label>Qtd. de Notificações</label><input type="number" id="rmnra-qtd" min="0" placeholder="Ex.: 42"></div>
-<div class="fi"><label>Observações</label><textarea id="rmnra-obs" placeholder="Obs. sobre o recebimento..."></textarea></div>`,
-  `<button class="btn btn-s" onclick="fecharModal()">Cancelar</button><button class="btn btn-p" onclick="salvarRmnra()">Registrar</button>`);
-}
-async function salvarRmnra(){
-  const farm=document.getElementById('rmnra-farm')?.value||'';
-  const mun=document.getElementById('rmnra-mun')?.value||'';
-  const mes=document.getElementById('rmnra-mes')?.value||'';
-  const data=document.getElementById('rmnra-data')?.value||null;
-  const qtd=parseInt(document.getElementById('rmnra-qtd')?.value||'0')||null;
-  const obs=document.getElementById('rmnra-obs')?.value||'';
-  if(!farm){toast('Informe a farmácia.','erro');return;}
-  if(!mes){toast('Informe o mês de referência.','erro');return;}
-  loading(true,'Salvando...');
-  await sb.from('rmnra_recebimentos').insert({farmacia:farm,municipio:mun,mes_referencia:mes,data_recebimento:data,qtd_notificacoes:qtd,observacoes:obs,usuario:USUARIO?.nome||'Sistema'});
-  await registrarLog(USUARIO?.nome,'RMNRA','Farmácia '+farm,'Mês: '+mes);
-  loading(false);fecharModal();
-  const c=document.getElementById('content');
-  if(c) c.innerHTML=await buildRmnraBody(APP.q.rmnra||'');
-  toast('RMNRA registrada — '+farm,'ok');
-}
 
 // ══════════════════════════════════════════════════════
 // EXPORTAÇÃO CSV DE ENTREGAS (Item 20)
