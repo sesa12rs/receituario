@@ -1824,9 +1824,10 @@ function buildBlocosBody(q){
 }
 function abrirEntradaBlocos(){
   if(!podeEscrever()) return;
-  const ult=APP.blocos.reduce((a,b)=>parseInt(b.NUMERO||0)>parseInt(a.NUMERO||0)?b:a,{NUMERO:'0',PAGINA_FINAL:'0'});
+  const ult=APP.blocos.reduce((a,b)=>parseInt(b.NUMERO||0)>parseInt(a.NUMERO||0)?b:a,{NUMERO:'0',PAGINA_FINAL:'0',LOTE:''});
   const proxN=parseInt(ult.NUMERO||0)+1;
   const proxP=parseInt(ult.PAGINA_FINAL||0)+1;
+  const ultLote=ult.LOTE||'';
   abrirModal('Entrada de Blocos no Estoque',`
 ${APP.blocos.length?`<div style="background:var(--bg);border-radius:var(--rs);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--muted)">
   Último registrado: <strong>Bloco ${pad(ult.NUMERO)}</strong> · Notificações ${ult.PAGINA_INICIAL}–${ult.PAGINA_FINAL}
@@ -1839,7 +1840,7 @@ ${APP.blocos.length?`<div style="background:var(--bg);border-radius:var(--rs);pa
   </div>
   <div class="fi" style="margin:0">
     <label>Lote / Série (opcional)</label>
-    <input type="text" id="b-lote" placeholder="Ex: 2508.1-41" style="font-size:15px;font-weight:600;padding:12px">
+    <input type="text" id="b-lote" value="${ultLote}" placeholder="Ex: 2508.1-41" style="font-size:15px;font-weight:600;padding:12px">
   </div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
