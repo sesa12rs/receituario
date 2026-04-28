@@ -414,7 +414,7 @@ const toUni = u => ({
   MUNICIPIO:u.municipio||'', UF:u.uf||'PR', TELEFONE:u.telefone||'', STATUS:u.status||'Ativo'
 });
 const toBloco = b => ({
-  ID:b.id, NUMERO:b.numero||'', PAGINA_INICIAL:b.pagina_inicial, PAGINA_FINAL:b.pagina_final,
+  ID:b.id, NUMERO:b.numero||'', PAGINA_INICIAL:b.pagina_inicial, PAGINA_FINAL:b.pagina_final, LOTE:b.lote||'',
   STATUS:b.status||'Disponivel', ID_ENTREGA:b.entrega_id||''
 });
 const toEntrega = e => ({
@@ -555,6 +555,13 @@ function initMasks(){
   // RG
   document.querySelectorAll('#modal-corpo input[id$="-rg"]').forEach(el=>applyMask(el,'rg'));
 }
+// ── Inputs numéricos: select-all no focus para facilitar edição ────────
+// Evita o problema de "1" + digitar "25" = "125"
+document.addEventListener('focus', e => {
+  if(e.target.type==='number') {
+    e.target.select();
+  }
+}, true);
 
 // ══════════════════════════════════════════════════════
 // VERIFICAÇÃO DE DUPLICADOS
@@ -912,20 +919,26 @@ async function dbSalvarUnidade(d){
   return {ok:true, id:uid2};
 }
 
-async function dbAdicionarBlocos(qtd){
-  const {data:ex}=await sb.from('blocos').select('numero,pagina_final').order('numero',{ascending:false}).limit(1);
-  let ultN=0,ultP=0;
-  if(ex?.length){ultN=parseInt(ex[0].numero)||0; ultP=parseInt(ex[0].pagina_final)||0;}
-  // UUID gerado pelo banco — não enviamos id no payload
+async function dbAdicionarBlocos(qtd, numIni, pagIni, lote){
+  // numIni e pagIni: números físicos do bloco recebido (capa e 1ª notificação)
+  // Se não fornecidos, usa sequência automática (compatibilidade retroativa)
+  let baseN=numIni||0, baseP=pagIni||0;
+  if(!baseN||!baseP){
+    const {data:ex}=await sb.from('blocos').select('numero,pagina_final').order('numero',{ascending:false}).limit(1);
+    if(ex?.length){baseN=parseInt(ex[0].numero)||0; baseP=parseInt(ex[0].pagina_final)||0;}
+    baseN+=1; baseP+=1;
+  }
   const rows=Array.from({length:qtd},(_,i)=>({
-    numero: String(ultN+i+1).padStart(6,'0'),
-    pagina_inicial: ultP+(i*20)+1,
-    pagina_final:   ultP+(i*20)+20,
-    status: 'Disponivel'
+    numero:         String(baseN+i).padStart(6,'0'),
+    pagina_inicial: baseP+(i*20),
+    pagina_final:   baseP+(i*20)+19,
+    lote:           lote||null,
+    status:         'Disponivel'
   }));
   const {error}=await sb.from('blocos').insert(rows);
   if(error) return {ok:false,msg:error.message};
-  await registrarLog(USUARIO?.nome,'ENTRADA','Estoque',`${qtd} bloco(s) — Nº ${String(ultN+1).padStart(6,'0')} a ${String(ultN+qtd).padStart(6,'0')}`);
+  const loteTxt=lote?' — Lote '+lote:'';
+  await registrarLog(USUARIO?.nome,'ENTRADA','Estoque',`${qtd} bloco(s) — Capa ${String(baseN).padStart(6,'0')} a ${String(baseN+qtd-1).padStart(6,'0')}${loteTxt}`);
   return {ok:true};
 }
 
@@ -1226,7 +1239,7 @@ function renderMedicos(){
   return `
 <div class="ph">
   <div class="ph-left"><div class="pt">Médicos</div><div class="ps">Prescritores de Receituário A</div></div>
-  ${wr?`<div class="ph-act"><button class="btn btn-p" onclick="abrirFormMedico()">+ Novo Médico</button></div>`:''}
+  <div class="ph-act" style="display:flex;gap:8px"><button class="btn btn-s" onclick="exportarMedicosCSV()" style="font-size:12px">⬇ CSV</button>${wr?`<button class="btn btn-p" onclick="abrirFormMedico()">+ Novo Médico</button>`:''}</div>
 </div>
 <div class="toolbar">${searchBar('medicos','Buscar por nome, CRM ou especialidade...')}</div>
 <div id="medicos-body">${buildMedBody('')}</div>`;
@@ -1346,7 +1359,7 @@ function renderReqs(){
   return `
 <div class="ph">
   <div class="ph-left"><div class="pt">Requisitantes</div><div class="ps">Autorizados a retirar blocos em nome dos médicos</div></div>
-  ${wr?`<div class="ph-act"><button class="btn btn-p" onclick="abrirFormReq()">+ Novo Requisitante</button></div>`:''}
+  <div class="ph-act" style="display:flex;gap:8px"><button class="btn btn-s" onclick="exportarRequisitantesCSV()" style="font-size:12px">⬇ CSV</button><button class="btn btn-s" onclick="exportarVinculosCSV()" style="font-size:12px">⬇ Vínculos</button>${wr?`<button class="btn btn-p" onclick="abrirFormReq()">+ Novo Requisitante</button>`:''}</div>
 </div>
 <div class="toolbar">${searchBar('requisitantes','Buscar por nome ou CPF...')}</div>
 <div id="requisitantes-body">${buildReqBody('')}</div>`;
@@ -1430,7 +1443,7 @@ function renderUnidades(){
   return `
 <div class="ph">
   <div class="ph-left"><div class="pt">Unidades de Saúde</div><div class="ps">Estabelecimentos vinculados ao sistema</div></div>
-  ${wr?`<div class="ph-act"><button class="btn btn-p" onclick="abrirFormUnidade()">+ Nova Unidade</button></div>`:''}
+  <div class="ph-act" style="display:flex;gap:8px"><button class="btn btn-s" onclick="exportarUnidadesCSV()" style="font-size:12px">⬇ CSV</button>${wr?`<button class="btn btn-p" onclick="abrirFormUnidade()">+ Nova Unidade</button>`:''}</div>
 </div>
 <div class="toolbar">${searchBar('unidades','Buscar por nome, município ou CNES...')}</div>
 <div id="unidades-body">${buildUnidadesBody('')}</div>`;
@@ -1792,7 +1805,7 @@ function renderBlocos(){
   return `
 <div class="ph">
   <div class="ph-left"><div class="pt">Estoque de Blocos</div><div class="ps">Inventário e rastreabilidade dos receituários</div></div>
-  ${wr?`<div class="ph-act"><button class="btn btn-p" onclick="abrirEntradaBlocos()">+ Entrada de Blocos</button></div>`:''}
+  <div class="ph-act" style="display:flex;gap:8px"><button class="btn btn-s" onclick="exportarBlocosCSV()" style="font-size:12px">⬇ CSV</button>${wr?`<button class="btn btn-p" onclick="abrirEntradaBlocos()">+ Entrada de Blocos</button>`:''}</div>
 </div>
 <div class="toolbar">${searchBar('blocos','Buscar por número do bloco...')}${filtros}</div>
 <div id="blocos-body">${buildBlocosBody('')}</div>`;
@@ -1802,7 +1815,7 @@ function buildBlocosBody(q){
   let fil=APP.blocos.filter(b=>(APP.blocoFiltro==='Todos'||b.STATUS===APP.blocoFiltro)&&(!q||b.NUMERO.includes(q)));
   fil=sortItems(fil,APP.sort.blocos.k,APP.sort.blocos.d);
   const {items,total,pages,page}=paginate(fil,APP.pg.blocos,APP.pgSz);
-  const rows=items.map(b=>{ const ent=APP.entregas.find(e=>String(e.IDS_BLOCOS||'').split(';').includes(b.ID)); const med=APP.medicos.find(m=>m.ID===(ent?.ID_MEDICO)); const extBtn=podeEscrever()&&b.STATUS==='Disponivel'?`<button class="btn-sm btn-d" style="font-size:10px;padding:2px 6px" onclick="abrirExtravioBloco('${b.ID}','${b.NUMERO}')">Extravio</button>`:''; return `<tr style="border-left:3px solid ${sc[b.STATUS]||'var(--border)'}"><td class="bold">Bloco ${pad(b.NUMERO)}</td><td>${b.PAGINA_INICIAL}</td><td>${b.PAGINA_FINAL}</td><td><span class="badge b-gr">20</span></td><td>${badge(b.STATUS)}</td><td style="font-size:12px">${med?nomeMed(med):'-'}</td><td>${extBtn}</td></tr>`; }).join('');
+  const rows=items.map(b=>{ const ent=APP.entregas.find(e=>String(e.IDS_BLOCOS||'').split(';').includes(b.ID)); const med=APP.medicos.find(m=>m.ID===(ent?.ID_MEDICO)); const extBtn=podeEscrever()&&b.STATUS==='Disponivel'?`<button class="btn-sm btn-d" style="font-size:10px;padding:2px 6px" onclick="abrirExtravioBloco('${b.ID}','${b.NUMERO}')">Extravio</button>`:''; const loteTag=b.LOTE?`<span style="font-size:10px;color:var(--muted2);background:var(--bg);padding:1px 5px;border-radius:3px;margin-left:4px">${b.LOTE}</span>`:''; return `<tr style="border-left:3px solid ${sc[b.STATUS]||'var(--border)'}"><td class="bold">Bloco ${pad(b.NUMERO)}${loteTag}</td><td>${b.PAGINA_INICIAL}</td><td>${b.PAGINA_FINAL}</td><td><span class="badge b-gr">20</span></td><td>${badge(b.STATUS)}</td><td style="font-size:12px">${med?nomeMed(med):'-'}</td><td>${extBtn}</td></tr>`; }).join('');
   return `<div class="card dtbl"><table>
     <thead><tr>${thSort('blocos','NUMERO','Bloco')}${thSort('blocos','PAGINA_INICIAL','Pág. Inicial')}${thSort('blocos','PAGINA_FINAL','Pág. Final')}<th>Folhas</th>${thSort('blocos','STATUS','Status')}<th>Entregue a</th><th>Ações</th></tr></thead>
     <tbody>${rows||`<tr><td colspan="6"><div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">Nenhum bloco nesta categoria.</div></div></td></tr>`}</tbody>
@@ -1812,17 +1825,59 @@ function buildBlocosBody(q){
 function abrirEntradaBlocos(){
   if(!podeEscrever()) return;
   const ult=APP.blocos.reduce((a,b)=>parseInt(b.NUMERO||0)>parseInt(a.NUMERO||0)?b:a,{NUMERO:'0',PAGINA_FINAL:'0'});
+  const proxN=parseInt(ult.NUMERO||0)+1;
+  const proxP=parseInt(ult.PAGINA_FINAL||0)+1;
   abrirModal('Entrada de Blocos no Estoque',`
-<p style="color:var(--muted);font-size:13px;margin-bottom:14px">A numeração é calculada automaticamente em sequência.</p>
-${APP.blocos.length?`<div style="background:var(--bg);border-radius:var(--rs);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--muted)">Último: <strong>Bloco ${pad(ult.NUMERO)}</strong> · Págs. ${ult.PAGINA_INICIAL}–${ult.PAGINA_FINAL}</div>`:''}
-<div class="fi"><label>Quantidade de Blocos <span class="req">*</span></label>
-  <input type="number" id="b-qtd" min="1" max="500" value="1" style="font-size:22px;font-weight:700;text-align:center;padding:12px">
-</div>`,
+${APP.blocos.length?`<div style="background:var(--bg);border-radius:var(--rs);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--muted)">
+  Último registrado: <strong>Bloco ${pad(ult.NUMERO)}</strong> · Notificações ${ult.PAGINA_INICIAL}–${ult.PAGINA_FINAL}
+</div>`:''}
+<div class="ibox" style="margin-bottom:14px">ℹ Os números abaixo são sugeridos automaticamente pela sequência, mas podem ser editados para corresponder à numeração física dos blocos recebidos de Curitiba.</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+  <div class="fi" style="margin:0">
+    <label>Quantidade de Blocos <span class="req">*</span></label>
+    <input type="number" id="b-qtd" min="1" max="500" value="1" style="font-size:22px;font-weight:700;text-align:center;padding:12px" oninput="calcPreviewBlocos()">
+  </div>
+  <div class="fi" style="margin:0">
+    <label>Lote / Série (opcional)</label>
+    <input type="text" id="b-lote" placeholder="Ex: 2508.1-41" style="font-size:15px;font-weight:600;padding:12px">
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+  <div class="fi" style="margin:0">
+    <label>Nº do 1º Bloco (capa) <span class="req">*</span></label>
+    <input type="number" id="b-num-ini" min="1" value="${proxN}" style="font-size:18px;font-weight:700;text-align:center;padding:10px" oninput="calcPreviewBlocos()">
+    <div style="font-size:11px;color:var(--muted);margin-top:3px">Número impresso na capa do bloco</div>
+  </div>
+  <div class="fi" style="margin:0">
+    <label>Nº da 1ª Notificação <span class="req">*</span></label>
+    <input type="number" id="b-pag-ini" min="1" value="${proxP}" style="font-size:18px;font-weight:700;text-align:center;padding:10px" oninput="calcPreviewBlocos()">
+    <div style="font-size:11px;color:var(--muted);margin-top:3px">Número da 1ª folha amarela do 1º bloco</div>
+  </div>
+</div>
+<div id="b-preview" style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:var(--rs);padding:10px 12px;font-size:12px;color:#166534;min-height:36px"></div>`,
   `<button class="btn btn-s" onclick="fecharModal()">Cancelar</button><button class="btn btn-p" onclick="salvarEntradaBlocos()">Adicionar ao Estoque</button>`);
+  setTimeout(calcPreviewBlocos, 80);
+}
+function calcPreviewBlocos(){
+  const qtd=parseInt(document.getElementById('b-qtd')?.value||'0')||0;
+  const numIni=parseInt(document.getElementById('b-num-ini')?.value||'0')||0;
+  const pagIni=parseInt(document.getElementById('b-pag-ini')?.value||'0')||0;
+  const el=document.getElementById('b-preview');
+  if(!el||!qtd||!numIni||!pagIni){if(el)el.textContent='';return;}
+  const numFim=numIni+qtd-1;
+  const pagFim=pagIni+(qtd*20)-1;
+  el.innerHTML=`Serão adicionados <strong>${qtd}</strong> bloco(s): `+
+    `Capa <strong>${String(numIni).padStart(6,'0')}</strong> a <strong>${String(numFim).padStart(6,'0')}</strong> · `+
+    `Notificações <strong>${pagIni}</strong> a <strong>${pagFim}</strong>`;
 }
 async function salvarEntradaBlocos(){
   const qtd=parseInt(document.getElementById('b-qtd')?.value||'1')||1;
-  loading(true,'Adicionando blocos...');const r=await dbAdicionarBlocos(qtd);loading(false);
+  const numIni=parseInt(document.getElementById('b-num-ini')?.value||'0')||0;
+  const pagIni=parseInt(document.getElementById('b-pag-ini')?.value||'0')||0;
+  const lote=(document.getElementById('b-lote')?.value||'').trim();
+  if(!numIni||numIni<1){toast('Número do 1º bloco inválido.','erro');return;}
+  if(!pagIni||pagIni<1){toast('Número da 1ª notificação inválido.','erro');return;}
+  loading(true,'Adicionando blocos...');const r=await dbAdicionarBlocos(qtd,numIni,pagIni,lote);loading(false);
   if(r?.ok){const d=await dbEntregasCompleto();Object.assign(APP,d);fecharModal();document.getElementById('blocos-body').innerHTML=buildBlocosBody(APP.q.blocos);toast(`${qtd} bloco(s) adicionado(s)!`,'ok');}
   else toast('Erro: '+(r?.msg||'Falha'),'erro');
 }
@@ -1951,10 +2006,15 @@ function atualizarLimiteQtd(){
   const info=document.getElementById('e-qtd-info');
   if(qtdEl){
     qtdEl.max=maximo;
-    if(parseInt(qtdEl.value)>maximo) qtdEl.value=maximo;
+    // Se a procuração informou quantidade, preenche o campo automaticamente
+    if(reqId&&procQtd>0){
+      qtdEl.value=Math.min(procQtd,disp);
+    } else if(parseInt(qtdEl.value)>maximo){
+      qtdEl.value=maximo;
+    }
     if(info){
       if(reqId&&procQtd>0)
-        info.innerHTML='<span style="color:var(--amber);font-weight:600">Limite da procuração: '+procQtd+' bloco(s)</span>&nbsp;&middot;&nbsp;'+disp+' disponível(is) em estoque';
+        info.innerHTML='<span style="color:var(--amber);font-weight:600">✓ Preenchido conforme procuração: '+procQtd+' bloco(s)</span>&nbsp;&middot;&nbsp;'+disp+' disponível(is) em estoque';
       else
         info.textContent=disp+' disponível(is) em estoque';
     }
@@ -2399,6 +2459,67 @@ async function salvarOcorrencia(medicoId, medicoNome){
 }
 
 
+// ══════════════════════════════════════════════════════
+// EXPORTAÇÃO CSV — TODAS AS TABELAS
+// ══════════════════════════════════════════════════════
+function _csvDownload(rows, filename){
+  const csv=rows.map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename+'_'+new Date().toLocaleDateString('sv-SE')+'.csv';a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV exportado: '+filename,'ok');
+}
+function exportarMedicosCSV(){
+  const rows=[['Nome Completo','Tratamento','CRM','UF CRM','CPF','RG','E-mail','Telefone','Especialidades','Unidades Vinculadas','Status']];
+  APP.medicos.forEach(m=>{
+    const unis=String(m.UNIDADES||'').split(';').filter(Boolean).map(id=>{const u=APP.unidades.find(x=>x.ID===id);return u?u.NOME:'';}).filter(Boolean).join(' | ');
+    const esps=String(m.ESPECIALIDADES||'').split(';').filter(Boolean).join(' | ');
+    rows.push([m.NOME||'',m.SEXO==='Feminino'?'Dra.':'Dr.',m.CRM||'',m.UF_CRM||'',m.CPF||'',m.RG||'',m.EMAIL||'',m.TELEFONE||'',esps,unis,m.STATUS||'']);
+  });
+  _csvDownload(rows,'medicos_scvsat');
+}
+function exportarRequisitantesCSV(){
+  const rows=[['Nome','CPF','RG','E-mail','Telefone','Médicos Autorizados','Status']];
+  APP.requisitantes.forEach(r=>{
+    const meds=String(r.MEDICOS_AUTORIZADOS||'').split(';').filter(Boolean).map(id=>{const m=APP.medicos.find(x=>x.ID===id);return m?nomeMed(m)+' CRM '+m.CRM+'-'+m.UF_CRM:'';}).filter(Boolean).join(' | ');
+    rows.push([r.NOME||'',r.CPF||'',r.RG||'',r.EMAIL||'',r.TELEFONE||'',meds,r.STATUS||'']);
+  });
+  _csvDownload(rows,'requisitantes_scvsat');
+}
+function exportarUnidadesCSV(){
+  const rows=[['Nome','CNES','Município','UF','CEP','Logradouro','Número','Complemento','Bairro','Telefone','Status']];
+  APP.unidades.forEach(u=>{
+    rows.push([u.NOME||'',u.CNES||'',u.MUNICIPIO||'',u.UF||'',u.CEP||'',u.LOGRADOURO||'',u.NUMERO||'',u.COMPLEMENTO||'',u.BAIRRO||'',u.TELEFONE||'',u.STATUS||'']);
+  });
+  _csvDownload(rows,'unidades_scvsat');
+}
+function exportarBlocosCSV(){
+  const rows=[['Bloco Nº','Lote/Série','Notif. Inicial','Notif. Final','Folhas','Status','Entregue a (Médico)','CRM','Protocolo Entrega']];
+  APP.blocos.forEach(b=>{
+    const ent=APP.entregas.find(e=>String(e.IDS_BLOCOS||'').split(';').map(x=>x.trim()).includes(b.ID));
+    const med=ent?APP.medicos.find(m=>m.ID===ent.ID_MEDICO):null;
+    rows.push([pad(b.NUMERO),b.LOTE||'',b.PAGINA_INICIAL||'',b.PAGINA_FINAL||'',20,b.STATUS||'',med?nomeMed(med):'-',med?med.CRM+'-'+med.UF_CRM:'-',ent?ent.PROTOCOLO:'-']);
+  });
+  _csvDownload(rows,'blocos_scvsat');
+}
+function exportarVinculosCSV(){
+  // Médico × Unidade e Requisitante × Médico
+  const rows=[['Tipo Vínculo','Nome A','Identificação A','Nome B','Identificação B']];
+  APP.medicos.forEach(m=>{
+    String(m.UNIDADES||'').split(';').filter(Boolean).forEach(uid=>{
+      const u=APP.unidades.find(x=>x.ID===uid);
+      if(u) rows.push(['Médico→Unidade',nomeMed(m),'CRM '+m.CRM+'-'+m.UF_CRM,u.NOME,u.CNES?'CNES '+u.CNES:'']);
+    });
+  });
+  APP.requisitantes.forEach(r=>{
+    String(r.MEDICOS_AUTORIZADOS||'').split(';').filter(Boolean).forEach(mid=>{
+      const m=APP.medicos.find(x=>x.ID===mid);
+      if(m) rows.push(['Requisitante→Médico',r.NOME,'CPF '+r.CPF,nomeMed(m),'CRM '+m.CRM+'-'+m.UF_CRM]);
+    });
+  });
+  _csvDownload(rows,'vinculos_scvsat');
+}
 // ══════════════════════════════════════════════════════
 // EXPORTAÇÃO CSV DE ENTREGAS (Item 20)
 // ══════════════════════════════════════════════════════
