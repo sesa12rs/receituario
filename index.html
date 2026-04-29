@@ -397,7 +397,11 @@ const NAV_ITEMS = [
 // TRANSFORMADORES
 // ══════════════════════════════════════════════════════
 const toMedico = m => ({
-  ID:m.id, SEXO:m.sexo||'Masculino', NOME:m.nome||'', CRM:m.crm||'', UF_CRM:m.uf_crm||'PR',
+  ID:m.id, SEXO:m.sexo||'Masculino', NOME:m.nome||'',
+  TIPO_REGISTRO: m.tipo_registro||'CRM',
+  CRM:  m.numero_registro||'',   // alias — campo DB renomeado para numero_registro
+  UF_CRM: m.uf_registro||'PR',   // alias — campo DB renomeado para uf_registro
+  VALIDADE_REGISTRO: m.validade_registro||null,
   CPF:m.cpf||'', RG:m.rg||'', EMAIL:m.email||'', TELEFONE:m.telefone||'', STATUS:m.status||'Ativo',
   CRIADO_EM:m.criado_em,
   ESPECIALIDADES:(m.medico_especialidades||[]).map(e=>e.especialidade).join(';'),
@@ -436,6 +440,17 @@ const pad    = n => String(n).padStart(6,'0'); // 6 dígitos sequenciais (Art. 7
 const esc    = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const trat   = m => String(m.SEXO||'').toLowerCase()==='feminino'?'Dra.':'Dr.';
 const nomeMed= m => trat(m)+' '+(m.NOME||'');
+// Exibe o tipo de registro + número + UF: "CRM 12345-PR", "CRO 6789-SP", etc.
+const regMed = m => (m.TIPO_REGISTRO||'CRM')+' '+String(m.CRM||'-')+'-'+(m.UF_CRM||'PR');
+// Badge de alerta para RMS perto de vencer ou vencido
+const rmsBadge = m => {
+  if((m.TIPO_REGISTRO||'CRM')!=='RMS'||!m.VALIDADE_REGISTRO) return '';
+  const dias=Math.ceil((new Date(m.VALIDADE_REGISTRO)-new Date())/(1000*86400));
+  if(dias<0) return '<span class="badge b-r" title="RMS vencido">RMS vencido</span>';
+  if(dias<=30) return `<span class="badge b-r" title="RMS vence em ${dias} dias">RMS vence em ${dias}d</span>`;
+  if(dias<=90) return `<span class="badge b-a" title="RMS vence em ${dias} dias">RMS vence em ${dias}d</span>`;
+  return '';
+};
 const fmtDt  = dt => { if(!dt) return '-'; try { const d=new Date(dt); return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'}); } catch(e){ return String(dt); } };
 const fmtData= dt => { if(!dt) return '-'; try { return new Date(dt).toLocaleDateString('pt-BR'); } catch(e){ return '-'; } };
 const badge  = (s,c) => { const m={Ativo:'b-g',Disponivel:'b-g',Inativo:'b-r',Extraviado:'b-r',Cancelado:'b-gr',Entregue:'b-a',Suspenso:'b-r'}; return `<span class="badge ${c||m[s]||'b-gr'}">${s||'-'}</span>`; };
@@ -543,6 +558,12 @@ function applyMask(el,type){
     try{ this.setSelectionRange(pos+diff,pos+diff); }catch(e){}
   });
 }
+// Mostra/oculta campo de validade conforme tipo de registro selecionado
+function toggleValidadeRMS(prefix){
+  const tipo=document.getElementById(prefix+'-tipo')?.value||'CRM';
+  const box=document.getElementById(prefix+'-validade-box');
+  if(box) box.style.display=tipo==='RMS'?'block':'none';
+}
 function initMasks(){
   // CPF
   document.querySelectorAll('#modal-corpo input[id$="-cpf"],#modal-corpo input[id="u-cpf"]').forEach(el=>applyMask(el,'cpf'));
@@ -566,12 +587,12 @@ document.addEventListener('focus', e => {
 // ══════════════════════════════════════════════════════
 // VERIFICAÇÃO DE DUPLICADOS
 // ══════════════════════════════════════════════════════
-function duploMedico(crm, ufCrm, cpf, idAtual){
-  const crmUp=crm.trim().toUpperCase(), cpfClean=cpf.replace(/\D/g,'');
+function duploMedico(crm, ufCrm, cpf, idAtual, tipo){
+  const crmUp=crm.trim().toUpperCase(), cpfClean=cpf.replace(/\D/g,''), tipoReg=tipo||'CRM';
   for(const m of APP.medicos){
     if(m.ID===idAtual) continue;
-    if(m.CRM.trim().toUpperCase()===crmUp && (m.UF_CRM||'PR')===(ufCrm||'PR'))
-      return `CRM ${crm}-${ufCrm} já cadastrado para ${m.NOME}.`;
+    if((m.TIPO_REGISTRO||'CRM')===tipoReg && m.CRM.trim().toUpperCase()===crmUp && (m.UF_CRM||'PR')===(ufCrm||'PR'))
+      return `${tipoReg} ${crm}-${ufCrm} já cadastrado para ${m.NOME}.`;
     if(cpfClean && cpfClean.length===11 && m.CPF.replace(/\D/g,'')===cpfClean)
       return `CPF ${cpf} já cadastrado para ${m.NOME}.`;
   }
@@ -864,7 +885,7 @@ async function dbEntregasCompleto(){
 async function dbSalvarMedico(d){
   // Novo cadastro: não envia id — banco gera UUID automaticamente
   // Edição: envia o id existente para o upsert encontrar o registro
-  const payload={sexo:d.sexo||'Masculino',nome:d.nome||'',crm:d.crm||'',uf_crm:d.uf_crm||'PR',cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',telefone:d.telefone||'',status:d.status||'Ativo'};
+  const payload={sexo:d.sexo||'Masculino',nome:d.nome||'',tipo_registro:d.tipo_registro||'CRM',numero_registro:d.crm||'',uf_registro:d.uf_crm||'PR',validade_registro:d.validade_registro||null,cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',telefone:d.telefone||'',status:d.status||'Ativo'};
   let mid;
   if(d.id){
     // Edição — update direto
@@ -1001,7 +1022,7 @@ async function dbGetTermo(entregaId){
   return {
     ok:true,
     entrega:{id:ent.id,protocolo:ent.protocolo,dataHora:ent.data_hora,emissor:ent.emissor||'',observacoes:ent.observacoes||'',quantidade:ent.quantidade_blocos||ids.length},
-    medico:med?{tratamento:t2,nome:med.nome,nomeCompleto:t2+' '+med.nome,crm:med.crm,uf_crm:med.uf_crm,cpf:med.cpf}:null,
+    medico:med?{tratamento:t2,nome:med.nome,nomeCompleto:t2+' '+med.nome,tipo_registro:med.tipo_registro||'CRM',crm:med.crm,uf_crm:med.uf_crm,cpf:med.cpf}:null,
     requisitante:req?{nome:req.nome,cpf:req.cpf,rg:req.rg||''}:null,
     unidade:uni?{nome:uni.nome,municipio:uni.municipio||'',uf:uni.uf||'',cnes:uni.cnes||'',telefone:uni.telefone||''}:null,
     blocos:(bls||[]).sort((a,b)=>parseInt(a.numero)-parseInt(b.numero)).map(b=>({numero:b.numero,paginaInicial:b.pagina_inicial,paginaFinal:b.pagina_final})),
@@ -1190,7 +1211,7 @@ function buildTermPage(ent, med, req, uni, bls, cfg, pageIdx, totalPages){
     ?`<tr><td><strong>Bloco ${pad(b.numero)}</strong></td><td>${b.paginaInicial}</td><td>${b.paginaFinal}</td></tr>`
     :`<tr class="vazio"><td>—</td><td></td><td></td></tr>`
   ).join('');
-  return `<div class="page"><div class="hdr"><div class="hdr-brand"><div class="sub">Estado do Paraná — SESA/PR</div><div class="title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div><div class="sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div><img src="https://www.saude.pr.gov.br/sites/default/files/2020-09/logo_governo_do_estado.png" onerror="this.style.display='none'" alt="PR"></div><div class="sp"></div><div class="titulo-doc"><h2>Termo de Recebimento de Receituário A</h2><p>Notificação de Receita "A" — Portaria SVS/MS nº 344/98${pgInfo}</p></div><div class="sp"></div><div class="meta"><span>Protocolo: <strong style="font-family:monospace;color:#92400e">${ent.protocolo}</strong></span><span>Data/Hora: <strong>${fmtDt(ent.dataHora)}</strong></span><span>Município: <strong>${uni?uni.municipio+'/'+uni.uf:'-'}</strong></span><span>Total: <strong>${ent.quantidade}</strong> bloco(s) · <strong>${totalFolhas}</strong> folhas</span></div><div class="sp"></div><div class="blocos-box"><div class="box-title">Blocos recebidos${pgInfo}</div><table class="blocos-table"><thead><tr><th style="width:36%">Bloco Nº</th><th style="width:32%">Num. Inicial</th><th style="width:32%">Num. Final</th></tr></thead><tbody>${blsRows}</tbody></table></div><div class="sp"></div><div class="secoes"><div class="section"><h3>Médico Destinatário</h3><div class="field">Nome: <strong>${med?.tratamento||''} ${med?.nome||'-'}</strong></div><div class="field">CRM: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong> &nbsp;&nbsp; CPF: <strong>${med?.cpf||'-'}</strong></div><div class="field">Unidade: <strong>${uni?.nome||'-'}</strong></div></div><div class="section"><h3>Recebedor</h3><div class="field">Nome: <strong>${recNome}</strong></div><div class="field">CPF: <strong>${recCPF}</strong></div><div class="field">RG: <strong>${recRG}</strong></div></div></div><div class="sp"></div><div class="decl"><strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita "A" numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.</div><div class="sp"></div><div class="assin-area"><div class="assin-col"><div class="assin"><div class="linha"><div class="nome">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div><div class="cargo">Responsável pela Entrega · SCVSAT</div></div></div><div class="assin"><div class="linha"><div class="nome">${recNome}</div><div class="cargo">Recebedor · CPF: ${recCPF}</div></div></div></div><div class="carimbo-wrap"><div class="carimbo-label">Carimbo da Unidade de Atendimento</div><div class="carimbo-box"></div><div class="carimbo-uni">${uni?.nome||''}</div></div></div><div class="sp"></div><div class="footer-doc">Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div>`;
+  return `<div class="page"><div class="hdr"><div class="hdr-brand"><div class="sub">Estado do Paraná — SESA/PR</div><div class="title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div><div class="sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div><img src="https://www.saude.pr.gov.br/sites/default/files/2020-09/logo_governo_do_estado.png" onerror="this.style.display='none'" alt="PR"></div><div class="sp"></div><div class="titulo-doc"><h2>Termo de Recebimento de Receituário A</h2><p>Notificação de Receita "A" — Portaria SVS/MS nº 344/98${pgInfo}</p></div><div class="sp"></div><div class="meta"><span>Protocolo: <strong style="font-family:monospace;color:#92400e">${ent.protocolo}</strong></span><span>Data/Hora: <strong>${fmtDt(ent.dataHora)}</strong></span><span>Município: <strong>${uni?uni.municipio+'/'+uni.uf:'-'}</strong></span><span>Total: <strong>${ent.quantidade}</strong> bloco(s) · <strong>${totalFolhas}</strong> folhas</span></div><div class="sp"></div><div class="blocos-box"><div class="box-title">Blocos recebidos${pgInfo}</div><table class="blocos-table"><thead><tr><th style="width:36%">Bloco Nº</th><th style="width:32%">Num. Inicial</th><th style="width:32%">Num. Final</th></tr></thead><tbody>${blsRows}</tbody></table></div><div class="sp"></div><div class="secoes"><div class="section"><h3>Médico Destinatário</h3><div class="field">Nome: <strong>${med?.tratamento||''} ${med?.nome||'-'}</strong></div><div class="field">${med?(med.tipo_registro||'CRM'): 'Registro'}: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong> &nbsp;&nbsp; CPF: <strong>${med?.cpf||'-'}</strong></div><div class="field">Unidade: <strong>${uni?.nome||'-'}</strong></div></div><div class="section"><h3>Recebedor</h3><div class="field">Nome: <strong>${recNome}</strong></div><div class="field">CPF: <strong>${recCPF}</strong></div><div class="field">RG: <strong>${recRG}</strong></div></div></div><div class="sp"></div><div class="decl"><strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita "A" numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.</div><div class="sp"></div><div class="assin-area"><div class="assin-col"><div class="assin"><div class="linha"><div class="nome">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div><div class="cargo">Responsável pela Entrega · SCVSAT</div></div></div><div class="assin"><div class="linha"><div class="nome">${recNome}</div><div class="cargo">Recebedor · CPF: ${recCPF}</div></div></div></div><div class="carimbo-wrap"><div class="carimbo-label">Carimbo da Unidade de Atendimento</div><div class="carimbo-box"></div><div class="carimbo-uni">${uni?.nome||''}</div></div></div><div class="sp"></div><div class="footer-doc">Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div>`;
 }
 
 // ══════════════════════════════════════════════════════
@@ -1241,12 +1262,12 @@ function renderMedicos(){
   <div class="ph-left"><div class="pt">Médicos</div><div class="ps">Prescritores de Receituário A</div></div>
   <div class="ph-act" style="display:flex;gap:8px"><button class="btn btn-s" onclick="exportarMedicosCSV()" style="font-size:12px">⬇ CSV</button>${wr?`<button class="btn btn-p" onclick="abrirFormMedico()">+ Novo Médico</button>`:''}</div>
 </div>
-<div class="toolbar">${searchBar('medicos','Buscar por nome, CRM ou especialidade...')}</div>
+<div class="toolbar">${searchBar('medicos','Buscar por nome, CRM/CRO/CRMV/RMS ou especialidade...')}</div>
 <div id="medicos-body">${buildMedBody('')}</div>`;
 }
 function buildMedBody(q){
   let fil=APP.medicos.filter(m=>{
-    const s=(nomeMed(m)+String(m.CRM||'')+String(m.ESPECIALIDADES||'')).toLowerCase();
+    const s=(nomeMed(m)+String(m.TIPO_REGISTRO||'')+String(m.CRM||'')+String(m.ESPECIALIDADES||'')).toLowerCase();
     return !q||s.includes(q.toLowerCase());
   });
   fil=sortItems(fil,APP.sort.medicos.k,APP.sort.medicos.d);
@@ -1258,7 +1279,7 @@ function buildMedBody(q){
     const mj=esc(JSON.stringify(m));
     return `<tr>
       <td class="bold">${nomeMed(m)}</td>
-      <td style="font-family:var(--mono);font-size:12px">${m.CRM||'-'}-${m.UF_CRM||''}</td>
+      <td style="font-family:var(--mono);font-size:12px">${regMed(m)} ${rmsBadge(m)}</td>
       <td style="font-size:12px;color:var(--muted)">${espStr||'-'}</td>
       <td>${badge(m.STATUS)}</td>
       ${wr?`<td><div style="display:flex;gap:4px">
@@ -1273,14 +1294,14 @@ function buildMedBody(q){
     const mj=esc(JSON.stringify(m));
     return `<div class="mc">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div><div class="mc-title">${nomeMed(m)}</div><div style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:2px">CRM ${m.CRM||'-'}-${m.UF_CRM||''}</div></div>${badge(m.STATUS)}
+        <div><div class="mc-title">${nomeMed(m)}</div><div style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:2px">${regMed(m)} ${rmsBadge(m)}</div></div>${badge(m.STATUS)}
       </div>
       ${esps.length?`<div style="font-size:11px;color:var(--muted);margin-top:4px">${esps.slice(0,2).join(' · ')}</div>`:''}
       ${wr?`<div class="mc-foot"><button class="btn-sm btn-e" onclick='abrirFormMedico(JSON.parse(this.dataset.m))' data-m='${mj}'>Editar</button><button class="btn-sm ${m.STATUS==='Ativo'?'btn-d':'btn-ok'}" onclick="toggleMedico('${m.ID}','${m.STATUS==='Ativo'?'Inativo':'Ativo'}')">${m.STATUS==='Ativo'?'Inativar':'Ativar'}</button></div>`:''}
     </div>`;
   }).join('');
   return `<div class="card dtbl"><table>
-    <thead><tr>${thSort('medicos','NOME','Nome')}${thSort('medicos','CRM','CRM')}<th>Especialidades</th>${thSort('medicos','STATUS','Status')}${wr?'<th>Ações</th>':''}</tr></thead>
+    <thead><tr>${thSort('medicos','NOME','Nome')}${thSort('medicos','CRM','Registro')}<th>Especialidades</th>${thSort('medicos','STATUS','Status')}${wr?'<th>Ações</th>':''}</tr></thead>
     <tbody>${rows||`<tr><td colspan="5"><div class="empty"><div class="empty-ico">⚕</div><div class="empty-txt">Nenhum resultado.</div></div></td></tr>`}</tbody>
   </table>${renderPag(pages,page,'medicos',total,items.length)}</div>
   <div class="mcards">${mcards||`<div class="empty"><div class="empty-ico">⚕</div><div class="empty-txt">Nenhum resultado.</div></div>`}${renderPag(pages,page,'medicos',total,items.length)}</div>`;
@@ -1301,8 +1322,21 @@ function abrirFormMedico(m){
   <div class="fi s1"><label>Status</label>
     <select id="m-status"><option${(m.STATUS||'Ativo')==='Ativo'?' selected':''}>Ativo</option><option${m.STATUS==='Inativo'?' selected':''}>Inativo</option><option${m.STATUS==='Suspenso'?' selected':''}>Suspenso</option></select></div>
   <div class="fi s2"><label>Nome Completo (sem Dr./Dra.) <span class="req">*</span></label><input id="m-nome" value="${esc(m.NOME||'')}"><div class="err" id="e-m-nome"></div></div>
-  <div class="fi s1"><label>CRM <span class="req">*</span></label><input id="m-crm" value="${esc(m.CRM||'')}"><div class="err" id="e-m-crm"></div></div>
-  <div class="fi s1"><label>UF do CRM</label><select id="m-ufcrm">${ufs}</select></div>
+  <div class="fi"><label>Tipo de Registro <span class="req">*</span></label>
+  <select id="m-tipo" onchange="toggleValidadeRMS('m')">
+    <option value="CRM"${(m.TIPO_REGISTRO||'CRM')==='CRM'?' selected':''}>CRM — Conselho Regional de Medicina</option>
+    <option value="CRO"${m.TIPO_REGISTRO==='CRO'?' selected':''}>CRO — Conselho Regional de Odontologia</option>
+    <option value="CRMV"${m.TIPO_REGISTRO==='CRMV'?' selected':''}>CRMV — Cons. Regional de Med. Veterinária</option>
+    <option value="RMS"${m.TIPO_REGISTRO==='RMS'?' selected':''}>RMS — Registro no Ministério da Saúde</option>
+  </select></div>
+  <div class="fi s1"><label>Número do Registro <span class="req">*</span></label><input id="m-crm" value="${esc(m.CRM||'')}"><div class="err" id="e-m-crm"></div></div>
+  <div class="fi s1"><label>UF</label><select id="m-ufcrm">${ufs}</select></div>
+  <div class="fi" id="m-validade-box" style="display:${(m.TIPO_REGISTRO||'CRM')==='RMS'?'block':'none'}">
+    <label>Validade do RMS <span class="req">*</span></label>
+    <input type="date" id="m-validade" value="${m.VALIDADE_REGISTRO||''}">
+    <div class="err" id="e-m-validade"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:3px">O médico será inativado automaticamente após o vencimento.</div>
+  </div>
   <div class="fi s1"><label>CPF</label><input id="m-cpf" value="${esc(m.CPF||'')}" placeholder="000.000.000-00"></div>
   <div class="fi s1"><label>RG</label><input id="m-rg" value="${esc(m.RG||'')}"></div>
   <div class="fi s1"><label>E-mail</label><input type="email" id="m-email" value="${esc(m.EMAIL||'')}"></div>
@@ -1323,16 +1357,19 @@ function abrirFormMedico(m){
 async function salvarMedico(id){
   const nome=(document.getElementById('m-nome')?.value||'').trim();
   const crm=(document.getElementById('m-crm')?.value||'').trim();
+  const tipo=document.getElementById('m-tipo')?.value||'CRM';
+  const validade=(document.getElementById('m-validade')?.value||'').trim();
   if(!nome){document.getElementById('e-m-nome').textContent='Obrigatório';return;}
   if(!crm){document.getElementById('e-m-crm').textContent='Obrigatório';return;}
+  if(tipo==='RMS'&&!validade){document.getElementById('e-m-validade').textContent='Obrigatória para RMS';return;}
   const ufCrm=document.getElementById('m-ufcrm').value;
   const cpf=document.getElementById('m-cpf').value;
-  const duplo=duploMedico(crm,ufCrm,cpf,id);
+  const duplo=duploMedico(crm,ufCrm,cpf,id,tipo);
   if(duplo){toast(duplo,'erro');return;}
   const espsNomes=tsGet('ts-esps');
   const unisNomes=tsGet('ts-unis');
   const unisIds=unisNomes.map(n=>{const u=APP.unidades.find(x=>x.NOME===n);return u?u.ID:'';}).filter(Boolean);
-  const dados={id,sexo:document.getElementById('m-sexo').value,nome,crm,uf_crm:document.getElementById('m-ufcrm').value,cpf:document.getElementById('m-cpf').value,rg:document.getElementById('m-rg').value,email:document.getElementById('m-email').value,telefone:document.getElementById('m-tel').value,status:document.getElementById('m-status').value,especialidades:espsNomes,unidades:unisIds};
+  const dados={id,sexo:document.getElementById('m-sexo').value,nome,tipo_registro:tipo,crm,uf_crm:document.getElementById('m-ufcrm').value,validade_registro:validade||null,cpf:document.getElementById('m-cpf').value,rg:document.getElementById('m-rg').value,email:document.getElementById('m-email').value,telefone:document.getElementById('m-tel').value,status:document.getElementById('m-status').value,especialidades:espsNomes,unidades:unisIds};
   loading(true,'Salvando médico...');const r=await dbSalvarMedico(dados);loading(false);
   if(r?.ok){
     APP.medicos=await dbMedicos();
@@ -1389,13 +1426,13 @@ function buildReqBody(q){
 let _medicoTemp=null;
 let _reqTemp=null;
 
-function salvarMedicoTemp(){ _medicoTemp={id:document.getElementById('m-nome')?.closest('.fg')&&document.getElementById('m-nome')?.value,sexo:document.getElementById('m-sexo')?.value,status:document.getElementById('m-status')?.value,nome:document.getElementById('m-nome')?.value,crm:document.getElementById('m-crm')?.value,uf_crm:document.getElementById('m-ufcrm')?.value,cpf:document.getElementById('m-cpf')?.value,rg:document.getElementById('m-rg')?.value,email:document.getElementById('m-email')?.value,tel:document.getElementById('m-tel')?.value,esps:tsGet('ts-esps'),unis:tsGet('ts-unis')}; }
+function salvarMedicoTemp(){ _medicoTemp={id:document.getElementById('m-nome')?.closest('.fg')&&document.getElementById('m-nome')?.value,sexo:document.getElementById('m-sexo')?.value,status:document.getElementById('m-status')?.value,nome:document.getElementById('m-nome')?.value,tipo_registro:document.getElementById('m-tipo')?.value||'CRM',crm:document.getElementById('m-crm')?.value,uf_crm:document.getElementById('m-ufcrm')?.value,validade_registro:document.getElementById('m-validade')?.value||null,cpf:document.getElementById('m-cpf')?.value,rg:document.getElementById('m-rg')?.value,email:document.getElementById('m-email')?.value,tel:document.getElementById('m-tel')?.value,esps:tsGet('ts-esps'),unis:tsGet('ts-unis')}; }
 function salvarReqTemp(){ _reqTemp={id:document.getElementById('r-nome')&&document.getElementById('r-nome')?.value,nome:document.getElementById('r-nome')?.value,cpf:document.getElementById('r-cpf')?.value,rg:document.getElementById('r-rg')?.value,email:document.getElementById('r-email')?.value,tel:document.getElementById('r-tel')?.value,status:document.getElementById('r-status')?.value,meds:tsGet('ts-rmeds')}; }
 
 function abrirFormReq(r){
   if(!podeEscrever()) return; r=r||{};
-  const medOpts=APP.medicos.map(m=>nomeMed(m)+' — CRM '+m.CRM+'-'+m.UF_CRM);
-  const medSel=String(r.MEDICOS_AUTORIZADOS||'').split(';').filter(Boolean).map(id=>{const m=APP.medicos.find(x=>x.ID===id);return m?nomeMed(m)+' — CRM '+m.CRM+'-'+m.UF_CRM:'';}).filter(Boolean);
+  const medOpts=APP.medicos.map(m=>nomeMed(m)+' — '+regMed(m));
+  const medSel=String(r.MEDICOS_AUTORIZADOS||'').split(';').filter(Boolean).map(id=>{const m=APP.medicos.find(x=>x.ID===id);return m?nomeMed(m)+' — '+regMed(m):'';}).filter(Boolean);
   abrirModal(r.ID?'Editar Requisitante':'Novo Requisitante',`
 <div class="fg">
   <div class="fi s2"><label>Nome Completo <span class="req">*</span></label><input id="r-nome" value="${esc(r.NOME||'')}"><div class="err" id="e-r-nome"></div></div>
@@ -1514,7 +1551,7 @@ async function toggleUnidade(id,status){
 }
 function restaurarMedico(t){
   // Recria objeto m para abrirFormMedico com os dados salvos
-  const m={ID:t.id,SEXO:t.sexo,STATUS:t.status,NOME:t.nome,CRM:t.crm,UF_CRM:t.uf_crm,CPF:t.cpf,RG:t.rg,EMAIL:t.email,TELEFONE:t.tel,ESPECIALIDADES:t.esps?.join(';')||'',UNIDADES:t.unis?.map(n=>{const u=APP.unidades.find(x=>x.NOME===n);return u?u.ID:'';}).filter(Boolean).join(';')||''};
+  const m={ID:t.id,SEXO:t.sexo,STATUS:t.status,NOME:t.nome,TIPO_REGISTRO:t.tipo_registro||'CRM',CRM:t.crm,UF_CRM:t.uf_crm,VALIDADE_REGISTRO:t.validade_registro||null,CPF:t.cpf,RG:t.rg,EMAIL:t.email,TELEFONE:t.tel,ESPECIALIDADES:t.esps?.join(';')||'',UNIDADES:t.unis?.map(n=>{const u=APP.unidades.find(x=>x.NOME===n);return u?u.ID:'';}).filter(Boolean).join(';')||''};
   abrirFormMedico(m);
 }
 function restaurarReq(t){
@@ -1539,7 +1576,7 @@ function abrirNovoReqNaEntrega(){
   if(!podeEscrever()) return;
   const mid=ssGet('e-med');
   const med=APP.medicos.find(m=>m.ID===mid);
-  const medOpts=APP.medicos.map(m=>nomeMed(m)+' — CRM '+m.CRM+'-'+m.UF_CRM);
+  const medOpts=APP.medicos.map(m=>nomeMed(m)+' — '+regMed(m));
   // Pré-seleciona o médico atual
   const medSel=med?[nomeMed(med)+' — CRM '+med.CRM+'-'+med.UF_CRM]:[];
   abrirModal2('Novo Requisitante',`
@@ -1596,7 +1633,7 @@ function abrirGerenciarUnidadeNaEntrega(){
   const uniItems=disponiveis.map(u=>({id:u.ID,label:u.NOME+' — '+u.MUNICIPIO+'/'+u.UF}));
   abrirModal2('Vincular Unidade ao Médico',`
 <div style="font-size:12px;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:var(--rs);padding:10px 12px;margin-bottom:14px;color:#1e40af">
-  Médico: <strong>${nomeMed(med)} — CRM ${med.CRM}-${med.UF_CRM}</strong>
+  Médico: <strong>${nomeMed(med)} — ${regMed(med)}</strong>
 </div>
 <div class="fi" style="margin-bottom:16px">
   <label>Selecionar unidade já cadastrada <span class="req">*</span></label>
@@ -1683,8 +1720,19 @@ function abrirNovoMedicoNaEntrega(){
 <div class="fg">
   <div class="fi s1"><label>Sexo</label><select id="em2-sexo"><option>Masculino</option><option>Feminino</option></select></div>
   <div class="fi s2"><label>Nome Completo <span class="req">*</span></label><input id="em2-nome"><div class="err" id="e-em2-nome"></div></div>
-  <div class="fi s1"><label>CRM <span class="req">*</span></label><input id="em2-crm"><div class="err" id="e-em2-crm"></div></div>
-  <div class="fi s1"><label>UF do CRM</label><select id="em2-ufcrm">${ufs}</select></div>
+  <div class="fi"><label>Tipo de Registro <span class="req">*</span></label>
+  <select id="em2-tipo" onchange="toggleValidadeRMS('em2')">
+    <option value="CRM">CRM — Conselho Regional de Medicina</option>
+    <option value="CRO">CRO — Conselho Regional de Odontologia</option>
+    <option value="CRMV">CRMV — Cons. Regional de Med. Veterinária</option>
+    <option value="RMS">RMS — Registro no Ministério da Saúde</option>
+  </select></div>
+  <div class="fi s1"><label>Número do Registro <span class="req">*</span></label><input id="em2-crm"><div class="err" id="e-em2-crm"></div></div>
+  <div class="fi s1"><label>UF</label><select id="em2-ufcrm">${ufs}</select></div>
+  <div class="fi" id="em2-validade-box" style="display:none">
+    <label>Validade do RMS <span class="req">*</span></label>
+    <input type="date" id="em2-validade"><div class="err" id="e-em2-validade"></div>
+  </div>
   <div class="fi s1"><label>CPF</label><input id="em2-cpf" placeholder="000.000.000-00"></div>
   <div class="fi s1"><label>Telefone</label><input id="em2-tel" placeholder="(44) 99900-0000"></div>
 </div>`,
@@ -1693,13 +1741,16 @@ function abrirNovoMedicoNaEntrega(){
 async function salvarNovoMedicoNaEntrega(){
   const nome=(document.getElementById('em2-nome')?.value||'').trim();
   const crm=(document.getElementById('em2-crm')?.value||'').trim();
+  const tipo=document.getElementById('em2-tipo')?.value||'CRM';
+  const validade=(document.getElementById('em2-validade')?.value||'').trim();
   if(!nome){document.getElementById('e-em2-nome').textContent='Obrigatório';return;}
   if(!crm){document.getElementById('e-em2-crm').textContent='Obrigatório';return;}
+  if(tipo==='RMS'&&!validade){document.getElementById('e-em2-validade').textContent='Obrigatória para RMS';return;}
   const ufCrm=document.getElementById('em2-ufcrm').value;
   const cpf=document.getElementById('em2-cpf').value;
-  const duplo=duploMedico(crm,ufCrm,cpf,'');
+  const duplo=duploMedico(crm,ufCrm,cpf,'',tipo);
   if(duplo){toast(duplo,'erro');return;}
-  const dados={sexo:document.getElementById('em2-sexo').value,nome,crm,uf_crm:ufCrm,cpf,telefone:document.getElementById('em2-tel').value,status:'Ativo',especialidades:[],unidades:[]};
+  const dados={sexo:document.getElementById('em2-sexo').value,nome,tipo_registro:tipo,crm,uf_crm:ufCrm,validade_registro:validade||null,cpf,telefone:document.getElementById('em2-tel').value,status:'Ativo',especialidades:[],unidades:[]};
   loading(true,'Salvando médico...');
   const r=await dbSalvarMedico(dados);
   loading(false);
@@ -1708,7 +1759,7 @@ async function salvarNovoMedicoNaEntrega(){
   fecharModal2();
   toast('Médico cadastrado! Selecionado automaticamente.','ok');
   // Atualiza a lista e seleciona o novo médico
-  const medItems=APP.medicos.filter(m=>m.STATUS==='Ativo').map(m=>({id:m.ID,label:nomeMed(m)+' — CRM '+m.CRM+'-'+m.UF_CRM}));
+  const medItems=APP.medicos.filter(m=>m.STATUS==='Ativo').map(m=>({id:m.ID,label:nomeMed(m)+' — '+regMed(m)}));
   if(SS['e-med']){SS['e-med'].items=medItems;}
   ssSelect('e-med',r.id);
   atualizarReqEUni(r.id);
@@ -1762,8 +1813,19 @@ function abrirNovoMedicoSecundario(){
 <div class="fg">
   <div class="fi s1"><label>Sexo</label><select id="m2-sexo"><option>Masculino</option><option>Feminino</option></select></div>
   <div class="fi s2"><label>Nome Completo <span class="req">*</span></label><input id="m2-nome"><div class="err" id="e-m2-nome"></div></div>
-  <div class="fi s1"><label>CRM <span class="req">*</span></label><input id="m2-crm"><div class="err" id="e-m2-crm"></div></div>
-  <div class="fi s1"><label>UF do CRM</label><select id="m2-ufcrm">${ufs}</select></div>
+  <div class="fi"><label>Tipo de Registro <span class="req">*</span></label>
+  <select id="m2-tipo" onchange="toggleValidadeRMS('m2')">
+    <option value="CRM">CRM — Conselho Regional de Medicina</option>
+    <option value="CRO">CRO — Conselho Regional de Odontologia</option>
+    <option value="CRMV">CRMV — Cons. Regional de Med. Veterinária</option>
+    <option value="RMS">RMS — Registro no Ministério da Saúde</option>
+  </select></div>
+  <div class="fi s1"><label>Número do Registro <span class="req">*</span></label><input id="m2-crm"><div class="err" id="e-m2-crm"></div></div>
+  <div class="fi s1"><label>UF</label><select id="m2-ufcrm">${ufs}</select></div>
+  <div class="fi" id="m2-validade-box" style="display:none">
+    <label>Validade do RMS <span class="req">*</span></label>
+    <input type="date" id="m2-validade"><div class="err" id="e-m2-validade"></div>
+  </div>
   <div class="fi s1"><label>CPF</label><input id="m2-cpf" placeholder="000.000.000-00"></div>
   <div class="fi s1"><label>RG</label><input id="m2-rg"></div>
   <div class="fi s1"><label>Telefone</label><input id="m2-tel" placeholder="(44) 99900-0000"></div>
@@ -1774,13 +1836,16 @@ function abrirNovoMedicoSecundario(){
 async function salvarNovoMedicoSecundario(){
   const nome=(document.getElementById('m2-nome')?.value||'').trim();
   const crm=(document.getElementById('m2-crm')?.value||'').trim();
+  const tipo=document.getElementById('m2-tipo')?.value||'CRM';
+  const validade=(document.getElementById('m2-validade')?.value||'').trim();
   if(!nome){document.getElementById('e-m2-nome').textContent='Obrigatório';return;}
   if(!crm){document.getElementById('e-m2-crm').textContent='Obrigatório';return;}
+  if(tipo==='RMS'&&!validade){document.getElementById('e-m2-validade').textContent='Obrigatória para RMS';return;}
   const ufCrm=document.getElementById('m2-ufcrm').value;
   const cpf=document.getElementById('m2-cpf').value;
-  const duplo=duploMedico(crm,ufCrm,cpf,'');
+  const duplo=duploMedico(crm,ufCrm,cpf,'',tipo);
   if(duplo){toast(duplo,'erro');return;}
-  const dados={sexo:document.getElementById('m2-sexo').value,nome,crm,uf_crm:ufCrm,cpf,rg:document.getElementById('m2-rg').value,telefone:document.getElementById('m2-tel').value,status:document.getElementById('m2-status').value,especialidades:[],unidades:[]};
+  const dados={sexo:document.getElementById('m2-sexo').value,nome,tipo_registro:tipo,crm,uf_crm:ufCrm,validade_registro:validade||null,cpf,rg:document.getElementById('m2-rg').value,telefone:document.getElementById('m2-tel').value,status:document.getElementById('m2-status').value,especialidades:[],unidades:[]};
   loading(true,'Salvando médico...');
   const r=await dbSalvarMedico(dados);
   loading(false);
@@ -1789,7 +1854,7 @@ async function salvarNovoMedicoSecundario(){
     fecharModal2();
     toast('Médico criado! Selecione-o no campo do formulário.','ok');
     // Atualizar o TagSelect de médicos no form do requisitante sem fechar o modal principal
-    const medOpts=APP.medicos.map(m=>nomeMed(m)+' — CRM '+m.CRM+'-'+m.UF_CRM);
+    const medOpts=APP.medicos.map(m=>nomeMed(m)+' — '+regMed(m));
     const novoLabel=nomeMed({SEXO:dados.sexo,NOME:nome})+' — CRM '+crm+'-'+ufCrm;
     const tsWrap=document.querySelector('#modal-corpo .ts-wrap[data-tsid="ts-rmeds"]');
     if(tsWrap){ const cur=tsGet('ts-rmeds'); tsWrap.outerHTML=tsHTML('ts-rmeds',medOpts,[...cur,novoLabel],'Buscar médico...'); tsWire('ts-rmeds'); }
@@ -1916,7 +1981,7 @@ function abrirNovaEntrega(){
   const disp=APP.blocos.filter(b=>b.STATUS==='Disponivel').sort((a,b)=>parseInt(a.NUMERO)-parseInt(b.NUMERO));
   if(!disp.length){toast('Sem blocos disponíveis. Acesse Estoque → Entrada de Blocos.','erro');return;}
   const hoje=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
-  const medItems=APP.medicos.filter(m=>m.STATUS==='Ativo').map(m=>({id:m.ID,label:nomeMed(m)+' — CRM '+m.CRM+'-'+m.UF_CRM}));
+  const medItems=APP.medicos.filter(m=>m.STATUS==='Ativo').map(m=>({id:m.ID,label:nomeMed(m)+' — '+regMed(m)}));
   abrirModal('Nova Entrega de Bloco',`
 <div style="display:flex;flex-direction:column;gap:13px">
   <div class="fi">
@@ -2056,6 +2121,15 @@ function atualizarSelBlocos(){
 }
 async function salvarEntrega(){
   const mid=ssGet('e-med');
+  // Bloquear entrega se médico tem RMS vencido
+  if(mid){
+    const medRms=APP.medicos.find(m=>m.ID===mid);
+    if(medRms&&(medRms.TIPO_REGISTRO||'CRM')==='RMS'&&medRms.VALIDADE_REGISTRO){
+      if(new Date(medRms.VALIDADE_REGISTRO)<new Date()){
+        toast('RMS deste médico está vencido. Atualize o cadastro antes de registrar a entrega.','erro');return;
+      }
+    }
+  }
   const uid3=ssGet('e-uni');
   const reqId=ssGet('e-req');
   const qtd=parseInt(document.getElementById('e-qtd')?.value||'1')||1;
@@ -2472,11 +2546,11 @@ function _csvDownload(rows, filename){
   toast('CSV exportado: '+filename,'ok');
 }
 function exportarMedicosCSV(){
-  const rows=[['Nome Completo','Tratamento','CRM','UF CRM','CPF','RG','E-mail','Telefone','Especialidades','Unidades Vinculadas','Status']];
+  const rows=[['Nome Completo','Tratamento','Tipo Registro','Número Registro','UF','Validade (RMS)','CPF','RG','E-mail','Telefone','Especialidades','Unidades Vinculadas','Status']];
   APP.medicos.forEach(m=>{
     const unis=String(m.UNIDADES||'').split(';').filter(Boolean).map(id=>{const u=APP.unidades.find(x=>x.ID===id);return u?u.NOME:'';}).filter(Boolean).join(' | ');
     const esps=String(m.ESPECIALIDADES||'').split(';').filter(Boolean).join(' | ');
-    rows.push([m.NOME||'',m.SEXO==='Feminino'?'Dra.':'Dr.',m.CRM||'',m.UF_CRM||'',m.CPF||'',m.RG||'',m.EMAIL||'',m.TELEFONE||'',esps,unis,m.STATUS||'']);
+    rows.push([m.NOME||'',m.SEXO==='Feminino'?'Dra.':'Dr.',m.TIPO_REGISTRO||'CRM',m.CRM||'',m.UF_CRM||'',m.VALIDADE_REGISTRO||'',m.CPF||'',m.RG||'',m.EMAIL||'',m.TELEFONE||'',esps,unis,m.STATUS||'']);
   });
   _csvDownload(rows,'medicos_scvsat');
 }
@@ -2500,7 +2574,7 @@ function exportarBlocosCSV(){
   APP.blocos.forEach(b=>{
     const ent=APP.entregas.find(e=>String(e.IDS_BLOCOS||'').split(';').map(x=>x.trim()).includes(b.ID));
     const med=ent?APP.medicos.find(m=>m.ID===ent.ID_MEDICO):null;
-    rows.push([pad(b.NUMERO),b.LOTE||'',b.PAGINA_INICIAL||'',b.PAGINA_FINAL||'',20,b.STATUS||'',med?nomeMed(med):'-',med?med.CRM+'-'+med.UF_CRM:'-',ent?ent.PROTOCOLO:'-']);
+    rows.push([pad(b.NUMERO),b.LOTE||'',b.PAGINA_INICIAL||'',b.PAGINA_FINAL||'',20,b.STATUS||'',med?nomeMed(med):'-',med?regMed(med):'-',ent?ent.PROTOCOLO:'-']);
   });
   _csvDownload(rows,'blocos_scvsat');
 }
@@ -2510,13 +2584,13 @@ function exportarVinculosCSV(){
   APP.medicos.forEach(m=>{
     String(m.UNIDADES||'').split(';').filter(Boolean).forEach(uid=>{
       const u=APP.unidades.find(x=>x.ID===uid);
-      if(u) rows.push(['Médico→Unidade',nomeMed(m),'CRM '+m.CRM+'-'+m.UF_CRM,u.NOME,u.CNES?'CNES '+u.CNES:'']);
+      if(u) rows.push(['Médico→Unidade',nomeMed(m),regMed(m),u.NOME,u.CNES?'CNES '+u.CNES:'']);
     });
   });
   APP.requisitantes.forEach(r=>{
     String(r.MEDICOS_AUTORIZADOS||'').split(';').filter(Boolean).forEach(mid=>{
       const m=APP.medicos.find(x=>x.ID===mid);
-      if(m) rows.push(['Requisitante→Médico',r.NOME,'CPF '+r.CPF,nomeMed(m),'CRM '+m.CRM+'-'+m.UF_CRM]);
+      if(m) rows.push(['Requisitante→Médico',r.NOME,'CPF '+r.CPF,nomeMed(m),regMed(m)]);
     });
   });
   _csvDownload(rows,'vinculos_scvsat');
