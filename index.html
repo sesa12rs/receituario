@@ -1022,7 +1022,7 @@ async function dbGetTermo(entregaId){
   return {
     ok:true,
     entrega:{id:ent.id,protocolo:ent.protocolo,dataHora:ent.data_hora,emissor:ent.emissor||'',observacoes:ent.observacoes||'',quantidade:ent.quantidade_blocos||ids.length},
-    medico:med?{tratamento:t2,nome:med.nome,nomeCompleto:t2+' '+med.nome,tipo_registro:med.tipo_registro||'CRM',crm:med.crm,uf_crm:med.uf_crm,cpf:med.cpf}:null,
+    medico:med?{tratamento:t2,nome:med.nome,nomeCompleto:t2+' '+med.nome,tipo_registro:med.tipo_registro||'CRM',crm:med.numero_registro,uf_crm:med.uf_registro,cpf:med.cpf}:null,
     requisitante:req?{nome:req.nome,cpf:req.cpf,rg:req.rg||''}:null,
     unidade:uni?{nome:uni.nome,municipio:uni.municipio||'',uf:uni.uf||'',cnes:uni.cnes||'',telefone:uni.telefone||''}:null,
     blocos:(bls||[]).sort((a,b)=>parseInt(a.numero)-parseInt(b.numero)).map(b=>({numero:b.numero,paginaInicial:b.pagina_inicial,paginaFinal:b.pagina_final})),
@@ -1046,6 +1046,7 @@ function printTermoHTML(pagesHtml, titulo){
   // - Fallback de 1800ms cobre Safari que não dispara "load" após document.write
   const html = `<!DOCTYPE html><html lang="pt-BR"><head>
 <meta charset="UTF-8">
+<base href="${window.location.href.substring(0,window.location.href.lastIndexOf('/')+1)}">
 <title>${esc(titulo||'Termo de Recebimento')}</title>
 <style>
 *{ box-sizing:border-box; margin:0; padding:0;
@@ -1067,10 +1068,12 @@ function printTermoHTML(pagesHtml, titulo){
 }
 
 /* ══ IMPRESSÃO ═══════════════════════════════════════════════════════════
-   Opção 3: margens nativas via @page — o browser conhece a resolução da
-   impressora e aplica com precisão, sem conversão mm→px manual.
-   Margem: 23,5mm V × 20mm H → .page ocupa 170×250mm dentro do A4.
-   Quebra: break-before no 2º .page em diante (sem wrapper, sem height). */
+   Estratégia:
+   - @page { margin } → Safari aplica espaço em branco ao redor nativamente
+   - page-break-after: always no próprio .page → break explícito no elemento
+   - .page:last-child → auto, evita página em branco após o último
+   - height: 250mm = 297mm - 2×23.5mm (a margem do @page preenche o resto)
+   NÃO usar break-before no seletor irmão — Safari Mac às vezes ignora        */
 @media print{
   @page{ size:210mm 297mm; margin:23.5mm 20mm; }
 
@@ -1078,8 +1081,6 @@ function printTermoHTML(pagesHtml, titulo){
     font-family:Arial,Helvetica,sans-serif;
     font-size:11px; color:#0f172a; line-height:normal; }
 
-  /* Cada .page é uma folha. O seletor irmão força quebra antes da 2ª folha
-     em diante — sem depender de height-snap nem de wrapper. */
   .page{
     display:block;
     width:170mm;
@@ -1088,10 +1089,15 @@ function printTermoHTML(pagesHtml, titulo){
     padding:6mm;
     overflow:hidden;
     background:#fff;
+    page-break-after:always;
+    break-after:page;
+    page-break-inside:avoid;   /* Safari: não dividir o conteúdo dentro da folha */
+    break-inside:avoid;
   }
-  .page + .page{
-    break-before:page;
-    page-break-before:always;
+  /* Último .page não cria página em branco extra */
+  .page:last-child{
+    page-break-after:auto;
+    break-after:auto;
   }
 }
 
@@ -1190,14 +1196,14 @@ function printTermoHTML(pagesHtml, titulo){
       if(printed) return;
       printed = true;
       win.focus();
-      setTimeout(() => { if(!win.closed) win.print(); }, 350);
+      setTimeout(() => { if(!win.closed) win.print(); }, 600);
     };
 
     // Caminho principal: aguarda imagens e recursos carregarem.
     win.addEventListener('load', doPrint);
     // Fallback: Safari às vezes não dispara "load" após document.write;
-    // 1800ms é suficiente para a logo do governo carregar (ou expirar).
-    setTimeout(doPrint, 1800);
+    // 2500ms cobre o tempo de carregamento da logo do governo no Mac.
+    setTimeout(doPrint, 2500);
   }catch(e){ toast('Erro ao gerar impressão: '+e.message,'erro'); }
 }
 function buildTermPage(ent, med, req, uni, bls, cfg, pageIdx, totalPages){
@@ -1211,7 +1217,7 @@ function buildTermPage(ent, med, req, uni, bls, cfg, pageIdx, totalPages){
     ?`<tr><td><strong>Bloco ${pad(b.numero)}</strong></td><td>${b.paginaInicial}</td><td>${b.paginaFinal}</td></tr>`
     :`<tr class="vazio"><td>—</td><td></td><td></td></tr>`
   ).join('');
-  return `<div class="page"><div class="hdr"><div class="hdr-brand"><div class="sub">Estado do Paraná — SESA/PR</div><div class="title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div><div class="sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div><img src="https://www.saude.pr.gov.br/sites/default/files/2020-09/logo_governo_do_estado.png" onerror="this.style.display='none'" alt="PR"></div><div class="sp"></div><div class="titulo-doc"><h2>Termo de Recebimento de Receituário A</h2><p>Notificação de Receita "A" — Portaria SVS/MS nº 344/98${pgInfo}</p></div><div class="sp"></div><div class="meta"><span>Protocolo: <strong style="font-family:monospace;color:#92400e">${ent.protocolo}</strong></span><span>Data/Hora: <strong>${fmtDt(ent.dataHora)}</strong></span><span>Município: <strong>${uni?uni.municipio+'/'+uni.uf:'-'}</strong></span><span>Total: <strong>${ent.quantidade}</strong> bloco(s) · <strong>${totalFolhas}</strong> folhas</span></div><div class="sp"></div><div class="blocos-box"><div class="box-title">Blocos recebidos${pgInfo}</div><table class="blocos-table"><thead><tr><th style="width:36%">Bloco Nº</th><th style="width:32%">Num. Inicial</th><th style="width:32%">Num. Final</th></tr></thead><tbody>${blsRows}</tbody></table></div><div class="sp"></div><div class="secoes"><div class="section"><h3>Médico Destinatário</h3><div class="field">Nome: <strong>${med?.tratamento||''} ${med?.nome||'-'}</strong></div><div class="field">${med?(med.tipo_registro||'CRM'): 'Registro'}: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong> &nbsp;&nbsp; CPF: <strong>${med?.cpf||'-'}</strong></div><div class="field">Unidade: <strong>${uni?.nome||'-'}</strong></div></div><div class="section"><h3>Recebedor</h3><div class="field">Nome: <strong>${recNome}</strong></div><div class="field">CPF: <strong>${recCPF}</strong></div><div class="field">RG: <strong>${recRG}</strong></div></div></div><div class="sp"></div><div class="decl"><strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita "A" numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.</div><div class="sp"></div><div class="assin-area"><div class="assin-col"><div class="assin"><div class="linha"><div class="nome">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div><div class="cargo">Responsável pela Entrega · SCVSAT</div></div></div><div class="assin"><div class="linha"><div class="nome">${recNome}</div><div class="cargo">Recebedor · CPF: ${recCPF}</div></div></div></div><div class="carimbo-wrap"><div class="carimbo-label">Carimbo da Unidade de Atendimento</div><div class="carimbo-box"></div><div class="carimbo-uni">${uni?.nome||''}</div></div></div><div class="sp"></div><div class="footer-doc">Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div>`;
+  return `<div class="page"><div class="hdr"><div class="hdr-brand"><div class="sub">Estado do Paraná — SESA/PR</div><div class="title">${cfg.SECRETARIA||'12ª Regional de Saúde — SCVSAT'}</div><div class="sub">${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div><img src="img/logoGovPR.png" onerror="this.style.display='none'" alt="PR"></div><div class="sp"></div><div class="titulo-doc"><h2>Termo de Recebimento de Receituário A</h2><p>Notificação de Receita "A" — Portaria SVS/MS nº 344/98${pgInfo}</p></div><div class="sp"></div><div class="meta"><span>Protocolo: <strong style="font-family:monospace;color:#92400e">${ent.protocolo}</strong></span><span>Data/Hora: <strong>${fmtDt(ent.dataHora)}</strong></span><span>Município: <strong>${uni?uni.municipio+'/'+uni.uf:'-'}</strong></span><span>Total: <strong>${ent.quantidade}</strong> bloco(s) · <strong>${totalFolhas}</strong> folhas</span></div><div class="sp"></div><div class="blocos-box"><div class="box-title">Blocos recebidos${pgInfo}</div><table class="blocos-table"><thead><tr><th style="width:36%">Bloco Nº</th><th style="width:32%">Num. Inicial</th><th style="width:32%">Num. Final</th></tr></thead><tbody>${blsRows}</tbody></table></div><div class="sp"></div><div class="secoes"><div class="section"><h3>Médico Destinatário</h3><div class="field">Nome: <strong>${med?.tratamento||''} ${med?.nome||'-'}</strong></div><div class="field">${med?(med.tipo_registro||'CRM'): 'Registro'}: <strong>${med?med.crm+'-'+med.uf_crm:'-'}</strong> &nbsp;&nbsp; CPF: <strong>${med?.cpf||'-'}</strong></div><div class="field">Unidade: <strong>${uni?.nome||'-'}</strong></div></div><div class="section"><h3>Recebedor</h3><div class="field">Nome: <strong>${recNome}</strong></div><div class="field">CPF: <strong>${recCPF}</strong></div><div class="field">RG: <strong>${recRG}</strong></div></div></div><div class="sp"></div><div class="decl"><strong>Declaração de responsabilidade:</strong> O recebedor declara estar ciente de que os formulários de Notificação de Receita "A" numerados acima são documentos oficiais controlados, sujeitos às sanções previstas na Portaria SVS/MS nº 344/98, Lei nº 11.343/2006 e demais legislações pertinentes. O uso indevido, extravio, falsificação ou cessão não autorizada constitui infração grave passível de apuração civil, administrativa e penal.</div><div class="sp"></div><div class="assin-area"><div class="assin-col"><div class="assin"><div class="linha"><div class="nome">${ent.emissor||cfg.RESPONSAVEL_PADRAO||'Responsável SCVSAT'}</div><div class="cargo">Responsável pela Entrega · SCVSAT</div></div></div><div class="assin"><div class="linha"><div class="nome">${recNome}</div><div class="cargo">Recebedor · CPF: ${recCPF}</div></div></div></div><div class="carimbo-wrap"><div class="carimbo-label">Carimbo da Unidade de Atendimento</div><div class="carimbo-box"></div><div class="carimbo-uni">${uni?.nome||''}</div></div></div><div class="sp"></div><div class="footer-doc">Emitido em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · Sistema SCVSAT · ${cfg.MUNICIPIO_SEDE||'Umuarama-PR'}</div></div>`;
 }
 
 // ══════════════════════════════════════════════════════
