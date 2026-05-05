@@ -462,6 +462,7 @@ function renderTelInputs(containerId, vals){
     row.innerHTML=`<input type="tel" class="tel-input" value="${esc(v)}" placeholder="(44) 99900-0000" style="flex:1">
       <button type="button" class="btn-sm btn-d" onclick="removeTelRow(this)" title="Remover">✕</button>`;
     c.appendChild(row);
+    applyMask(row.querySelector('input'),'fone'); // máscara em cada input existente
   });
 }
 function addTelRow(containerId){
@@ -470,7 +471,10 @@ function addTelRow(containerId){
   row.style.cssText='display:flex;gap:6px;margin-bottom:6px';
   row.innerHTML=`<input type="tel" class="tel-input" value="" placeholder="(44) 99900-0000" style="flex:1">
     <button type="button" class="btn-sm btn-d" onclick="removeTelRow(this)" title="Remover">✕</button>`;
-  c.appendChild(row); row.querySelector('input').focus();
+  c.appendChild(row);
+  const inp=row.querySelector('input');
+  applyMask(inp,'fone'); // aplica máscara no input recém-criado
+  inp.focus();
 }
 function removeTelRow(btn){
   const c=btn.closest('[id$="-tels"]');
