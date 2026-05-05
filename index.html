@@ -2049,6 +2049,13 @@ function abrirNovaEntrega(){
       <label>Observações da procuração</label>
       <input id="e-proc-obs" placeholder="Ex: conforme procuração em anexo...">
     </div>
+    <div id="e-portador-check" style="padding-top:10px;border-top:1px solid #fed7aa">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--amber);margin-bottom:6px">Verificação do Portador (Art. 80, P06/99)</div>
+      <label style="display:flex;gap:8px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="e-port-check" style="width:16px;height:16px;flex-shrink:0;margin-top:2px">
+        <span>Autorização por escrito, RG e carimbo do profissional verificados</span>
+      </label>
+    </div>
   </div>
   <div class="fi">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -2171,7 +2178,7 @@ async function salvarEntrega(){
     observacoes:  document.getElementById('e-obs')?.value||'',
     carimboAposto: false,
     reciboAssinado: false,
-    portadorVerificado: false
+    portadorVerificado: document.getElementById('e-port-check')?.checked||false
   });
   loading(false);
   if(r?.ok){
