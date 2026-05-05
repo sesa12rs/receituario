@@ -433,7 +433,11 @@ const toEntrega = e => ({
   ID_MEDICO:e.medico_id||'', ID_REQUISITANTE:e.requisitante_id||'',
   ID_UNIDADE:e.unidade_id||'', EMISSOR:e.emissor||'', OBSERVACOES:e.observacoes||'',
   QUANTIDADE_BLOCOS:e.quantidade_blocos||0,
-  IDS_BLOCOS:(e.entrega_blocos||[]).map(eb=>eb.bloco_id).join(';')
+  TIPO_RETIRADA:e.tipo_retirada||'',
+  IDS_BLOCOS:(e.entrega_blocos||[]).map(eb=>eb.bloco_id).join(';'),
+  CARIMBO_APOSTO:e.carimbo_aposto||false,
+  RECIBO_ASSINADO:e.recibo_assinado||false,
+  PORTADOR_VERIFICADO:e.portador_verificado||false
 });
 const toLog = l => ({
   ID:l.id, DATA_HORA:l.data_hora, USUARIO:l.usuario||'',
@@ -2066,15 +2070,7 @@ function abrirNovaEntrega(){
     <div id="e-blocos-info" class="ibox" style="margin-top:6px"></div>
   </div>
   <div class="fi"><label>Observações gerais</label><textarea id="e-obs" placeholder="Observações opcionais..."></textarea></div>
-  <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:var(--r);padding:14px">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--green);margin-bottom:10px">✅ Confirmações obrigatórias (Art. 68-80, Portaria 06/99)</div>
-    <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer"><input type="checkbox" id="e-carimbo" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"><span>Carimbo da unidade foi aposto em <strong>todas as folhas</strong> do talonário na presença do responsável</span></label>
-    <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="e-recibo" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"><span>O recebedor <strong>assinou o Termo de Recebimento</strong> físico (via será arquivada)</span></label>
-    <div id="e-portador-check" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #a7f3d0">
-      <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:6px">Verificação do Portador (Art. 80, P06/99):</div>
-      <label style="display:flex;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="e-port-check" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"><span>Autorização por escrito, RG e carimbo do profissional verificados</span></label>
-    </div>
-  </div>
+
   <div class="ibox">ℹ O Termo de Recebimento abrirá automaticamente após salvar.</div>
 </div>`,
   `<button class="btn btn-s" onclick="fecharModal()">Cancelar</button><button class="btn btn-p" onclick="salvarEntrega()">Registrar Entrega</button>`,true);
@@ -2173,9 +2169,9 @@ async function salvarEntrega(){
     procuracaoQtd:  parseInt(document.getElementById('e-proc-qtd')?.value||'0')||null,
     procuracaoObs:  document.getElementById('e-proc-obs')?.value||'',
     observacoes:  document.getElementById('e-obs')?.value||'',
-    carimboAposto: document.getElementById('e-carimbo')?.checked||false,
-    reciboAssinado: document.getElementById('e-recibo')?.checked||false,
-    portadorVerificado: document.getElementById('e-port-check')?.checked||false
+    carimboAposto: false,
+    reciboAssinado: false,
+    portadorVerificado: false
   });
   loading(false);
   if(r?.ok){
@@ -2323,6 +2319,10 @@ async function abrirModalLivro(entregaId, protocolo){
   const qtdBlocos=ent?.QUANTIDADE_BLOCOS||1;
   const qtdPagsTermo=Math.ceil(qtdBlocos/10)||1;
   const jaAviso=ja?`<div class="wbox" style="margin-top:10px">⚠ Já possui registro: Livro ${ja.numero_livro}, pág. ${ja.numero_pagina} (${ja.lado||'Frente'}). Salvar irá atualizar.</div>`:'';
+  const chkCarimbo=ent?.CARIMBO_APOSTO?'checked':'';
+  const chkRecibo=ent?.RECIBO_ASSINADO?'checked':'';
+  const chkPortador=ent?.PORTADOR_VERIFICADO?'checked':'';
+  const showPortador=ent?.TIPO_RETIRADA==='requisitante';
   abrirModal2('📖 Registro Físico do Livro',`
 <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Informe onde o Termo do protocolo <strong style="font-family:var(--mono);color:#92400e">${protocolo}</strong> foi colado no livro físico.</p>
 <div class="ibox ibox-blue" style="margin-bottom:14px">ℹ Esta entrega gerou <strong>${qtdPagsTermo}</strong> página(s) impressa(s) (${qtdBlocos} bloco(s), 10 por pág.). Informe onde começa a 1ª página do Termo.</div>
@@ -2336,7 +2336,25 @@ async function abrirModalLivro(entregaId, protocolo){
     </select>
   </div>
 </div>
-<div id="rf-range" style="background:var(--bg);border-radius:var(--rs);padding:10px 12px;font-size:12px;color:var(--muted);min-height:36px"></div>
+<div id="rf-range" style="background:var(--bg);border-radius:var(--rs);padding:10px 12px;font-size:12px;color:var(--muted);min-height:36px;margin-bottom:14px"></div>
+<div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:var(--r);padding:14px">
+  <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--green);margin-bottom:10px">✅ Confirmações obrigatórias (Art. 68-80, Portaria 06/99)</div>
+  <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer">
+    <input type="checkbox" id="conf-carimbo" ${chkCarimbo} style="width:16px;height:16px;flex-shrink:0;margin-top:2px">
+    <span>Carimbo da unidade foi aposto em <strong>todas as folhas</strong> do talonário na presença do responsável</span>
+  </label>
+  <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer">
+    <input type="checkbox" id="conf-recibo" ${chkRecibo} style="width:16px;height:16px;flex-shrink:0;margin-top:2px">
+    <span>O recebedor <strong>assinou o Termo de Recebimento</strong> físico (via será arquivada)</span>
+  </label>
+  ${showPortador?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid #a7f3d0">
+    <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:6px">Verificação do Portador (Art. 80, P06/99):</div>
+    <label style="display:flex;gap:8px;font-size:13px;cursor:pointer">
+      <input type="checkbox" id="conf-portador" ${chkPortador} style="width:16px;height:16px;flex-shrink:0;margin-top:2px">
+      <span>Autorização por escrito, RG e carimbo do profissional verificados</span>
+    </label>
+  </div>`:''}
+</div>
 ${jaAviso}`,
   `<button class="btn btn-s" onclick="fecharModal2()">Cancelar</button><button class="btn btn-p" onclick="salvarRegistroFisico('${entregaId}','${protocolo}',${ja?'true':'false'},${qtdPagsTermo})">Confirmar Registro</button>`);
   setTimeout(()=>calcLivroRange(qtdPagsTermo),80);
@@ -2363,6 +2381,15 @@ async function salvarRegistroFisico(entregaId,protocolo,atualizar,qtdPags){
   const payload={numero_livro:livro,numero_pagina:pag,lado,qtd_paginas_termo:qtdPags||1,usuario:USUARIO?.nome||'Sistema'};
   if(atualizar){await sb.from('registros_fisicos').update(payload).eq('entrega_id',entregaId);}
   else{await sb.from('registros_fisicos').insert({...payload,entrega_id:entregaId});}
+  // Salvar confirmações obrigatórias junto com o registro físico
+  const confPayload={
+    carimbo_aposto:     document.getElementById('conf-carimbo')?.checked||false,
+    recibo_assinado:    document.getElementById('conf-recibo')?.checked||false,
+    portador_verificado:document.getElementById('conf-portador')?.checked||false
+  };
+  await sb.from('entregas').update(confPayload).eq('id',entregaId);
+  const idx=APP.entregas.findIndex(e=>e.ID===entregaId);
+  if(idx>=0) Object.assign(APP.entregas[idx],{CARIMBO_APOSTO:confPayload.carimbo_aposto,RECIBO_ASSINADO:confPayload.recibo_assinado,PORTADOR_VERIFICADO:confPayload.portador_verificado});
   await registrarLog(USUARIO?.nome,'REGISTRO_FISICO','Entrega '+protocolo,'Livro '+livro+', pág. '+pag+' '+lado);
   loading(false);fecharModal2();
   document.getElementById('termo-overlay').classList.remove('open');
@@ -2373,6 +2400,24 @@ async function salvarRegistroFisico(entregaId,protocolo,atualizar,qtdPags){
 // ══════════════════════════════════════════════════════
 // TERMO DE RECEBIMENTO
 // ══════════════════════════════════════════════════════
+// Salva as confirmações obrigatórias (carimbo, recibo, portador) no banco
+async function salvarConfirmacoes(entregaId){
+  const payload={
+    carimbo_aposto:    document.getElementById('conf-carimbo')?.checked||false,
+    recibo_assinado:   document.getElementById('conf-recibo')?.checked||false,
+    portador_verificado: document.getElementById('conf-portador')?.checked||false
+  };
+  const {error}=await sb.from('entregas').update(payload).eq('id',entregaId);
+  if(error){ toast('Erro ao salvar confirmação: '+error.message,'erro'); return; }
+  // Atualiza APP.entregas em memória
+  const idx=APP.entregas.findIndex(e=>e.ID===entregaId);
+  if(idx>=0) Object.assign(APP.entregas[idx],{
+    CARIMBO_APOSTO: payload.carimbo_aposto,
+    RECIBO_ASSINADO: payload.recibo_assinado,
+    PORTADOR_VERIFICADO: payload.portador_verificado
+  });
+  toast('Confirmação salva','ok');
+}
 async function verTermo(entregaId){
   loading(true,'Gerando Termo...');
   const [r, rfRes]=await Promise.all([
@@ -2385,6 +2430,10 @@ async function verTermo(entregaId){
   const rf=rfRes?.data||null;
   // Monta preview no overlay
   const {entrega:ent,medico:med,requisitante:req,unidade:uni,blocos:bls,config:cfg}=r;
+  // Garantir campos de confirmação no objeto ent (vêm do banco via dbGetTermo)
+  ent.carimbo_aposto     = ent.carimbo_aposto||false;
+  ent.recibo_assinado    = ent.recibo_assinado||false;
+  ent.portador_verificado= ent.portador_verificado||false;
   const recNome=req?req.nome:med?.nomeCompleto||'-';
   const recCPF=req?req.cpf:med?.cpf||'-';
   const totalFolhas=(parseInt(ent.quantidade)||bls.length)*20;
