@@ -69,7 +69,7 @@ a{color:var(--amber);text-decoration:none}
 .nb:hover{color:#fff;background:rgba(255,255,255,.06)}
 .nb.active{background:rgba(201,106,0,.18);color:var(--amber-lt);font-weight:600}
 .nb .ni{font-size:15px;width:18px;text-align:center;flex-shrink:0}
-.nav-sec{padding:16px 14px 4px;font-size:9px;font-weight:700;color:rgba(148,163,184,.35);text-transform:uppercase;letter-spacing:.1em}
+.nav-sec{padding:16px 14px 4px;font-size:9px;font-weight:700;color:rgba(148,163,184,.5);text-transform:uppercase;letter-spacing:.1em;border-top:1px solid rgba(148,163,184,.1);margin-top:4px}.nav-sec:first-of-type{border-top:none;margin-top:0}
 #sfoot{padding:12px 14px;border-top:1px solid rgba(255,255,255,.07)}
 .sf-user{font-size:12px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sf-papel{font-size:10px;color:var(--muted2);margin-top:1px;margin-bottom:8px}
@@ -100,6 +100,7 @@ a{color:var(--amber);text-decoration:none}
 .sc-val{font-size:30px;font-weight:700;line-height:1}
 .sc-green .sc-val{color:var(--green)}.sc-amber .sc-val{color:#92400e}
 .sc-blue .sc-val{color:var(--blue)}.sc-slate .sc-val{color:var(--slate3)}
+.sc[onclick]{transition:transform .12s,box-shadow .12s}.sc[onclick]:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.1)}
 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:var(--rs);padding:8px 14px;font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap}
@@ -382,15 +383,23 @@ const ESPS = ['Acupuntura','Alergia e imunologia','Anestesiologia','Angiologia',
   'Radiologia e diagnóstico por imagem','Radioterapia','Reumatologia','Urologia','Outra'];
 
 const NAV_ITEMS = [
-  {id:'dashboard',     label:'Dashboard',          icon:'◈', admin:false},
-  {id:'medicos',       label:'Médicos',             icon:'⚕', admin:false},
-  {id:'requisitantes', label:'Requisitantes',       icon:'👤',admin:false},
-  {id:'unidades',      label:'Unidades de Saúde',   icon:'🏥',admin:false},
-  {id:'blocos',        label:'Estoque de Blocos',   icon:'📋',admin:false},
-  {id:'entregas',      label:'Entregas',            icon:'📦',admin:false},
-  {id:'auditoria',     label:'Auditoria / Logs',    icon:'🔍',admin:false},
-  {id:'usuarios',      label:'Usuários do Sistema', icon:'⚙', admin:true},
-  {id:'cnes',          label:'Consulta CNES',        icon:'🔗',admin:false, link:'https://cnes.datasus.gov.br/pages/profissionais/consulta.jsp'},
+  {id:'dashboard',     label:'Dashboard',           icon:'◈',  admin:false, section:null},
+  // Cadastros
+  {id:'medicos',       label:'Médicos',              icon:'⚕',  admin:false, section:'Cadastros'},
+  {id:'requisitantes', label:'Requisitantes',        icon:'👤', admin:false, section:'Cadastros'},
+  {id:'unidades',      label:'Unidades de Saúde',   icon:'🏥', admin:false, section:'Cadastros'},
+  {id:'blocos',        label:'Estoque de Blocos',   icon:'📋', admin:false, section:'Cadastros'},
+  // Lançamentos
+  {id:'entregas',      label:'Entregas',             icon:'📦', admin:false, section:'Lançamentos'},
+  // Pesquisas Externas
+  {id:'cnes', label:'CNES — Estabelecimentos', icon:'🔗', admin:false, section:'Pesquisas Externas', link:'https://cnes.datasus.gov.br/pages/profissionais/consulta.jsp'},
+  {id:'cfm',  label:'CRM — Busca Médicos',     icon:'🔗', admin:false, section:'Pesquisas Externas', link:'https://portal.cfm.org.br/busca-medicos'},
+  {id:'cfo',  label:'CRO — Busca Dentistas',   icon:'🔗', admin:false, section:'Pesquisas Externas', link:'https://busca-profissionais.cfo.org.br'},
+  // Administração
+  {id:'auditoria', label:'Auditoria / Logs',    icon:'🔍', admin:false, section:'Administração'},
+  {id:'usuarios',  label:'Usuários do Sistema', icon:'⚙',  admin:true,  section:'Administração'},
+  // Ajuda
+  {id:'ajuda', label:'Ajuda / Manual', icon:'❓', admin:false, section:'Ajuda', link:'ajuda.html'},
 ];
 
 // ══════════════════════════════════════════════════════
@@ -401,15 +410,14 @@ const toMedico = m => ({
   TIPO_REGISTRO: m.tipo_registro||'CRM',
   CRM:  m.numero_registro||'',   // alias — campo DB renomeado para numero_registro
   UF_CRM: m.uf_registro||'PR',   // alias — campo DB renomeado para uf_registro
-  VALIDADE_REGISTRO: m.validade_registro||null,
-  CPF:m.cpf||'', RG:m.rg||'', EMAIL:m.email||'', TELEFONE:m.telefone||'', STATUS:m.status||'Ativo',
+  CPF:m.cpf||'', RG:m.rg||'', EMAIL:m.email||'', TELEFONE:m.telefone||'', OBSERVACOES:m.observacoes||'', STATUS:m.status||'Ativo',
   CRIADO_EM:m.criado_em,
   ESPECIALIDADES:(m.medico_especialidades||[]).map(e=>e.especialidade).join(';'),
   UNIDADES:(m.medico_unidades||[]).map(e=>e.unidade_id).join(';')
 });
 const toReq = r => ({
   ID:r.id, NOME:r.nome||'', CPF:r.cpf||'', RG:r.rg||'', EMAIL:r.email||'',
-  TELEFONE:r.telefone||'', STATUS:r.status||'Ativo', CRIADO_EM:r.criado_em,
+  TELEFONE:r.telefone||'', OBSERVACOES:r.observacoes||'', STATUS:r.status||'Ativo', CRIADO_EM:r.criado_em,
   MEDICOS_AUTORIZADOS:(r.requisitante_medicos||[]).map(e=>e.medico_id).join(';')
 });
 const toUni = u => ({
@@ -442,15 +450,37 @@ const trat   = m => String(m.SEXO||'').toLowerCase()==='feminino'?'Dra.':'Dr.';
 const nomeMed= m => trat(m)+' '+(m.NOME||'');
 // Exibe o tipo de registro + número + UF: "CRM 12345-PR", "CRO 6789-SP", etc.
 const regMed = m => (m.TIPO_REGISTRO||'CRM')+' '+String(m.CRM||'-')+'-'+(m.UF_CRM||'PR');
-// Badge de alerta para RMS perto de vencer ou vencido
-const rmsBadge = m => {
-  if((m.TIPO_REGISTRO||'CRM')!=='RMS'||!m.VALIDADE_REGISTRO) return '';
-  const dias=Math.ceil((new Date(m.VALIDADE_REGISTRO)-new Date())/(1000*86400));
-  if(dias<0) return '<span class="badge b-r" title="RMS vencido">RMS vencido</span>';
-  if(dias<=30) return `<span class="badge b-r" title="RMS vence em ${dias} dias">RMS vence em ${dias}d</span>`;
-  if(dias<=90) return `<span class="badge b-a" title="RMS vence em ${dias} dias">RMS vence em ${dias}d</span>`;
-  return '';
-};
+const rmsBadge = () => ''; // RMS não tem validade — badge removido
+// Múltiplos telefones: armazenados separados por |
+const splitTels = v => (v||'').split('|').map(s=>s.trim()).filter(Boolean);
+const joinTels  = arr => arr.filter(Boolean).join('|');
+// Renderiza lista de inputs de telefone
+function renderTelInputs(containerId, vals){
+  const c=document.getElementById(containerId); if(!c) return;
+  c.innerHTML=''; (vals.length?vals:['']).forEach((v,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;gap:6px;margin-bottom:6px';
+    row.innerHTML=`<input type="tel" class="tel-input" value="${esc(v)}" placeholder="(44) 99900-0000" style="flex:1">
+      <button type="button" class="btn-sm btn-d" onclick="removeTelRow(this)" title="Remover">✕</button>`;
+    c.appendChild(row);
+  });
+}
+function addTelRow(containerId){
+  const c=document.getElementById(containerId); if(!c) return;
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:6px;margin-bottom:6px';
+  row.innerHTML=`<input type="tel" class="tel-input" value="" placeholder="(44) 99900-0000" style="flex:1">
+    <button type="button" class="btn-sm btn-d" onclick="removeTelRow(this)" title="Remover">✕</button>`;
+  c.appendChild(row); row.querySelector('input').focus();
+}
+function removeTelRow(btn){
+  const c=btn.closest('[id$="-tels"]');
+  if(c&&c.querySelectorAll('.tel-input').length<=1){btn.previousElementSibling.value='';return;}
+  btn.parentElement.remove();
+}
+function getTels(containerId){
+  return joinTels([...document.querySelectorAll('#'+containerId+' .tel-input')].map(i=>i.value.trim()));
+}
 const fmtDt  = dt => { if(!dt) return '-'; try { const d=new Date(dt); return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'}); } catch(e){ return String(dt); } };
 const fmtData= dt => { if(!dt) return '-'; try { return new Date(dt).toLocaleDateString('pt-BR'); } catch(e){ return '-'; } };
 const badge  = (s,c) => { const m={Ativo:'b-g',Disponivel:'b-g',Inativo:'b-r',Extraviado:'b-r',Cancelado:'b-gr',Entregue:'b-a',Suspenso:'b-r'}; return `<span class="badge ${c||m[s]||'b-gr'}">${s||'-'}</span>`; };
@@ -485,7 +515,7 @@ function abrirModal2(titulo, corpo, rodape, larga){
   document.getElementById('modal2-rodape').innerHTML = rodape || '';
   document.getElementById('modal2').className = larga ? 'wide' : '';
   document.getElementById('overlay2').classList.add('open');
-  setTimeout(()=>{ document.querySelectorAll('#modal2-corpo .ts-wrap[data-tsid]').forEach(el=>tsWire(el.dataset.tsid)); initMasks2(); }, 50);
+  setTimeout(()=>{ document.querySelectorAll('#modal2-corpo .ts-wrap[data-tsid]').forEach(el=>tsWire(el.dataset.tsid)); initMasks2(); renderTelInputs('r-tels',splitTels(document.getElementById('r-tels')?.dataset.initial||'')); }, 50);
 }
 function fecharModal2(){ document.getElementById('overlay2').classList.remove('open'); }
 function initMasks2(){
@@ -502,7 +532,7 @@ function abrirModal(titulo,corpo,rodape,larga){
   document.getElementById('modal').className=larga?'wide':'';
   document.getElementById('overlay').classList.add('open');
   // Re-inicializar TagSelects dentro do modal
-  setTimeout(()=>{ document.querySelectorAll('#modal-corpo .ts-wrap[data-tsid]').forEach(el=>tsWire(el.dataset.tsid)); initMasks(); },50);
+  setTimeout(()=>{ document.querySelectorAll('#modal-corpo .ts-wrap[data-tsid]').forEach(el=>tsWire(el.dataset.tsid)); initMasks(); renderTelInputs('m-tels',splitTels(document.getElementById('m-tels')?.dataset.initial||'')); },50);
 }
 function skeleton(){ return '<div style="padding:20px">'+['40%','100%','100%','80%'].map(w=>`<div class="sk" style="width:${w};height:${w==='40%'?22:40}px;margin-bottom:8px"></div>`).join('')+'</div>'; }
 function erroView(msg){ return `<div style="padding:20px;background:#fee2e2;border-radius:var(--r);color:#991b1b;font-size:13px"><strong>Erro:</strong> ${esc(msg)}<br><button onclick="carregarView(APP.view)" class="btn btn-p" style="margin-top:10px;font-size:12px">Tentar novamente</button></div>`; }
@@ -557,12 +587,6 @@ function applyMask(el,type){
     const diff=this.value.length-len;
     try{ this.setSelectionRange(pos+diff,pos+diff); }catch(e){}
   });
-}
-// Mostra/oculta campo de validade conforme tipo de registro selecionado
-function toggleValidadeRMS(prefix){
-  const tipo=document.getElementById(prefix+'-tipo')?.value||'CRM';
-  const box=document.getElementById(prefix+'-validade-box');
-  if(box) box.style.display=tipo==='RMS'?'block':'none';
 }
 function initMasks(){
   // CPF
@@ -804,11 +828,14 @@ async function salvarSenha(){
 // NAVEGAÇÃO
 // ══════════════════════════════════════════════════════
 function buildNav(){
-  let html='',adm=false;
+  let html='', lastSection=undefined;
   NAV_ITEMS.filter(p=>!p.admin||isAdmin()).forEach(p=>{
-    if(p.admin&&!adm){html+=`<div class="nav-sec">Administração</div>`;adm=true;}
+    const sec=p.section||null;
+    if(sec!==lastSection){
+      if(sec) html+=`<div class="nav-sec">${sec}</div>`;
+      lastSection=sec;
+    }
     if(p.link){
-      // Item externo: abre nova aba, não muda a view ativa
       html+=`<a class="nb nb-ext" href="${p.link}" target="_blank" rel="noopener" title="Abre em nova aba"><span class="ni">${p.icon}</span>${p.label}<span style="font-size:9px;opacity:.6;margin-left:4px">↗</span></a>`;
     } else {
       html+=`<button class="nb${p.id===APP.view?' active':''}" onclick="go('${p.id}')"><span class="ni">${p.icon}</span>${p.label}</button>`;
@@ -885,7 +912,7 @@ async function dbEntregasCompleto(){
 async function dbSalvarMedico(d){
   // Novo cadastro: não envia id — banco gera UUID automaticamente
   // Edição: envia o id existente para o upsert encontrar o registro
-  const payload={sexo:d.sexo||'Masculino',nome:d.nome||'',tipo_registro:d.tipo_registro||'CRM',numero_registro:d.crm||'',uf_registro:d.uf_crm||'PR',validade_registro:d.validade_registro||null,cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',telefone:d.telefone||'',status:d.status||'Ativo'};
+  const payload={sexo:d.sexo||'Masculino',nome:d.nome||'',tipo_registro:d.tipo_registro||'CRM',numero_registro:d.crm||'',uf_registro:d.uf_crm||'PR',cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',telefone:d.telefone||'',observacoes:d.observacoes||'',status:d.status||'Ativo'};
   let mid;
   if(d.id){
     // Edição — update direto
@@ -907,7 +934,7 @@ async function dbSalvarMedico(d){
 }
 
 async function dbSalvarReq(d){
-  const payload={nome:d.nome||'',cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',telefone:d.telefone||'',status:d.status||'Ativo'};
+  const payload={nome:d.nome||'',cpf:d.cpf||'',rg:d.rg||'',email:d.email||'',telefone:d.telefone||'',observacoes:d.observacoes||'',status:d.status||'Ativo'};
   let rid;
   if(d.id){
     const {error}=await sb.from('requisitantes').update(payload).eq('id',d.id);
@@ -1237,10 +1264,10 @@ function renderDashboard(){
 </div>
 ${alerta}
 <div class="stats-grid">
-  <div class="sc sc-green"><div class="sc-lbl">Blocos em Estoque</div><div class="sc-val">${disp}</div></div>
-  <div class="sc sc-amber"><div class="sc-lbl">Blocos Entregues</div><div class="sc-val">${entB}</div></div>
-  <div class="sc sc-blue"><div class="sc-lbl">Médicos Ativos</div><div class="sc-val">${mAt}</div></div>
-  <div class="sc sc-slate"><div class="sc-lbl">Total Protocolos</div><div class="sc-val">${APP.entregas.length}</div></div>
+  <div class="sc sc-green" onclick="go('blocos')" style="cursor:pointer" title="Ver Estoque de Blocos"><div class="sc-lbl">Blocos em Estoque</div><div class="sc-val">${disp}</div></div>
+  <div class="sc sc-amber" onclick="go('entregas')" style="cursor:pointer" title="Ver Entregas"><div class="sc-lbl">Blocos Entregues</div><div class="sc-val">${entB}</div></div>
+  <div class="sc sc-blue" onclick="go('medicos')" style="cursor:pointer" title="Ver Médicos"><div class="sc-lbl">Médicos Ativos</div><div class="sc-val">${mAt}</div></div>
+  <div class="sc sc-slate" onclick="go('entregas')" style="cursor:pointer" title="Ver Entregas"><div class="sc-lbl">Total Protocolos</div><div class="sc-val">${APP.entregas.length}</div></div>
 </div>
 <div class="card">
   <div class="card-head"><span class="card-head-title">Últimas Entregas</span><button class="btn btn-s" style="font-size:12px;padding:5px 10px" onclick="go('entregas')">Ver todas →</button></div>
@@ -1329,7 +1356,7 @@ function abrirFormMedico(m){
     <select id="m-status"><option${(m.STATUS||'Ativo')==='Ativo'?' selected':''}>Ativo</option><option${m.STATUS==='Inativo'?' selected':''}>Inativo</option><option${m.STATUS==='Suspenso'?' selected':''}>Suspenso</option></select></div>
   <div class="fi s2"><label>Nome Completo (sem Dr./Dra.) <span class="req">*</span></label><input id="m-nome" value="${esc(m.NOME||'')}"><div class="err" id="e-m-nome"></div></div>
   <div class="fi"><label>Tipo de Registro <span class="req">*</span></label>
-  <select id="m-tipo" onchange="toggleValidadeRMS('m')">
+  <select id="m-tipo">
     <option value="CRM"${(m.TIPO_REGISTRO||'CRM')==='CRM'?' selected':''}>CRM — Conselho Regional de Medicina</option>
     <option value="CRO"${m.TIPO_REGISTRO==='CRO'?' selected':''}>CRO — Conselho Regional de Odontologia</option>
     <option value="CRMV"${m.TIPO_REGISTRO==='CRMV'?' selected':''}>CRMV — Cons. Regional de Med. Veterinária</option>
@@ -1337,16 +1364,15 @@ function abrirFormMedico(m){
   </select></div>
   <div class="fi s1"><label>Número do Registro <span class="req">*</span></label><input id="m-crm" value="${esc(m.CRM||'')}"><div class="err" id="e-m-crm"></div></div>
   <div class="fi s1"><label>UF</label><select id="m-ufcrm">${ufs}</select></div>
-  <div class="fi" id="m-validade-box" style="display:${(m.TIPO_REGISTRO||'CRM')==='RMS'?'block':'none'}">
-    <label>Validade do RMS <span class="req">*</span></label>
-    <input type="date" id="m-validade" value="${m.VALIDADE_REGISTRO||''}">
-    <div class="err" id="e-m-validade"></div>
-    <div style="font-size:11px;color:var(--muted);margin-top:3px">O médico será inativado automaticamente após o vencimento.</div>
-  </div>
+
   <div class="fi s1"><label>CPF</label><input id="m-cpf" value="${esc(m.CPF||'')}" placeholder="000.000.000-00"></div>
   <div class="fi s1"><label>RG</label><input id="m-rg" value="${esc(m.RG||'')}"></div>
+  <div class="fi"><label>Telefone(s)</label>
+    <div id="m-tels" data-initial="${esc(m.TELEFONE||'')}"></div>
+    <button type="button" class="btn-sm btn-s" onclick="addTelRow('m-tels')" style="margin-top:2px">+ Adicionar telefone</button>
+  </div>
   <div class="fi s1"><label>E-mail</label><input type="email" id="m-email" value="${esc(m.EMAIL||'')}"></div>
-  <div class="fi s1"><label>Telefone</label><input id="m-tel" value="${esc(m.TELEFONE||'')}" placeholder="(44) 99900-0000"></div>
+  <div class="fi"><label>Observações</label><textarea id="m-obs" rows="2" placeholder="Anotações sobre o médico...">${esc(m.OBSERVACOES||'')}</textarea></div>
   <div class="fi s2"><label>Especialidades</label>${tsHTML('ts-esps',ESPS,espsAtuais,'Buscar especialidade...')}</div>
   <div class="fi s2">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
@@ -1364,10 +1390,8 @@ async function salvarMedico(id){
   const nome=(document.getElementById('m-nome')?.value||'').trim();
   const crm=(document.getElementById('m-crm')?.value||'').trim();
   const tipo=document.getElementById('m-tipo')?.value||'CRM';
-  const validade=(document.getElementById('m-validade')?.value||'').trim();
   if(!nome){document.getElementById('e-m-nome').textContent='Obrigatório';return;}
   if(!crm){document.getElementById('e-m-crm').textContent='Obrigatório';return;}
-  if(tipo==='RMS'&&!validade){document.getElementById('e-m-validade').textContent='Obrigatória para RMS';return;}
   const ufCrm=document.getElementById('m-ufcrm').value;
   const cpf=document.getElementById('m-cpf').value;
   const duplo=duploMedico(crm,ufCrm,cpf,id,tipo);
@@ -1375,7 +1399,7 @@ async function salvarMedico(id){
   const espsNomes=tsGet('ts-esps');
   const unisNomes=tsGet('ts-unis');
   const unisIds=unisNomes.map(n=>{const u=APP.unidades.find(x=>x.NOME===n);return u?u.ID:'';}).filter(Boolean);
-  const dados={id,sexo:document.getElementById('m-sexo').value,nome,tipo_registro:tipo,crm,uf_crm:document.getElementById('m-ufcrm').value,validade_registro:validade||null,cpf:document.getElementById('m-cpf').value,rg:document.getElementById('m-rg').value,email:document.getElementById('m-email').value,telefone:document.getElementById('m-tel').value,status:document.getElementById('m-status').value,especialidades:espsNomes,unidades:unisIds};
+  const dados={id,sexo:document.getElementById('m-sexo').value,nome,tipo_registro:tipo,crm,uf_crm:document.getElementById('m-ufcrm').value,cpf:document.getElementById('m-cpf').value,rg:document.getElementById('m-rg').value,email:document.getElementById('m-email').value,telefone:getTels('m-tels'),observacoes:document.getElementById('m-obs')?.value||'',status:document.getElementById('m-status').value,especialidades:espsNomes,unidades:unisIds};
   loading(true,'Salvando médico...');const r=await dbSalvarMedico(dados);loading(false);
   if(r?.ok){
     APP.medicos=await dbMedicos();
@@ -1432,8 +1456,8 @@ function buildReqBody(q){
 let _medicoTemp=null;
 let _reqTemp=null;
 
-function salvarMedicoTemp(){ _medicoTemp={id:document.getElementById('m-nome')?.closest('.fg')&&document.getElementById('m-nome')?.value,sexo:document.getElementById('m-sexo')?.value,status:document.getElementById('m-status')?.value,nome:document.getElementById('m-nome')?.value,tipo_registro:document.getElementById('m-tipo')?.value||'CRM',crm:document.getElementById('m-crm')?.value,uf_crm:document.getElementById('m-ufcrm')?.value,validade_registro:document.getElementById('m-validade')?.value||null,cpf:document.getElementById('m-cpf')?.value,rg:document.getElementById('m-rg')?.value,email:document.getElementById('m-email')?.value,tel:document.getElementById('m-tel')?.value,esps:tsGet('ts-esps'),unis:tsGet('ts-unis')}; }
-function salvarReqTemp(){ _reqTemp={id:document.getElementById('r-nome')&&document.getElementById('r-nome')?.value,nome:document.getElementById('r-nome')?.value,cpf:document.getElementById('r-cpf')?.value,rg:document.getElementById('r-rg')?.value,email:document.getElementById('r-email')?.value,tel:document.getElementById('r-tel')?.value,status:document.getElementById('r-status')?.value,meds:tsGet('ts-rmeds')}; }
+function salvarMedicoTemp(){ _medicoTemp={id:document.getElementById('m-nome')?.closest('.fg')&&document.getElementById('m-nome')?.value,sexo:document.getElementById('m-sexo')?.value,status:document.getElementById('m-status')?.value,nome:document.getElementById('m-nome')?.value,tipo_registro:document.getElementById('m-tipo')?.value||'CRM',crm:document.getElementById('m-crm')?.value,uf_crm:document.getElementById('m-ufcrm')?.value,cpf:document.getElementById('m-cpf')?.value,rg:document.getElementById('m-rg')?.value,email:document.getElementById('m-email')?.value,tel:getTels('m-tels'),obs:document.getElementById('m-obs')?.value||'',esps:tsGet('ts-esps'),unis:tsGet('ts-unis')}; }
+function salvarReqTemp(){ _reqTemp={id:document.getElementById('r-nome')&&document.getElementById('r-nome')?.value,nome:document.getElementById('r-nome')?.value,cpf:document.getElementById('r-cpf')?.value,rg:document.getElementById('r-rg')?.value,email:document.getElementById('r-email')?.value,tel:getTels('r-tels'),obs:document.getElementById('r-obs')?.value||'',status:document.getElementById('r-status')?.value,meds:tsGet('ts-rmeds')}; }
 
 function abrirFormReq(r){
   if(!podeEscrever()) return; r=r||{};
@@ -1444,8 +1468,12 @@ function abrirFormReq(r){
   <div class="fi s2"><label>Nome Completo <span class="req">*</span></label><input id="r-nome" value="${esc(r.NOME||'')}"><div class="err" id="e-r-nome"></div></div>
   <div class="fi s1"><label>CPF <span class="req">*</span></label><input id="r-cpf" value="${esc(r.CPF||'')}" placeholder="000.000.000-00"><div class="err" id="e-r-cpf"></div></div>
   <div class="fi s1"><label>RG</label><input id="r-rg" value="${esc(r.RG||'')}"></div>
+  <div class="fi"><label>Telefone(s)</label>
+    <div id="r-tels" data-initial="${esc(r.TELEFONE||'')}"></div>
+    <button type="button" class="btn-sm btn-s" onclick="addTelRow('r-tels')" style="margin-top:2px">+ Adicionar telefone</button>
+  </div>
   <div class="fi s1"><label>E-mail</label><input type="email" id="r-email" value="${esc(r.EMAIL||'')}"></div>
-  <div class="fi s1"><label>Telefone</label><input id="r-tel" value="${esc(r.TELEFONE||'')}"></div>
+  <div class="fi"><label>Observações</label><textarea id="r-obs" rows="2" placeholder="Anotações sobre o requisitante...">${esc(r.OBSERVACOES||'')}</textarea></div>
   <div class="fi s1"><label>Status</label><select id="r-status"><option${(r.STATUS||'Ativo')==='Ativo'?' selected':''}>Ativo</option><option${r.STATUS==='Inativo'?' selected':''}>Inativo</option></select></div>
   <div class="fi s2">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -1466,7 +1494,7 @@ async function salvarReq(id){
   if(duploR){toast(duploR,'erro');return;}
   const medNomes=tsGet('ts-rmeds');
   const medIds=medNomes.map(n=>{const m=APP.medicos.find(x=>(nomeMed(x)+' — CRM '+x.CRM+'-'+x.UF_CRM)===n);return m?m.ID:'';}).filter(Boolean);
-  const dados={id,nome,cpf,rg:document.getElementById('r-rg').value,email:document.getElementById('r-email').value,telefone:document.getElementById('r-tel').value,status:document.getElementById('r-status').value,medicos:medIds};
+  const dados={id,nome,cpf,rg:document.getElementById('r-rg').value,email:document.getElementById('r-email').value,telefone:getTels('r-tels'),observacoes:document.getElementById('r-obs')?.value||'',status:document.getElementById('r-status').value,medicos:medIds};
   loading(true,'Salvando...');const r=await dbSalvarReq(dados);loading(false);
   if(r?.ok){APP.requisitantes=await dbReqs();fecharModal();document.getElementById('requisitantes-body').innerHTML=buildReqBody(APP.q.requisitantes);toast('Salvo!','ok');}
   else toast('Erro: '+(r?.msg||'Falha'),'erro');
@@ -1557,7 +1585,7 @@ async function toggleUnidade(id,status){
 }
 function restaurarMedico(t){
   // Recria objeto m para abrirFormMedico com os dados salvos
-  const m={ID:t.id,SEXO:t.sexo,STATUS:t.status,NOME:t.nome,TIPO_REGISTRO:t.tipo_registro||'CRM',CRM:t.crm,UF_CRM:t.uf_crm,VALIDADE_REGISTRO:t.validade_registro||null,CPF:t.cpf,RG:t.rg,EMAIL:t.email,TELEFONE:t.tel,ESPECIALIDADES:t.esps?.join(';')||'',UNIDADES:t.unis?.map(n=>{const u=APP.unidades.find(x=>x.NOME===n);return u?u.ID:'';}).filter(Boolean).join(';')||''};
+  const m={ID:t.id,SEXO:t.sexo,STATUS:t.status,NOME:t.nome,TIPO_REGISTRO:t.tipo_registro||'CRM',CRM:t.crm,UF_CRM:t.uf_crm,CPF:t.cpf,RG:t.rg,EMAIL:t.email,TELEFONE:t.tel,ESPECIALIDADES:t.esps?.join(';')||'',UNIDADES:t.unis?.map(n=>{const u=APP.unidades.find(x=>x.NOME===n);return u?u.ID:'';}).filter(Boolean).join(';')||''};
   abrirFormMedico(m);
 }
 function restaurarReq(t){
@@ -1727,7 +1755,7 @@ function abrirNovoMedicoNaEntrega(){
   <div class="fi s1"><label>Sexo</label><select id="em2-sexo"><option>Masculino</option><option>Feminino</option></select></div>
   <div class="fi s2"><label>Nome Completo <span class="req">*</span></label><input id="em2-nome"><div class="err" id="e-em2-nome"></div></div>
   <div class="fi"><label>Tipo de Registro <span class="req">*</span></label>
-  <select id="em2-tipo" onchange="toggleValidadeRMS('em2')">
+  <select id="em2-tipo">
     <option value="CRM">CRM — Conselho Regional de Medicina</option>
     <option value="CRO">CRO — Conselho Regional de Odontologia</option>
     <option value="CRMV">CRMV — Cons. Regional de Med. Veterinária</option>
@@ -1735,10 +1763,7 @@ function abrirNovoMedicoNaEntrega(){
   </select></div>
   <div class="fi s1"><label>Número do Registro <span class="req">*</span></label><input id="em2-crm"><div class="err" id="e-em2-crm"></div></div>
   <div class="fi s1"><label>UF</label><select id="em2-ufcrm">${ufs}</select></div>
-  <div class="fi" id="em2-validade-box" style="display:none">
-    <label>Validade do RMS <span class="req">*</span></label>
-    <input type="date" id="em2-validade"><div class="err" id="e-em2-validade"></div>
-  </div>
+
   <div class="fi s1"><label>CPF</label><input id="em2-cpf" placeholder="000.000.000-00"></div>
   <div class="fi s1"><label>Telefone</label><input id="em2-tel" placeholder="(44) 99900-0000"></div>
 </div>`,
@@ -1748,15 +1773,13 @@ async function salvarNovoMedicoNaEntrega(){
   const nome=(document.getElementById('em2-nome')?.value||'').trim();
   const crm=(document.getElementById('em2-crm')?.value||'').trim();
   const tipo=document.getElementById('em2-tipo')?.value||'CRM';
-  const validade=(document.getElementById('em2-validade')?.value||'').trim();
   if(!nome){document.getElementById('e-em2-nome').textContent='Obrigatório';return;}
   if(!crm){document.getElementById('e-em2-crm').textContent='Obrigatório';return;}
-  if(tipo==='RMS'&&!validade){document.getElementById('e-em2-validade').textContent='Obrigatória para RMS';return;}
   const ufCrm=document.getElementById('em2-ufcrm').value;
   const cpf=document.getElementById('em2-cpf').value;
   const duplo=duploMedico(crm,ufCrm,cpf,'',tipo);
   if(duplo){toast(duplo,'erro');return;}
-  const dados={sexo:document.getElementById('em2-sexo').value,nome,tipo_registro:tipo,crm,uf_crm:ufCrm,validade_registro:validade||null,cpf,telefone:document.getElementById('em2-tel').value,status:'Ativo',especialidades:[],unidades:[]};
+  const dados={sexo:document.getElementById('em2-sexo').value,nome,tipo_registro:tipo,crm,uf_crm:ufCrm,cpf,telefone:document.getElementById('em2-tel').value,status:'Ativo',especialidades:[],unidades:[]};
   loading(true,'Salvando médico...');
   const r=await dbSalvarMedico(dados);
   loading(false);
@@ -1820,7 +1843,7 @@ function abrirNovoMedicoSecundario(){
   <div class="fi s1"><label>Sexo</label><select id="m2-sexo"><option>Masculino</option><option>Feminino</option></select></div>
   <div class="fi s2"><label>Nome Completo <span class="req">*</span></label><input id="m2-nome"><div class="err" id="e-m2-nome"></div></div>
   <div class="fi"><label>Tipo de Registro <span class="req">*</span></label>
-  <select id="m2-tipo" onchange="toggleValidadeRMS('m2')">
+  <select id="m2-tipo">
     <option value="CRM">CRM — Conselho Regional de Medicina</option>
     <option value="CRO">CRO — Conselho Regional de Odontologia</option>
     <option value="CRMV">CRMV — Cons. Regional de Med. Veterinária</option>
@@ -1828,10 +1851,7 @@ function abrirNovoMedicoSecundario(){
   </select></div>
   <div class="fi s1"><label>Número do Registro <span class="req">*</span></label><input id="m2-crm"><div class="err" id="e-m2-crm"></div></div>
   <div class="fi s1"><label>UF</label><select id="m2-ufcrm">${ufs}</select></div>
-  <div class="fi" id="m2-validade-box" style="display:none">
-    <label>Validade do RMS <span class="req">*</span></label>
-    <input type="date" id="m2-validade"><div class="err" id="e-m2-validade"></div>
-  </div>
+
   <div class="fi s1"><label>CPF</label><input id="m2-cpf" placeholder="000.000.000-00"></div>
   <div class="fi s1"><label>RG</label><input id="m2-rg"></div>
   <div class="fi s1"><label>Telefone</label><input id="m2-tel" placeholder="(44) 99900-0000"></div>
@@ -1843,15 +1863,13 @@ async function salvarNovoMedicoSecundario(){
   const nome=(document.getElementById('m2-nome')?.value||'').trim();
   const crm=(document.getElementById('m2-crm')?.value||'').trim();
   const tipo=document.getElementById('m2-tipo')?.value||'CRM';
-  const validade=(document.getElementById('m2-validade')?.value||'').trim();
   if(!nome){document.getElementById('e-m2-nome').textContent='Obrigatório';return;}
   if(!crm){document.getElementById('e-m2-crm').textContent='Obrigatório';return;}
-  if(tipo==='RMS'&&!validade){document.getElementById('e-m2-validade').textContent='Obrigatória para RMS';return;}
   const ufCrm=document.getElementById('m2-ufcrm').value;
   const cpf=document.getElementById('m2-cpf').value;
   const duplo=duploMedico(crm,ufCrm,cpf,'',tipo);
   if(duplo){toast(duplo,'erro');return;}
-  const dados={sexo:document.getElementById('m2-sexo').value,nome,tipo_registro:tipo,crm,uf_crm:ufCrm,validade_registro:validade||null,cpf,rg:document.getElementById('m2-rg').value,telefone:document.getElementById('m2-tel').value,status:document.getElementById('m2-status').value,especialidades:[],unidades:[]};
+  const dados={sexo:document.getElementById('m2-sexo').value,nome,tipo_registro:tipo,crm,uf_crm:ufCrm,cpf,rg:document.getElementById('m2-rg').value,telefone:document.getElementById('m2-tel').value,status:document.getElementById('m2-status').value,especialidades:[],unidades:[]};
   loading(true,'Salvando médico...');
   const r=await dbSalvarMedico(dados);
   loading(false);
@@ -2127,15 +2145,7 @@ function atualizarSelBlocos(){
 }
 async function salvarEntrega(){
   const mid=ssGet('e-med');
-  // Bloquear entrega se médico tem RMS vencido
-  if(mid){
-    const medRms=APP.medicos.find(m=>m.ID===mid);
-    if(medRms&&(medRms.TIPO_REGISTRO||'CRM')==='RMS'&&medRms.VALIDADE_REGISTRO){
-      if(new Date(medRms.VALIDADE_REGISTRO)<new Date()){
-        toast('RMS deste médico está vencido. Atualize o cadastro antes de registrar a entrega.','erro');return;
-      }
-    }
-  }
+
   const uid3=ssGet('e-uni');
   const reqId=ssGet('e-req');
   const qtd=parseInt(document.getElementById('e-qtd')?.value||'1')||1;
